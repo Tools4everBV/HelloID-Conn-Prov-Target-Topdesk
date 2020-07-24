@@ -1,0 +1,38 @@
+[
+	{
+		"DisplayName": "Wijzigingsverzoek aanvraag laptop",
+		"Identification": {
+			"Id": "C001"
+		},
+		"Requester": "tester@test.com",
+		"Request": "Naam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName).",
+		"Action": null,
+		"BriefDescription": "Aanvraag Laptop",
+		"Template": "Ws 006",
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"ChangeType": "Simple",
+		"ExternalNumber": null,
+		"Impact": "Persoon",
+		"Benefit": null,
+		"Priority": "P1"
+	},
+	{
+		"DisplayName": "Wijzigingsverzoek aanvraag telefoon",
+		"Identification": {
+			"Id": "C002"
+		},
+		"Requester": "tester@test.com",
+		"Request": "Naam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName).",
+		"Action": null,
+		"BriefDescription": "Aanvraag Telefoon",
+		"Template": "Ws 013",
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"ChangeType": "Simple",
+		"ExternalNumber": null,
+		"Impact": "Persoon",
+		"Benefit": null,
+		"Priority": "P1"
+	}
+]
