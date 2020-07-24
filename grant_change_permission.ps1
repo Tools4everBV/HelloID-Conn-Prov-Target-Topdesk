@@ -6,9 +6,9 @@ $pRef = $permissionReference | ConvertFrom-json;
 $auditMessage = " not created succesfully";
 
 #TOPdesk system data
-$url = 'https://tools4ever.topdesk.net'
-$apiKey = 'd2tee-hdvxm-wwdvg-o3fkz-ftjcb'
-$userName = 'tempadmin'
+$url = 'https://<customer_portal>.topdesk.net'
+$apiKey = '<api key>'
+$userName = '<api user>'
 
 $path = 'C:\Temp\TOPdesk\exampleChanges.json'
 
