@@ -1,4 +1,4 @@
-$path = 'C:\Temp\TOPdesk\exampleChanges.json'
+$path = 'C:\Temp\Powershell\TOPDesk\exampleChanges.json'
 
 try {
     If (Test-Path $path) {
