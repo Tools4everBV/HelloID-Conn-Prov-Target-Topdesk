@@ -10,7 +10,7 @@ $url = 'https://<customer_portal>.topdesk.net'
 $apiKey = '<api key>'
 $userName = '<api user>'
 
-$path = 'C:\Temp\TOPdesk\exampleChanges.json'
+$path = 'C:\Temp\Powershell\TOPDesk\exampleChanges.json'
 
 # Enable TLS 1.2
 if ([Net.ServicePointManager]::SecurityProtocol -notmatch "Tls12") {
@@ -267,9 +267,9 @@ function New-TOPdeskChange {
 }
 
 $changeList = Get-Content -Raw -Path $path | ConvertFrom-Json
-$change = $changeList | Where-Object { $_.Identification.Id -eq $pRef.id } | Select-Object -Property * -ExcludeProperty DisplayName, Identification
+$change = $changeList | Where-Object { ($_.Identification.Id -eq $pRef.id) -and ($_.HelloIDAction -eq "Grant") } | Select-Object -Property * -ExcludeProperty DisplayName, Identification, HelloIDAction
 
-if (-Not($dryRun -eq $False)) {
+if (-Not($dryRun -eq $True)) {
     if (![string]::IsNullOrEmpty($change)) {
         try {
             $change.Request = Invoke-Expression "`"$($change.Request)`""

@@ -4,6 +4,7 @@
 		"Identification": {
 			"Id": "C001"
 		},
+		"HelloIDAction": "Grant",
 		"Requester": "tester@test.com",
 		"Request": "Naam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName).",
 		"Action": null,
@@ -22,6 +23,7 @@
 		"Identification": {
 			"Id": "C002"
 		},
+		"HelloIDAction": "Grant",
 		"Requester": "tester@test.com",
 		"Request": "Naam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName).",
 		"Action": null,

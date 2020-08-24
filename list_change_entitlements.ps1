@@ -3,8 +3,8 @@ $path = 'C:\Temp\TOPdesk\exampleChanges.json'
 try {
     If (Test-Path $path) {
         $changeList = Get-Content -Raw -Path $path | ConvertFrom-Json
-        $permissions = $changeList | Select-Object -Property displayName, identification
-        write-output $permissions | ConvertTo-Json -Depth 10;
+        $changes = $changeList | Where-Object {$_.HelloIDAction -eq "Grant" } | Select-Object -Property displayName, identification
+        write-output $changes | ConvertTo-Json -Depth 10;
     }
 }
 catch{
