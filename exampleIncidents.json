@@ -4,6 +4,7 @@
 		"Identification": {
 			"Id": "C001"
 		},
+		"HelloIDAction": "Grant",
 		"Branch": "Baarn",
 		"OperatorGroup":"Servicedesk",
 		"Category":"Werkplek",

@@ -1,6 +1,6 @@
 #Initialize default properties
 $success = $False;
-$auditMessage = " not granted succesfully";
+$auditMessage = " not revoked succesfully";
 
 $p = $person | ConvertFrom-Json;
 $m = $manager | ConvertFrom-Json;
@@ -270,7 +270,7 @@ function New-TOPdeskChange {
 }
 
 $changeList = Get-Content -Raw -Path $path | ConvertFrom-Json
-$change = $changeList | Where-Object { ($_.Identification.Id -eq $pRef.id) -and ($_.HelloIDAction -eq "Grant") } | Select-Object -Property * -ExcludeProperty DisplayName, Identification, HelloIDAction
+$change = $changeList | Where-Object { ($_.Identification.Id -eq $pRef.id) -and ($_.HelloIDAction -eq "Revoke") } | Select-Object -Property * -ExcludeProperty DisplayName, Identification, HelloIDAction
 
 if (-Not($dryRun -eq $True)) {
     if (![string]::IsNullOrEmpty($change)) {

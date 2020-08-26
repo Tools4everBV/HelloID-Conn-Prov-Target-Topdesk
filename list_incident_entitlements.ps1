@@ -1,10 +1,10 @@
-$path = 'C:\Temp\TOPdesk\exampleIncidents.json'
+$path = 'C:\Temp\Powershell\TOPDesk\exampleChanges.json'
 
 try {
     If (Test-Path $path) {
         $incidentList = Get-Content -Raw -Path $path | ConvertFrom-Json
-        $permissions = $incidentList | Select-Object -Property displayName, identification
-        write-output $permissions | ConvertTo-Json -Depth 10;
+        $incidents = $changeList | Where-Object {$_.HelloIDAction -eq "Grant" } | Select-Object -Property displayName, identification
+        write-output $incidents | ConvertTo-Json -Depth 10;
     }
 }
 catch{

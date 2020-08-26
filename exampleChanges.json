@@ -1,14 +1,14 @@
 [
 	{
-		"DisplayName": "Wijzigingsverzoek aanvraag laptop",
+		"DisplayName": "Aanvraag laptop",
 		"Identification": {
 			"Id": "C001"
 		},
 		"HelloIDAction": "Grant",
 		"Requester": "tester@test.com",
-		"Request": "Naam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName).",
+		"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 		"Action": null,
-		"BriefDescription": "Aanvraag Laptop",
+		"BriefDescription": "Aanvraag Laptop ($($p.displayName))",
 		"Template": "Ws 006",
 		"Category": "Middelen",
 		"SubCategory": "Inventaris & apparatuur",
@@ -19,16 +19,54 @@
 		"Priority": "P1"
 	},
 	{
-		"DisplayName": "Wijzigingsverzoek aanvraag telefoon",
+		"DisplayName": "Inname laptop",
+		"Identification": {
+			"Id": "C001"
+		},
+		"HelloIDAction": "Revoke",
+		"Requester": "tester@test.com",
+		"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+		"Action": null,
+		"BriefDescription": "Inname Laptop ($($p.displayName))",
+		"Template": "Ws 015",
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"ChangeType": "Simple",
+		"ExternalNumber": null,
+		"Impact": "Persoon",
+		"Benefit": null,
+		"Priority": "P1"
+	},
+	{
+		"DisplayName": "Aanvraag mobiele telefoon",
 		"Identification": {
 			"Id": "C002"
 		},
 		"HelloIDAction": "Grant",
 		"Requester": "tester@test.com",
-		"Request": "Naam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName).",
+		"Request": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 		"Action": null,
-		"BriefDescription": "Aanvraag Telefoon",
+		"BriefDescription": "Aanvraag mobiele telefoon ($($p.displayName))",
 		"Template": "Ws 013",
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"ChangeType": "Simple",
+		"ExternalNumber": null,
+		"Impact": "Persoon",
+		"Benefit": null,
+		"Priority": "P1"
+	},
+	{
+		"DisplayName": "Inname mobiele telefoon",
+		"Identification": {
+			"Id": "C002"
+		},
+		"HelloIDAction": "Revoke",
+		"Requester": "tester@test.com",
+		"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een mobiele telefoon, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+		"Action": null,
+		"BriefDescription": "Inname mobiele telefoon ($($p.displayName))",
+		"Template": "Ws 016",
 		"Category": "Middelen",
 		"SubCategory": "Inventaris & apparatuur",
 		"ChangeType": "Simple",
