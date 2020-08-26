@@ -76,7 +76,7 @@ For more information about the TOPdesk  API see the following TOPdesk [Documenta
 
 When running into 403 issues when creating changes, make sure the configured change template is available for use in change requests. This option can be enabled from the second tab of the change template configuration page.
 
-Before you can start using this connector, please make sure to replace the following:
+Before you start using this connector, please make sure to replace the following:
 
 The URL to the portal endpoint:
 `$url = https://<customer_portal>.topdesk.net`
