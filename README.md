@@ -5,10 +5,14 @@
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
+* [Introduction](#introduction)
 * [Getting Started](#getting-started)
   * [Permissions](#permissions)
   * [API Access](#API-access)
 * [Usage](#usage)
+
+## Introduction
+TOPdesk provides a RESTful API that allows you to programmatically interact with its services and data.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -60,12 +64,23 @@ The following permissions are required to use this connector. This should be con
 
 ### API Access
 
-Creating an API Key
+Getting Connected to the API
 
-1. Create a new permission group and check the boxes indicated as described in the table above.
-2. Add the operator you want to use for this connector to the permission group.
-3. Log-in using the operator account and go to user settings.
-4. Add a new API-KEY. TOPdesk calls this an 'application password'.
+ 1. Go to your TOPdesk portal (e.g., https://customer.topdesk.net/), and log into an operator account.
+ 2. Go to Modules > Supporting Files > Overview > Permission groups.
+ 3. Select the New Permission Group button.
+ 4. Enter a Name for the permission group.
+ 5. Configure te correct permissions as described in the table above.
+ 6. Select the Save button.
+ 7. Select the Operators tab.
+ 8. Select the Links Wizard button.
+ 9. Select the operator whose credentials you wish to use to access the TOPdesk API.
+10. Select the Link button.
+11. Select the user account icon in the top-right corner of the screen, and in the drop down, select My Settings.
+12. Under the Application passwords section, select the Add button.
+13. Enter an Application name.
+14. Select the Create button.
+15. Copy the Application password.
 
 To work with the API TOPdesk expects an application password, not the password used to login to the web interface. More information about this specific password can be found on the following [Documentation](https://developers.topdesk.com/tutorial.html#show-collapse-usage-createAppPassword) page.
 
@@ -76,18 +91,15 @@ For more information about the TOPdesk  API see the following TOPdesk [Documenta
 
 When running into 403 issues when creating changes, make sure the configured change template is available for use in change requests. This option can be enabled from the second tab of the change template configuration page.
 
-Before you start using this connector, please make sure to replace the following:
+Update the scripts with your own values, under the #TOPdesk system data comment:
 
-The URL to the portal endpoint:
-`$url = https://<customer_portal>.topdesk.net`
+    url: Replace 'xxxx' with your organization's TOPdesk subdomain.
+    apiKey: The application password you copied.
+    userName: The TOPdesk operator username that you linked to the new permission group you created.
 
-The generated API key
-`$apiKey = <api key>`
-
-The username of the API user
-`$userName = <api user>`
-
-Optional: path to where your exampleChanges.json or exampleIncidents.json are being stored 
-`$path = C:\Temp\Powershell\TOPDesk\exampleChanges.json`
+(Optional) 
+when using the connector to handle Incidents or Changes you have to configure the path to where your exampleChanges.json or exampleIncidents.json are being stored 
+    
+    path = C:\Temp\Powershell\TOPDesk\exampleChanges.json
 
 _For more information about our HelloID PowerShell connectors, please refer to general [Documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-How-to-configure-a-custom-PowerShell-target-connector) page_
