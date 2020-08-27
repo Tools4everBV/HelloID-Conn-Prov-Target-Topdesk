@@ -9,9 +9,9 @@ $mRef = $managerAccountReference | ConvertFrom-Json;
 $pRef = $permissionReference | ConvertFrom-json;
 
 #TOPdesk system data
-$url = 'https://<customer_portal>.topdesk.net'
-$apiKey = '<api key>'
-$userName = '<api user>'
+$url = 'https://xxxx.topdesk.net'
+$apiKey = 'xxxx-xxxx-xxxx-xxxx-xxxx'
+$userName = 'xxxx'
 
 $path = 'C:\Temp\Powershell\TOPDesk\exampleChanges.json'
 

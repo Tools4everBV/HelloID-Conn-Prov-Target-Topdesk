@@ -6,9 +6,9 @@ $pRef = $permissionReference | ConvertFrom-json;
 $auditMessage = " not created succesfully";
 
 #TOPdesk system data
-$url = 'https://<customer_portal>.topdesk.net'
-$apiKey = '<api key>'
-$userName = '<api user>'
+$url = 'https://xxxx.topdesk.net'
+$apiKey = 'xxxx-xxxx-xxxx-xxxx-xxxx'
+$userName = 'xxxx'
 
 $path = 'C:\Temp\TOPdesk\exampleIncidents.json'
 
