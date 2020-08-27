@@ -24,7 +24,7 @@ By using this connector you will have the ability to create one of the following
 * Incidents
 * Accounts
 
-In this project we connect to the TOPdesk API using the Powershell Invoke-RestMethod cmdlet. Before we can start using, we have to setup the API access first.
+In this project we are connecting to the TOPdesk API using the Powershell Invoke-RestMethod cmdlet. Before we can start using this, we have to setup and configure our API access first.
 
 ### Permissions
 
