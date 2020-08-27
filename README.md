@@ -102,4 +102,4 @@ when using the connector to handle Incidents or Changes you have to configure th
     
     path = C:\Temp\Powershell\TOPDesk\exampleChanges.json
 
-_For more information about our HelloID PowerShell connectors, please refer to general [Documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-How-to-configure-a-custom-PowerShell-target-connector) page_
+_For more information about our HelloID PowerShell connectors, please refer to our general [Documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-How-to-configure-a-custom-PowerShell-target-connector) page_
