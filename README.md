@@ -62,6 +62,8 @@ The following permissions are required to use this connector. This should be con
 
 </table>
 
+(To create departments and budgetholders, you will need to allow the API account read and write access to the "Instellingen voor Ondersteunende bestanden".)
+
 ### API Access
 
 Getting Connected to the API
