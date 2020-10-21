@@ -1,53 +1,96 @@
 ﻿#Initialize default properties
 $success = $False;
+$p = $person | ConvertFrom-Json
 $aRef = $accountReference | ConvertFrom-Json
-$auditMessage = " not enabled succesfully";
+$auditMessage = " not disabled succesfully";
 
 #TOPdesk system data
-$url = "https://xxxx.topdesk.net/tas/api/persons/id/${aRef}/archive"
+$url = 'https://customer-test.topdesk.net/tas/api'
 $apiKey = 'xxxx-xxxx-xxxx-xxxx-xxxx'
 $userName = 'xxxx'
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json' }
 
-$archive = @{
-      id = "64d2d84d-de01-5bc4-bf4a-08ec61e20d1e"; 
+$PersonArchivingReason = @{
+    id = "Persoon uit organisatie"; 
 }
-
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 if(-Not($dryRun -eq $True)){
- try {
-    $body = $archive | ConvertTo-Json -Depth 10
-    $response = Invoke-WebRequest -uri $url -Method PATCH -Headers $headers -Body $body -UseBasicParsing
+    try {
+        $lookupFailure = $False
 
-    $resp = $response | ConvertFrom-Json
+        write-verbose -verbose "Archiving reason lookup..."
+        if ([string]::IsNullOrEmpty($PersonArchivingReason.id)) {
+            $auditMessage = $auditMessage + "; Archiving reason is not set'"
+            $lookupFailure = $True
+            write-verbose -verbose "Archiving reason lookup failed"
+        } else {
+            $archivingReasonUrl = $url + "/archiving-reasons"
+            $responseArchivingReasonJson = Invoke-WebRequest -uri $archivingReasonUrl -Method Get -Headers $headers -UseBasicParsing
+            $responseArchivingReason = $responseArchivingReasonJson | ConvertFrom-Json
+            $archivingReason = $responseArchivingReason | Where-object name -eq $PersonArchivingReason.id
 
-    if(-Not($null -eq $resp.id)) {
-        $success = $True;
-        $auditMessage = "disabled succesfully";
-    }
+            if ([string]::IsNullOrEmpty($archivingReason.id) -eq $True) {
+                Write-Output -Verbose "Archiving Reason '$($PersonArchivingReason.id)' not found"
+                $auditMessage = $auditMessage + "; Archiving Reason '$($PersonArchivingReason.id)' not found"
+                $lookupFailure = $True
+                write-verbose -verbose "Archiving Reason lookup failed"
+            } else {
+                $PersonArchivingReason.id = $archivingReason.id
+                write-verbose -verbose "Archiving Reason lookup succesful"
+            }
+        }
 
-    }catch{
-        $result = $_.Exception.Response.GetResponseStream()
-        $reader = New-Object System.IO.StreamReader($result)
-        $reader.BaseStream.Position = 0
-        $reader.DiscardBufferedData()
-        $errResponse = $reader.ReadToEnd();
-        $auditMessage = " not disabled succesfully: ${errResponse}";
-        if($errResponse -like "*Person is already archived.*"){
-            $success = $True;
+        write-verbose -verbose "Person lookup..."
+        $PersonUrl = $url + "/persons/id/${aRef}"
+        $responsePersonJson = Invoke-WebRequest -uri $PersonUrl -Method Get -Headers $headers -UseBasicParsing
+        $responsePerson = $responsePersonJson | ConvertFrom-Json
+
+        if([string]::IsNullOrEmpty($responsePerson.id)) {
+            $auditMessage = $auditMessage + "; Person is not found in TOPdesk'"
+            $lookupFailure = $true
+            write-verbose -verbose "Person not found in TOPdesk"
+        } else {
+            write-verbose -verbose "Person lookup succesful"
+        }
+           
+        if (!($lookupFailure)) {
+            if ($responsePerson.status -eq "person") {
+                write-verbose -verbose "Archiving account for '$($p.ExternalID)...'"
+                $bodyPersonArchive = $PersonArchivingReason | ConvertTo-Json -Depth 10
+                $archiveUrl = $url + "/persons/id/${aRef}/archive"
+                $responseArchiveJson = Invoke-WebRequest -uri $archiveUrl -Method PATCH -Body $bodyPersonArchive -Headers $headers -UseBasicParsing
+                $null = $responseArchiveJson | ConvertFrom-Json
+                write-verbose -verbose "Account Archived"
+                $auditMessage = "disabled succesfully";
+            } else {
+                write-verbose -verbose "Person is already archived. Nothing to do"
+            }
+            $success = $True
             $auditMessage = "disabled succesfully";
         }
-    }
 
+    } catch {
+        if ($_.Exception.Response.StatusCode -eq "Forbidden") {
+            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.Exception.Message)'"
+            $auditMessage = " not disabled succesfully: '$($_.Exception.Message)'" 
+        } elseif (![string]::IsNullOrEmpty($_.ErrorDetails.Message)) {
+            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.ErrorDetails.Message)'" 
+            $auditMessage = " not disabled succesfully: '$($_.ErrorDetails.Message)'"
+        } else {
+            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_)'" 
+            $auditMessage = " not disabled succesfully: '$($_)'" 
+        }        
+        $success = $False
+    }
 }
+
 #build up result
 $result = [PSCustomObject]@{ 
-	Success= $success;
-    AccountReference= $aRef;
-	AuditDetails=$auditMessage;
+	Success = $success;
+	AuditDetails = $auditMessage;
 };
 
 Write-Output $result | ConvertTo-Json -Depth 10;
