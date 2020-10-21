@@ -6,7 +6,7 @@ $auditMessage = " not disabled succesfully";
 
 #TOPdesk system data
 $url = 'https://customer-test.topdesk.net/tas/api'
-$apiKey = 'xxxx-xxxx-xxxx-xxxx-xxxx'
+$apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
 $userName = 'xxxx'
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)

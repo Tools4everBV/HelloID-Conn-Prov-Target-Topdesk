@@ -8,7 +8,7 @@ $url = 'https://customer-test.topdesk.net/tas/api'
 $personUrl = $url + '/persons'
 
 $apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
-$userName = 'xyz'
+$userName = 'xxxx'
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json' }
