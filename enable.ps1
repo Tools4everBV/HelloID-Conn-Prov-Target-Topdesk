@@ -31,8 +31,7 @@ $account = @{
     email = $email;
     jobTitle = $p.PrimaryContract.Title.Name;
     department = @{ id = $p.PrimaryContract.Department.DisplayName };
-    #budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name };
-    budgetHolder = @{ id = "12345" + " " + "Tools4ever testnaam" };
+    budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name };
     #employeeNumber = $p.ExternalID;
     networkLoginName = $username;
     branch = @{ id = $p.PrimaryContract.Location.Name };
