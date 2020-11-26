@@ -10,7 +10,7 @@ $apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
 $userName = 'xxxx'
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
-$headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json' }
+$headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
 
 $PersonArchivingReason = @{
     id = "Persoon uit organisatie"; 
@@ -93,4 +93,4 @@ $result = [PSCustomObject]@{
 	AuditDetails = $auditMessage;
 };
 
-Write-Output $result | ConvertTo-Json -Depth 10;
+Write-Output $result | ConvertTo-Json -Depth 10

@@ -105,3 +105,26 @@ when using the connector to handle Incidents or Changes you have to configure th
     path = C:\Temp\Powershell\TOPDesk\exampleChanges.json
 
 _For more information about our HelloID PowerShell connectors, please refer to our general [Documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-How-to-configure-a-custom-PowerShell-target-connector) page_
+
+It is now possible to use the manager or the employee as a requester of a change, by using the words 'employee' or the word 'manager' as a value in the 'Requester' parameter.
+Please make sure the person is enabled(not archived) when setting the employee as the requester when creating a change. Usually you need to disable any action in the disable task, and archive the user in the delete task. An example for a dummy disable task is displayed below:
+```powershell
+#Initialize default properties
+$success = $False;
+$p = $person | ConvertFrom-Json
+$aRef = $accountReference | ConvertFrom-Json
+$auditMessage = " not disabled succesfully";
+
+if(-Not($dryRun -eq $True)){  
+    $success = $True
+    $auditMessage = "disabled successfully";
+}
+
+#build up result
+$result = [PSCustomObject]@{ 
+	Success = $success;
+	AuditDetails = $auditMessage;
+};
+
+Write-Output $result | ConvertTo-Json -Depth 10;
+```

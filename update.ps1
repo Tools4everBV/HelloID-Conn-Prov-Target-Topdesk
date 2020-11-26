@@ -1,16 +1,16 @@
 ﻿#Initialize default properties
 $success = $False;
-$p = $person | ConvertFrom-Json;
-$aRef = $accountReference | ConvertFrom-Json;
+$p = $person | ConvertFrom-Json
+$aRef = $accountReference | ConvertFrom-Json
 $auditMessage = " not updated succesfully";
 
 #TOPdesk system data
-$url = "https://customer-test.topdesk.net/tas/api"
+$url = 'https://customer-test.topdesk.net/tas/api'
 $apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
 $userName = 'xxxx'
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
-$headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json' }
+$headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
 
 #Connector settings
 $createMissingDepartments = $True
@@ -20,8 +20,11 @@ $createMissingBudgetholders = $True
 $correlationField = 'employeeNumber';
 
 #mapping
+#$username = $p.Accounts.MicrosoftActiveDirectory.SamAccountName;
+#$email = $p.Accounts.MicrosoftActiveDirectory.Mail;
 $username = $p.Accounts.MicrosoftActiveDirectory.SamAccountName;
 $email = $p.Accounts.MicrosoftActiveDirectory.Mail;
+
 
 $account = @{
     surName = $p.Custom.TOPdeskSurName;
@@ -32,6 +35,7 @@ $account = @{
     jobTitle = $p.PrimaryContract.Title.Name;
     department = @{ id = $p.PrimaryContract.Department.DisplayName };
     budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name };
+    #budgetHolder = @{ id = "12345" + " " + "Tools4ever testnaam" };
     #employeeNumber = $p.ExternalID;
     networkLoginName = $username;
     branch = @{ id = $p.PrimaryContract.Location.Name };
@@ -92,7 +96,7 @@ if(-Not($dryRun -eq $True)){
                 $personDepartment = $responseDepartment | Where-object name -eq $account.department.id
 
                 if ([string]::IsNullOrEmpty($personDepartment.id) -eq $True) {
-                    Write-Output -Verbose "Department '$($Account.department.id)' not found"
+                    Write-Output -Verbose "Department '$($Account.department.id)' not found"
                     if ($createMissingDepartments) {
                         Write-Verbose -Verbose "Creating department '$($Account.department.id)' in TOPdesk"
                         $bodyDepartment = @{ name=$Account.department.id } | ConvertTo-Json -Depth 1
@@ -115,8 +119,9 @@ if(-Not($dryRun -eq $True)){
             write-verbose -verbose "BudgetHolder lookup..."
             if ([string]::IsNullOrEmpty($account.budgetHolder.id.replace(' ', '""')) -or $account.budgetHolder.id.StartsWith(' ') -or $account.budgetHolder.id.EndsWith(' ')) {
                 $auditMessage = $auditMessage + "; BudgetHolder is empty for person '$($p.ExternalId)'"
-                $lookupFailure = $True
-                write-verbose -verbose "BudgetHolder lookup failed"
+                $account.PSObject.Properties.Remove('budgetHolder')
+			    #$lookupFailure = $False
+                #write-verbose -verbose "BudgetHolder lookup failed"
             } else {
                 $budgetHolderUrl = $url + "/budgetholders"
                 $responseBudgetHolderJson = Invoke-WebRequest -uri $budgetHolderUrl -Method Get -Headers $headers -UseBasicParsing
@@ -125,7 +130,7 @@ if(-Not($dryRun -eq $True)){
 
                 if ([string]::IsNullOrEmpty($personBudgetHolder.id) -eq $True) {
                     Write-Verbose -Verbose "BudgetHolder '$($account.budgetHolder.id)' not found"
-                    if ($createMissingBudgetholders) {
+                    if ($createMissingDepartments) {
                         Write-Verbose -Verbose "Creating budgetHolder '$($Account.budgetHolder.id)' in TOPdesk"
                         $bodyBudgetHolder = @{ name=$Account.budgetHolder.id } | ConvertTo-Json -Depth 1
                         $responseBudgetHolderCreateJson = Invoke-WebRequest -uri $budgetHolderUrl -Method POST -Headers $headers -Body $bodyBudgetHolder -UseBasicParsing
@@ -166,7 +171,7 @@ if(-Not($dryRun -eq $True)){
                         write-verbose -verbose "Setting isManager flag on manager..."
                         $managerUrl = $personUrl + "/id/" + $responseManager.id
                         $bodyManagerEdit = '{"isManager": true }'
-                        $null = Invoke-WebRequest -uri $managerUrl -Method PATCH -Headers $headers -Body $bodyManagerEdit -UseBasicParsing
+                        $responseManagerEdit = Invoke-WebRequest -uri $managerUrl -Method PATCH -Headers $headers -Body $bodyManagerEdit -UseBasicParsing
                         write-verbose -verbose "Setting isManager flag on manager succesful"
                     }
                     write-verbose -verbose "Manager lookup succesful"
@@ -177,13 +182,15 @@ if(-Not($dryRun -eq $True)){
                 if ($person.status -eq "personArchived") {
                     write-verbose -verbose "Unarchiving account for '$($p.ExternalID)...'"
                     $unarchiveUrl = $PersonUrl + "/unarchive"
-                    $null = Invoke-WebRequest -uri $unarchiveUrl -Method PATCH -Headers $headers -UseBasicParsing
+                    $responseUnarchiveJson = Invoke-WebRequest -uri $unarchiveUrl -Method PATCH -Headers $headers -UseBasicParsing
+                    $responseUnarchive = $responseUnarchiveJson | ConvertFrom-Json
                     write-verbose -verbose "Account unarchived"
                 }
             
                 write-verbose -verbose "Updating account for '$($p.ExternalID)...'"
                 $bodyPersonUpdate = $account | ConvertTo-Json -Depth 10
-                $null = Invoke-WebRequest -uri $personUrl -Method PATCH -Headers $headers -Body $bodyPersonUpdate -UseBasicParsing
+                $responsePersonUpdate = Invoke-WebRequest -uri $personUrl -Method PATCH -Headers $headers -Body $bodyPersonUpdate -UseBasicParsing
+                $responsePersonUpdateJson = $responsePersonUpdate | ConvertFrom-Json
                 $success = $True
                 $auditMessage = "update succesful"
                 write-verbose -verbose "Account updated for '$($p.ExternalID)'"
