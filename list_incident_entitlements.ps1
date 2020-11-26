@@ -3,7 +3,7 @@ $path = 'C:\Temp\Powershell\TOPDesk\exampleChanges.json'
 try {
     If (Test-Path $path) {
         $incidentList = Get-Content -Raw -Path $path | ConvertFrom-Json
-        $incidents = $changeList | Where-Object {$_.HelloIDAction -eq "Grant" } | Select-Object -Property displayName, identification
+        $incidents = $incidentList | Where-Object {$_.HelloIDAction -eq "Grant" } | Select-Object -Property displayName, identification
         write-output $incidents | ConvertTo-Json -Depth 10;
     }
 }

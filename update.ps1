@@ -171,7 +171,7 @@ if(-Not($dryRun -eq $True)){
                         write-verbose -verbose "Setting isManager flag on manager..."
                         $managerUrl = $personUrl + "/id/" + $responseManager.id
                         $bodyManagerEdit = '{"isManager": true }'
-                        $responseManagerEdit = Invoke-WebRequest -uri $managerUrl -Method PATCH -Headers $headers -Body $bodyManagerEdit -UseBasicParsing
+                        $null = Invoke-WebRequest -uri $managerUrl -Method PATCH -Headers $headers -Body $bodyManagerEdit -UseBasicParsing
                         write-verbose -verbose "Setting isManager flag on manager succesful"
                     }
                     write-verbose -verbose "Manager lookup succesful"
@@ -183,14 +183,14 @@ if(-Not($dryRun -eq $True)){
                     write-verbose -verbose "Unarchiving account for '$($p.ExternalID)...'"
                     $unarchiveUrl = $PersonUrl + "/unarchive"
                     $responseUnarchiveJson = Invoke-WebRequest -uri $unarchiveUrl -Method PATCH -Headers $headers -UseBasicParsing
-                    $responseUnarchive = $responseUnarchiveJson | ConvertFrom-Json
+                    $null = $responseUnarchiveJson | ConvertFrom-Json
                     write-verbose -verbose "Account unarchived"
                 }
             
                 write-verbose -verbose "Updating account for '$($p.ExternalID)...'"
                 $bodyPersonUpdate = $account | ConvertTo-Json -Depth 10
                 $responsePersonUpdate = Invoke-WebRequest -uri $personUrl -Method PATCH -Headers $headers -Body $bodyPersonUpdate -UseBasicParsing
-                $responsePersonUpdateJson = $responsePersonUpdate | ConvertFrom-Json
+                $null = $responsePersonUpdate | ConvertFrom-Json
                 $success = $True
                 $auditMessage = "update succesful"
                 write-verbose -verbose "Account updated for '$($p.ExternalID)'"
