@@ -171,7 +171,7 @@ if(-Not($dryRun -eq $True)) {
                 if (!($responseManager.isManager)) {
                     $managerUrl = $personUrl + "/id/" + $responseManager.id
                     $bodyManagerEdit = '{"isManager": true }'
-                    $responseManagerEdit = Invoke-WebRequest -uri $managerUrl -Method PATCH -Headers $headers -Body $bodyManagerEdit -UseBasicParsing
+                    $null = Invoke-WebRequest -uri $managerUrl -Method PATCH -Headers $headers -Body $bodyManagerEdit -UseBasicParsing
                 }
                 write-verbose -verbose "Manager lookup succesful"
             }
