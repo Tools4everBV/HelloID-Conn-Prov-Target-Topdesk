@@ -67,7 +67,6 @@ if(-Not($dryRun -eq $True)){
                 $archiveUrl = $url + "/persons/id/${aRef}/archive"
                 $responseArchiveJson = Invoke-WebRequest -uri $archiveUrl -Method PATCH -Body $bodyPersonArchive -Headers $headers -UseBasicParsing
                 $null = $responseArchiveJson | ConvertFrom-Json
-                $sucess = $True
                 write-verbose -verbose "Account Archived"
                 $auditMessage = "deleted succesfully";
             } else {
