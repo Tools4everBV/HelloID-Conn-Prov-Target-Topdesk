@@ -88,11 +88,8 @@ if(-Not($dryRun -eq $True)){
                 write-verbose -verbose "Department lookup failed"
             } else {
                 $departmentUrl = $url + "/departments"
-                Write-verbose -verbose $departmentUrl
                 $responseDepartmentJson = Invoke-WebRequest -uri $departmentUrl -Method Get -Headers $headers -UseBasicParsing
-                Write-verbose -verbose $responseDepartmentJson 
-                $responseDepartment = $responseDepartmentJson | ConvertFrom-Json
-                write-verbose -verbose test
+                $responseDepartment = $responseDepartmentJson.content | Out-String | ConvertFrom-Json
                 $personDepartment = $responseDepartment | Where-object name -eq "$($account.department.id)"
                 write-verbose -verbose "$($personDepartment.id)"
                 if ([string]::IsNullOrEmpty($personDepartment.id) -eq $True) {
@@ -125,7 +122,7 @@ if(-Not($dryRun -eq $True)){
             } else {
                 $budgetHolderUrl = $url + "/budgetholders"
                 $responseBudgetHolderJson = Invoke-WebRequest -uri $budgetHolderUrl -Method Get -Headers $headers -UseBasicParsing
-                $responseBudgetHolder = $responseBudgetHolderJson | ConvertFrom-Json  
+                $responseBudgetHolder = $responseBudgetHolderJson.content | Out-String | ConvertFrom-Json   
                 $personBudgetholder = $responseBudgetHolder| Where-object name -eq $account.budgetHolder.id
 
                 if ([string]::IsNullOrEmpty($personBudgetHolder.id) -eq $True) {

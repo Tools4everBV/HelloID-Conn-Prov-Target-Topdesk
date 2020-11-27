@@ -92,7 +92,7 @@ if(-Not($dryRun -eq $True)){
             } else {
                 $departmentUrl = $url + "/departments"
                 $responseDepartmentJson = Invoke-WebRequest -uri $departmentUrl -Method Get -Headers $headers -UseBasicParsing
-                $responseDepartment = $responseDepartmentJson | ConvertFrom-Json
+              $responseDepartment = $responseDepartmentJson.content | Out-String | ConvertFrom-Json
                 $personDepartment = $responseDepartment | Where-object name -eq $account.department.id
 
                 if ([string]::IsNullOrEmpty($personDepartment.id) -eq $True) {
@@ -125,7 +125,7 @@ if(-Not($dryRun -eq $True)){
             } else {
                 $budgetHolderUrl = $url + "/budgetholders"
                 $responseBudgetHolderJson = Invoke-WebRequest -uri $budgetHolderUrl -Method Get -Headers $headers -UseBasicParsing
-                $responseBudgetHolder = $responseBudgetHolderJson | ConvertFrom-Json  
+                $responseBudgetHolder = $responseBudgetHolderJson.content | Out-String | ConvertFrom-Json
                 $personBudgetholder = $responseBudgetHolder| Where-object name -eq $account.budgetHolder.id
 
                 if ([string]::IsNullOrEmpty($personBudgetHolder.id) -eq $True) {
