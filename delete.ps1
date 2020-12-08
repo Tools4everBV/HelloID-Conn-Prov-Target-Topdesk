@@ -1,19 +1,20 @@
 ﻿#Initialize default properties
-$success = $False;
+$success = $False
 $p = $person | ConvertFrom-Json
 $aRef = $accountReference | ConvertFrom-Json
-$auditMessage = " not deleted succesfully";
+$auditMessage = " not deleted succesfully"
 
 #TOPdesk system data
-$url = 'https://customer-test.topdesk.net/tas/api'
-$apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
-$userName = 'xxxx'
+$url = 'https://trajectum.topdesk.net/tas/api'
+$apiKey = 'z56o5-5go5t-wwuhi-pv3uf-3y3uc'
+$userName = 'sa_helloid'
+
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
 
 $PersonArchivingReason = @{
-    id = "Persoon uit organisatie"; 
+    id = "Persoon uit organisatie";
 }
 
 #Zet dit tijdelijk aan als het aanmaken van een ticket tijdelijk overgeslagen moet worden
@@ -33,7 +34,7 @@ if(-Not($dryRun -eq $True)){
         } else {
             $archivingReasonUrl = $url + "/archiving-reasons"
             $responseArchivingReasonJson = Invoke-WebRequest -uri $archivingReasonUrl -Method Get -Headers $headers -UseBasicParsing
-            $responseArchivingReason = $responseArchivingReasonJson | ConvertFrom-Json
+            $responseArchivingReason = $responseArchivingReasonJson.Content | Out-String | ConvertFrom-Json
             $archivingReason = $responseArchivingReason | Where-object name -eq $PersonArchivingReason.id
 
             if ([string]::IsNullOrEmpty($archivingReason.id) -eq $True) {
@@ -48,9 +49,9 @@ if(-Not($dryRun -eq $True)){
         }
 
         write-verbose -verbose "Person lookup..."
-        $PersonUrl = $url + "/persons/id/${aRef}"
-        $responsePersonJson = Invoke-WebRequest -uri $PersonUrl -Method Get -Headers $headers -UseBasicParsing
-        $responsePerson = $responsePersonJson | ConvertFrom-Json
+        $personUrl = $url + "/persons/id/${aRef}"
+        $responsePersonJson = Invoke-WebRequest -uri $personUrl -Method Get -Headers $headers -UseBasicParsing
+        $responsePerson = $responsePersonJson.Content | Out-String | ConvertFrom-Json
 
         if([string]::IsNullOrEmpty($responsePerson.id)) {
             $auditMessage = $auditMessage + "; Person is not found in TOPdesk'"
@@ -63,17 +64,15 @@ if(-Not($dryRun -eq $True)){
         if (!($lookupFailure)) {
             if ($responsePerson.status -eq "person") {
                 write-verbose -verbose "Archiving account for '$($p.ExternalID)...'"
-                $bodyPersonArchive = $PersonArchivingReason | ConvertTo-Json -Depth 10
+                $bodyPersonArchive = $personArchivingReason | ConvertTo-Json -Depth 10
                 $archiveUrl = $url + "/persons/id/${aRef}/archive"
-                $responseArchiveJson = Invoke-WebRequest -uri $archiveUrl -Method PATCH -Body $bodyPersonArchive -Headers $headers -UseBasicParsing
-                $null = $responseArchiveJson | ConvertFrom-Json
+                $null = Invoke-WebRequest -uri $archiveUrl -Method PATCH -Body ([Text.Encoding]::UTF8.GetBytes($bodyPersonArchive)) -Headers $headers -UseBasicParsing
                 write-verbose -verbose "Account Archived"
-                $auditMessage = "deleted succesfully";
             } else {
                 write-verbose -verbose "Person is already archived. Nothing to do"
             }
             $success = $True
-            $auditMessage = "deleted succesfully";
+            $auditMessage = "deleted succesfully"
         }
 
     } catch {
@@ -84,8 +83,8 @@ if(-Not($dryRun -eq $True)){
             Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.ErrorDetails.Message)'" 
             $auditMessage = " not deleted succesfully: '$($_.ErrorDetails.Message)'"
         } else {
-            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_)'" 
-            $auditMessage = " not deleted succesfully: '$($_)'" 
+            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_)'"
+            $auditMessage = " not deleted succesfully: '$($_)'"
         }        
         $success = $False
     }
@@ -95,6 +94,6 @@ if(-Not($dryRun -eq $True)){
 $result = [PSCustomObject]@{ 
 	Success = $success;
 	AuditDetails = $auditMessage;
-};
+}
 
-Write-Output $result | ConvertTo-Json -Depth 10;
+Write-Output $result | ConvertTo-Json -Depth 10

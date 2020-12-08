@@ -8,6 +8,7 @@ $auditMessage = " not disabled succesfully";
 $url = 'https://customer-test.topdesk.net/tas/api'
 $apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
 $userName = 'xxxx'
+
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
@@ -29,7 +30,7 @@ if(-Not($dryRun -eq $True)){
         } else {
             $archivingReasonUrl = $url + "/archiving-reasons"
             $responseArchivingReasonJson = Invoke-WebRequest -uri $archivingReasonUrl -Method Get -Headers $headers -UseBasicParsing
-            $responseArchivingReason = $responseArchivingReasonJson | ConvertFrom-Json
+            $responseArchivingReason = $responseArchivingReasonJson.Content | Out-String | ConvertFrom-Json
             $archivingReason = $responseArchivingReason | Where-object name -eq $PersonArchivingReason.id
 
             if ([string]::IsNullOrEmpty($archivingReason.id) -eq $True) {
@@ -46,7 +47,7 @@ if(-Not($dryRun -eq $True)){
         write-verbose -verbose "Person lookup..."
         $PersonUrl = $url + "/persons/id/${aRef}"
         $responsePersonJson = Invoke-WebRequest -uri $PersonUrl -Method Get -Headers $headers -UseBasicParsing
-        $responsePerson = $responsePersonJson | ConvertFrom-Json
+        $responsePerson = $responsePersonJson.Content | Out-String | ConvertFrom-Json
 
         if([string]::IsNullOrEmpty($responsePerson.id)) {
             $auditMessage = $auditMessage + "; Person is not found in TOPdesk'"
@@ -61,9 +62,8 @@ if(-Not($dryRun -eq $True)){
                 write-verbose -verbose "Archiving account for '$($p.ExternalID)...'"
                 $bodyPersonArchive = $PersonArchivingReason | ConvertTo-Json -Depth 10
                 $archiveUrl = $url + "/persons/id/${aRef}/archive"
-                $responseArchiveJson = Invoke-WebRequest -uri $archiveUrl -Method PATCH -Body $bodyPersonArchive -Headers $headers -UseBasicParsing
-                $null = $responseArchiveJson | ConvertFrom-Json
-                write-verbose -verbose "Account Archived"
+                $null = Invoke-WebRequest -uri $archiveUrl -Method PATCH -Body ([Text.Encoding]::UTF8.GetBytes($bodyPersonArchive)) -Headers $headers -UseBasicParsing
+             write-verbose -verbose "Account Archived"
                 $auditMessage = "disabled succesfully";
             } else {
                 write-verbose -verbose "Person is already archived. Nothing to do"
