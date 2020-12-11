@@ -2,21 +2,26 @@
 $success = $False;
 $p = $person | ConvertFrom-Json
 $aRef = $accountReference | ConvertFrom-Json
+$config = $configuration | ConvertFrom-Json 
 $auditMessage = " not updated succesfully";
 
 #TOPdesk system data
-$url = 'https://customer-test.topdesk.net/tas/api'
-$apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
-$userName = 'xxxx'
+$url = $config.connection.url
+$apiKey = $config.connection.apikey
+$userName = $config.connection.username
 
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
 
 #Connector settings
-$createMissingDepartments = $True
-$createMissingBudgetholders = $True
-$errorOnMissingManager = $True
+$createMissingDepartment = [Boolean]$config.persons.errorNoDepartmentHR
+$errorOnMissingDepartment = [Boolean]$config.persons.errorNoDepartmentTD    # todo
+
+$createMissingBudgetholder = [Boolean]$config.persons.errorNoBudgetHolderTD
+$errorOnMissingBudgetholder = [Boolean]$config.persons.errorNoBudgetHolderHR # todo
+
+$errorOnMissingManager = [Boolean]$config.persons.errorNoManagerHR
 
 #correlation (For manager lookup)
 $correlationField = 'employeeNumber';
@@ -97,7 +102,7 @@ if(-Not($dryRun -eq $True)){
 
                 if ([string]::IsNullOrEmpty($personDepartment.id) -eq $True) {
                     Write-Output -Verbose "Department '$($account.department.id)' not found"
-                    if ($createMissingDepartments) {
+                    if ($createMissingDepartment) {
                         Write-Verbose -Verbose "Creating department '$($Account.department.id)' in TOPdesk"
                         $bodyDepartment = @{ name=$account.department.id } | ConvertTo-Json -Depth 1
                         $responseDepartmentCreateJson = Invoke-WebRequest -uri $departmentUrl -Method POST -Headers $headers -Body ([Text.Encoding]::UTF8.GetBytes($bodyDepartment)) -UseBasicParsing
@@ -130,7 +135,7 @@ if(-Not($dryRun -eq $True)){
 
                 if ([string]::IsNullOrEmpty($personBudgetHolder.id) -eq $True) {
                     Write-Verbose -Verbose "BudgetHolder '$($account.budgetHolder.id)' not found"
-                    if ($createMissingBudgetholders) {
+                    if ($createMissingBudgetholder) {
                         Write-Verbose -Verbose "Creating budgetHolder '$($account.budgetHolder.id)' in TOPdesk"
                         $bodyBudgetHolder = @{ name=$account.budgetHolder.id } | ConvertTo-Json -Depth 1
                         $responseBudgetHolderCreateJson = Invoke-WebRequest -uri $budgetHolderUrl -Method POST -Headers $headers -Body ([Text.Encoding]::UTF8.GetBytes($bodyBudgetHolder)) -UseBasicParsing

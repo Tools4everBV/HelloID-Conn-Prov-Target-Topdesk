@@ -2,12 +2,13 @@
 $success = $False;
 $p = $person | ConvertFrom-Json
 $aRef = $accountReference | ConvertFrom-Json
+$config = $configuration | ConvertFrom-Json 
 $auditMessage = " not disabled succesfully";
 
 #TOPdesk system data
-$url = 'https://customer-test.topdesk.net/tas/api'
-$apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
-$userName = 'xxxx'
+$url = $config.connection.url
+$apiKey = $config.connection.apikey
+$userName = $config.connection.username
 
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)

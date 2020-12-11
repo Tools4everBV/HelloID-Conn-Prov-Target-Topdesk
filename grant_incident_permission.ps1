@@ -1,16 +1,17 @@
 #Initialize default properties
 $success = $False;
+
 $p = $person | ConvertFrom-Json;
 $aRef = $accountReference | ConvertFrom-Json;
 $pRef = $permissionReference | ConvertFrom-json;
+$config = $configuration | ConvertFrom-Json 
 $auditMessage = " not created succesfully";
 
 #TOPdesk system data
-$url = 'https://xxxx.topdesk.net'
-$apiKey = 'xxxx-xxxx-xxxx-xxxx-xxxx'
-$userName = 'xxxx'
-
-$path = 'C:\Temp\TOPdesk\exampleIncidents.json'
+$url = $config.connection.url
+$apiKey = $config.connection.apikey
+$userName = $config.connection.username
+$path = $config.notifications.jsonPath
 
 # Enable TLS 1.2
 if ([Net.ServicePointManager]::SecurityProtocol -notmatch "Tls12") {

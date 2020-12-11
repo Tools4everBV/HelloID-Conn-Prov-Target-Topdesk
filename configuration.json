@@ -1,0 +1,142 @@
+[
+    {
+      "key": "connection.url",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "url",
+        "placeholder": "Please enter the url to TOPdesk",
+        "required": true
+      }
+    },
+    {
+      "key": "connection.username",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "Username",
+        "placeholder": "Please enter the username",
+        "required": true
+      }
+    },
+    {
+      "key": "connection.apikey",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "API Key",
+        "type": "password",
+        "placeholder": "Please enter a password",
+        "required": true
+      }
+    },
+    {
+      "key": "notifications.jsonPath",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "Notification file path",
+        "placeholder": "Please enter path to the TOPdesk notifcation file",
+        "required": true
+      }
+    },
+    {
+      "key": "notifications.disable",
+      "type": "checkbox",
+      "defaultValue": false,
+      "templateOptions": {
+        "label": "Do not create topdesk notifications",
+        "required": false
+      }
+    },
+    {
+      "key": "persons.errorNoDepartmentHR",
+      "type": "radio",
+      "defaultValue": "false",
+      "templateOptions": {
+        "label": "When a person has no department in HR",
+        "options": [
+          {
+            "value": "false",
+            "label": "Leave department field empty"
+          },
+          {
+            "value": "true",
+            "label": "Stop processing"
+          }
+        ]
+      }
+    },
+    {
+      "key": "persons.errorNoDepartmentTD",
+      "type": "radio",
+      "defaultValue": "one",
+      "templateOptions": {
+        "label": "When a department does not exist in TOPdesk",
+        "options": [
+          {
+            "value": "one",
+            "label": "Create department"
+          },
+          {
+            "value": "two",
+            "label": "Stop processing"
+          }
+        ]
+      }
+    },
+    {
+      "key": "persons.errorNoBudgetHolderHR",
+      "type": "radio",
+      "defaultValue": "false",
+      "templateOptions": {
+        "label": "When a person has no budgetholder in HR",
+        "options": [
+          {
+            "value": "false",
+            "label": "Leave budgetholder field empty"
+          },
+          {
+            "value": "true",
+            "label": "Stop processing"
+          }
+        ]
+      }
+    },
+    {
+      "key": "persons.errorNoBudgetHolderTD",
+      "type": "radio",
+      "defaultValue": "false",
+      "templateOptions": {
+        "label": "When a budgetholder does not exist in TOPdesk",
+        "options": [
+          {
+            "value": "false",
+            "label": "Create budgetholder"
+          },
+          {
+            "value": "true",
+            "label": "Stop processing"
+          }
+        ]
+      }
+    },
+    {
+      "key": "persons.errorNoManagerHR",
+      "type": "radio",
+      "defaultValue": "false",
+      "templateOptions": {
+        "label": "When a person has no manager in HR",
+        "options": [
+          {
+            "value": "false",
+            "label": "Leave manager field empty"
+          },
+          {
+            "value": "true",
+            "label": "Stop processing"
+          }
+        ]
+      }
+    }
+  ]

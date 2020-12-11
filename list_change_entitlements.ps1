@@ -1,4 +1,5 @@
-$path = 'C:\Temp\Powershell\TOPDesk\exampleChanges.json'
+$config = $configuration | ConvertFrom-Json 
+$path = $config.notifications.jsonPath
 
 try {
     If (Test-Path $path) {

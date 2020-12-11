@@ -7,13 +7,13 @@ $m = $manager | ConvertFrom-Json
 $aRef = $accountReference | ConvertFrom-Json
 $mRef = $managerAccountReference | ConvertFrom-Json
 $pRef = $permissionReference | ConvertFrom-json
+$config = $configuration | ConvertFrom-Json 
 
 #TOPdesk system data
-$url = 'https://customer-test.topdesk.net'
-$apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
-$userName = 'xxxx'
-
-$path = 'C:\HelloID - Ondersteunend\TOPdesk-Changes\TOPdeskChanges.json'
+$url = $config.connection.url
+$apiKey = $config.connection.apikey
+$userName = $config.connection.username
+$path = $config.notifications.jsonPath
 
 # Enable TLS 1.2
 if ([Net.ServicePointManager]::SecurityProtocol -notmatch "Tls12") {
