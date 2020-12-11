@@ -5,9 +5,9 @@ $aRef = $accountReference | ConvertFrom-Json
 $auditMessage = " not deleted succesfully"
 
 #TOPdesk system data
-$url = 'https://trajectum.topdesk.net/tas/api'
-$apiKey = 'z56o5-5go5t-wwuhi-pv3uf-3y3uc'
-$userName = 'sa_helloid'
+$url = 'https://customer-test.topdesk.net/tas/api'
+$apiKey = 'aaaaa-bbbbb-ccccc-ddddd-eeeee'
+$userName = 'xxxx'
 
 $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
