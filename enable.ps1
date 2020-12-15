@@ -110,7 +110,9 @@ if(-Not($dryRun -eq $True)){
                     } else {
                         $auditMessage = $auditMessage + "; Department '$($account.department.id)' not found"
                         write-verbose -verbose "Department lookup failed"
-                        $lookupFailure = $True
+                        if ($errorOnMissingDepartment) { 
+                            $lookupFailure = $True
+                        }
                     }
                 } else {
                     $account.department.id = $personDepartment.id
@@ -142,7 +144,9 @@ if(-Not($dryRun -eq $True)){
                         $account.budgetHolder.id = $responseBudgetholderCreate.id
                     } else {
                         $auditMessage = $auditMessage + "; BudgetHolder '$($account.budgetHolder.id)' not found"
-                        $lookupFailure = $true
+                        if ($errorOnMissingBudgetholder) { 
+                            $lookupFailure = $True
+                        }
                         write-verbose -verbose "BudgetHolder lookup failed"
                     }         
                 } else {

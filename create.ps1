@@ -15,11 +15,11 @@ $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
 
 #Connector settings
-$createMissingDepartment = [Boolean]$config.persons.errorNoDepartmentHR
-$errorOnMissingDepartment = [Boolean]$config.persons.errorNoDepartmentTD    # todo
+$createMissingDepartment = [Boolean]$config.persons.errorNoDepartmentTD
+$errorOnMissingDepartment = [Boolean]$config.persons.errorNoDepartmentHR
 
 $createMissingBudgetholder = [Boolean]$config.persons.errorNoBudgetHolderTD
-$errorOnMissingBudgetholder = [Boolean]$config.persons.errorNoBudgetHolderHR # todo
+$errorOnMissingBudgetholder = [Boolean]$config.persons.errorNoBudgetHolderHR
 
 $errorOnMissingManager = [Boolean]$config.persons.errorNoManagerHR
 
@@ -115,7 +115,9 @@ if(-Not($dryRun -eq $True)) {
                 } else {
                     $auditMessage = $auditMessage + "; Department '$($account.department.id)' not found"
                     write-verbose -verbose "Department lookup failed"
-                    $lookupFailure = $True
+                    if ($errorOnMissingDepartment) { 
+                        $lookupFailure = $True
+                    }
                 }
             } else {
                 $account.department.id = $personDepartment.id
@@ -147,7 +149,9 @@ if(-Not($dryRun -eq $True)) {
                     $account.budgetHolder.id = $responseBudgetholderCreate.id
                 } else {
                     $auditMessage = $auditMessage + "; BudgetHolder '$($account.budgetHolder.id)' not found"
-                    $lookupFailure = $true
+                    if ($errorOnMissingBudgetholder) { 
+                        $lookupFailure = $True
+                    }
                     write-verbose -verbose "BudgetHolder lookup failed"
                 }         
             } else {
