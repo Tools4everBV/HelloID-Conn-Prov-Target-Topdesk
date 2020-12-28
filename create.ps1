@@ -15,13 +15,13 @@ $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
 
 #Connector settings
-$createMissingDepartment = [Boolean]$config.persons.errorNoDepartmentTD
-$errorOnMissingDepartment = [Boolean]$config.persons.errorNoDepartmentHR
+$createMissingDepartment = [System.Convert]::ToBoolean($config.persons.errorNoDepartmentTD)
+$errorOnMissingDepartment = [System.Convert]::ToBoolean($config.persons.errorNoDepartmentHR)
 
-$createMissingBudgetholder = [Boolean]$config.persons.errorNoBudgetHolderTD
-$errorOnMissingBudgetholder = [Boolean]$config.persons.errorNoBudgetHolderHR
+$createMissingBudgetholder = [System.Convert]::ToBoolean($config.persons.errorNoBudgetHolderTD)
+$errorOnMissingBudgetholder = [System.Convert]::ToBoolean($config.persons.errorNoBudgetHolderHR)
 
-$errorOnMissingManager = [Boolean]$config.persons.errorNoManagerHR
+$errorOnMissingManager = [System.Convert]::ToBoolean($config.persons.errorNoManagerHR)
 
 #mapping
 $username = $p.Accounts.MicrosoftActiveDirectory.SamAccountName

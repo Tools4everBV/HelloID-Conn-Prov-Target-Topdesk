@@ -70,16 +70,16 @@
   {
     "key": "persons.errorNoDepartmentTD",
     "type": "radio",
-    "defaultValue": "one",
+    "defaultValue": "false",
     "templateOptions": {
       "label": "When a department does not exist in TOPdesk",
       "options": [
         {
-          "value": "one",
+          "value": "true",
           "label": "Create department"
         },
         {
-          "value": "two",
+          "value": "false",
           "label": "Stop processing"
         }
       ]
