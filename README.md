@@ -6,6 +6,7 @@
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 * [Introduction](#introduction)
+* [Connector Icon](#connector-icon)
 * [Getting Started](#getting-started)
   * [Permissions](#permissions)
   * [API Access](#API-access)
