@@ -14,6 +14,9 @@
 ## Introduction
 TOPdesk provides a RESTful API that allows you to programmatically interact with its services and data.
 
+## Connector Icon
+https://avatars1.githubusercontent.com/u/14311896?s=200&v=4
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
