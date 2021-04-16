@@ -14,6 +14,16 @@ $bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
 $base64 = [System.Convert]::ToBase64String($bytes)
 $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
 
+#mapping
+$username = ""
+$email = ""
+
+$account = @{
+    email = $email;
+    networkLoginName = $username;
+    tasLoginName = $username;
+}
+
 $PersonArchivingReason = @{
     id = "Persoon uit organisatie"; 
 }
@@ -59,12 +69,17 @@ if(-Not($dryRun -eq $True)){
         }
            
         if (!($lookupFailure)) {
+			write-verbose -verbose "Updating account for '$($p.ExternalID)...'"
+			$bodyPersonUpdate = $account | ConvertTo-Json -Depth 10
+			$null = Invoke-WebRequest -uri $personUrl -Method PATCH -Headers $headers -Body  ([Text.Encoding]::UTF8.GetBytes($bodyPersonUpdate)) -UseBasicParsing
+			write-verbose -verbose "Updated account for '$($p.ExternalID)...'"
+			
             if ($responsePerson.status -eq "person") {
                 write-verbose -verbose "Archiving account for '$($p.ExternalID)...'"
                 $bodyPersonArchive = $PersonArchivingReason | ConvertTo-Json -Depth 10
                 $archiveUrl = $url + "/persons/id/${aRef}/archive"
                 $null = Invoke-WebRequest -uri $archiveUrl -Method PATCH -Body ([Text.Encoding]::UTF8.GetBytes($bodyPersonArchive)) -Headers $headers -UseBasicParsing
-             write-verbose -verbose "Account Archived"
+                write-verbose -verbose "Account Archived"
                 $auditMessage = "disabled succesfully";
             } else {
                 write-verbose -verbose "Person is already archived. Nothing to do"

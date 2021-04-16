@@ -26,20 +26,49 @@ $errorOnMissingManager = [System.Convert]::ToBoolean($config.persons.errorNoMana
 #mapping
 $username = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
 $email = $p.Accounts.MicrosoftActiveDirectory.Mail
+$surname = ""
+
+$prefix = ""
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)))
+{
+    $prefix = $p.Name.FamilyNamePrefix + " "
+}
+
+$partnerprefix = ""
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)))
+{
+    $partnerprefix = $p.Name.FamilyNamePartnerPrefix + " "
+}
+
+switch($p.Name.Convention)
+{
+    "B" {$surname += $prefix + $p.Name.FamilyName}
+    "P" {$surname += $partnerprefix + $p.Name.FamilyNamePartner}
+    "BP" {$surname += $prefix + $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner}
+    "PB" {$surname += $partnerprefix + $p.Name.FamilyNamePartner + " - " + $prefix + $p.Name.FamilyName}
+    default {$surname += $prefix + $p.Name.FamilyName}
+}
+
+switch($p.details.Gender)
+{
+    "M" {$gender = "MALE"}
+    "V" {$gender = "FEMALE"}
+    default {$gender = ""}
+}
 
 $account = @{
-    surName = $p.Custom.TOPdeskSurName;
+    surName = $surname;
     firstName = $p.Name.NickName;
     firstInitials = $p.Name.Initials;
-    gender = $p.Custom.TOPdeskGender;
+    gender = $gender;
     email = $email;
     jobTitle = $p.PrimaryContract.Title.Name;
     department = @{ id = $p.PrimaryContract.Team.Name };
+	personExtraFieldA = @{ id = "Value for PersonExtraFieldA"};
     budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name };
-    #budgetHolder = @{ id = "12345" + " " + "Tools4ever testnaam" };
     employeeNumber = $p.ExternalID;
     networkLoginName = $username;
-    branch = @{ id = $p.PrimaryContract.Location.Name };
+    branch = @{ id = "Fixed Branch" };
     tasLoginName = $username;
     isManager = $False;
     manager = @{ id = $p.PrimaryManager.ExternalId };
@@ -57,7 +86,7 @@ if(-Not($dryRun -eq $True)) {
     $personCorrelationUrl = $personUrl + "/?page_size=2&query=$($correlationField)=='$($correlationValue)'"
     $responseCorrelationJson = Invoke-WebRequest -uri $personCorrelationUrl -Method Get -Headers $headers -UseBasicParsing
     $responseCorrelation = $responseCorrelationJson | ConvertFrom-Json
-
+    
     if(-Not($null -eq $responseCorrelation) -and -Not($null -eq $responseCorrelation[0].id)) {
         $aRef = $responseCorrelation[0].id 
         $create = $False
@@ -80,8 +109,8 @@ if(-Not($dryRun -eq $True)) {
             $branchUrl = $url + "/branches"
             $responseBranchJson = Invoke-WebRequest -uri $branchUrl -Method Get -Headers $headers -UseBasicParsing
             $responseBranch = $responseBranchJson.Content | Out-String | ConvertFrom-Json
-	    $personBranch = $responseBranch | Where-object name -eq $account.branch.id
-        
+	        $personBranch = $responseBranch | Where-object name -eq $account.branch.id
+                
             if ([string]::IsNullOrEmpty($personBranch.id) -eq $True) {
                 $auditMessage = $auditMessage + "; Branch '$($account.branch.id)' not found!"
                 $lookupFailure = $True
@@ -161,6 +190,32 @@ if(-Not($dryRun -eq $True)) {
             }
         }
         
+        # get personExtraFieldA
+        write-verbose -verbose "personExtraFieldA lookup..."
+        if ([string]::IsNullOrEmpty($account.personExtraFieldA.id.replace(' ', '""')) -or $account.personExtraFieldA.id.StartsWith(' ') -or $account.personExtraFieldA.id.EndsWith(' ')) {
+            $auditMessage = $auditMessage + "; personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
+            $account.PSObject.Properties.Remove('personExtraFieldA')
+        } else {
+            $personExtraFieldAUrl = $url + "/personExtraFieldAEntries"
+            $responsepersonExtraFieldAJson = Invoke-WebRequest -uri $personExtraFieldAUrl -Method Get -Headers $headers -UseBasicParsing
+            $responsepersonExtraFieldA = $responsepersonExtraFieldAJson.Content | Out-String | ConvertFrom-Json
+            $personpersonExtraFieldA = $responsepersonExtraFieldA| Where-object name -eq $account.personExtraFieldA.id
+
+            if ([string]::IsNullOrEmpty($personpersonExtraFieldA.id) -eq $True) {
+                Write-Verbose -Verbose "personExtraFieldA '$($account.personExtraFieldA.id)' not found"
+                
+                $auditMessage = $auditMessage + "; personExtraFieldA '$($account.personExtraFieldA.id)' not found"
+                if ($errorOnMissingpersonExtraFieldA) { 
+                    $lookupFailure = $True
+                }
+                write-verbose -verbose "personExtraFieldA lookup failed"
+                            
+            } else {
+                $account.personExtraFieldA.id = $personpersonExtraFieldA.id
+                write-verbose -verbose "personExtraFieldA lookup succesful"
+            }
+        }
+
         # get manager
         write-verbose -verbose "Manager lookup..."
         if ([string]::IsNullOrEmpty($account.manager.id)) {

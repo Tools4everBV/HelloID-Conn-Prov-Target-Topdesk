@@ -29,23 +29,53 @@ $correlationField = 'employeeNumber'
 #mapping
 $username = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
 $email = $p.Accounts.MicrosoftActiveDirectory.Mail
+$surname = ""
+
+$prefix = ""
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)))
+{
+    $prefix = $p.Name.FamilyNamePrefix + " "
+}
+
+$partnerprefix = ""
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)))
+{
+    $partnerprefix = $p.Name.FamilyNamePartnerPrefix + " "
+}
+
+switch($p.Name.Convention)
+{
+    "B" {$surname += $prefix + $p.Name.FamilyName}
+    "P" {$surname += $partnerprefix + $p.Name.FamilyNamePartner}
+    "BP" {$surname += $prefix + $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner}
+    "PB" {$surname += $partnerprefix + $p.Name.FamilyNamePartner + " - " + $prefix + $p.Name.FamilyName}
+    default {$surname += $prefix + $p.Name.FamilyName}
+}
+
+switch($p.details.Gender)
+{
+    "M" {$gender = "MALE"}
+    "V" {$gender = "FEMALE"}
+    default {$gender = ""}
+}
 
 $account = @{
-    surName = $p.Custom.TOPdeskSurName;
+    surName = $surname;
     firstName = $p.Name.NickName;
     firstInitials = $p.Name.Initials;
-    #gender = $p.Custom.TOPdeskGender;
+    gender = $gender;
     email = $email;
     jobTitle = $p.PrimaryContract.Title.Name;
-    department = @{ id = $p.PrimaryContract.Department.DisplayName };
+    department = @{ id = $p.PrimaryContract.Team.Name };
+	personExtraFieldA = @{ id = "Value for PersonExtraFieldA"};
     budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name };
-    #budgetHolder = @{ id = "12345" + " " + "Tools4ever testnaam" };
-    #employeeNumber = $p.ExternalID;
+    employeeNumber = $p.ExternalID;
     networkLoginName = $username;
-    branch = @{ id = $p.PrimaryContract.Location.Name };
+    branch = @{ id = "Fixed Branch" };
     tasLoginName = $username;
-    #isManager = $False;
+    isManager = $False;
     manager = @{ id = $p.PrimaryManager.ExternalId };
+    showDepartment = $True;
 }
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -73,11 +103,11 @@ if(-Not($dryRun -eq $True)){
                 $lookupFailure = $True
                 write-verbose -verbose "Branch lookup failed"
             } else {
-         	$branchUrl = $url + "/branches"
-         	$responseBranchJson = Invoke-WebRequest -uri $branchUrl -Method Get -Headers $headers -UseBasicParsing
-         	$responseBranch = $responseBranchJson.Content | Out-String | ConvertFrom-Json
-	    	$personBranch = $responseBranch | Where-object name -eq $account.branch.id
-        
+                $branchUrl = $url + "/branches"
+                $responseBranchJson = Invoke-WebRequest -uri $branchUrl -Method Get -Headers $headers -UseBasicParsing
+                $responseBranch = $responseBranchJson.Content | Out-String | ConvertFrom-Json
+                $personBranch = $responseBranch | Where-object name -eq $account.branch.id
+                
                 if ([string]::IsNullOrEmpty($personBranch.id) -eq $True) {
                     $auditMessage = $auditMessage + "; Branch '$($account.branch.id)' not found!"
                     $lookupFailure = $True
@@ -155,6 +185,34 @@ if(-Not($dryRun -eq $True)){
                     write-verbose -verbose "BudgetHolder lookup succesful"
                 }
             }
+			
+			# get personExtraFieldA
+			write-verbose -verbose "personExtraFieldA lookup..."
+			if ([string]::IsNullOrEmpty($account.personExtraFieldA.id.replace(' ', '""')) -or $account.personExtraFieldA.id.StartsWith(' ') -or $account.personExtraFieldA.id.EndsWith(' ')) {
+				$auditMessage = $auditMessage + "; personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
+				$account.PSObject.Properties.Remove('personExtraFieldA')
+				#$lookupFailure = $False
+				#write-verbose -verbose "PersonExtraFieldA lookup failed"
+			} else {
+				$personExtraFieldAUrl = $url + "/personExtraFieldAEntries"
+				$responsepersonExtraFieldAJson = Invoke-WebRequest -uri $personExtraFieldAUrl -Method Get -Headers $headers -UseBasicParsing
+				$responsepersonExtraFieldA = $responsepersonExtraFieldAJson.Content | Out-String | ConvertFrom-Json
+				$personpersonExtraFieldA = $responsepersonExtraFieldA| Where-object name -eq $account.personExtraFieldA.id
+
+				if ([string]::IsNullOrEmpty($personpersonExtraFieldA.id) -eq $True) {
+					Write-Verbose -Verbose "personExtraFieldA '$($account.personExtraFieldA.id)' not found"
+					
+					$auditMessage = $auditMessage + "; personExtraFieldA '$($account.personExtraFieldA.id)' not found"
+					if ($errorOnMissingpersonExtraFieldA) { 
+						$lookupFailure = $True
+					}
+					write-verbose -verbose "personExtraFieldA lookup failed"
+							 
+				} else {
+					$account.personExtraFieldA.id = $personpersonExtraFieldA.id
+					write-verbose -verbose "personExtraFieldA lookup succesful"
+				}
+			}
         
             # get manager
             write-verbose -verbose "Manager lookup..."
