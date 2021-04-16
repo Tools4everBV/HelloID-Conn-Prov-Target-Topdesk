@@ -77,9 +77,10 @@ if(-Not($dryRun -eq $True)) {
             $lookupFailure = $True
             write-verbose -verbose "Branch lookup failed"
         } else {
-            $branchUrl = $url + "/branches?query=name=='$($account.branch.id)'"
+            $branchUrl = $url + "/branches"
             $responseBranchJson = Invoke-WebRequest -uri $branchUrl -Method Get -Headers $headers -UseBasicParsing
-            $personBranch = $responseBranchJson.Content | Out-String | ConvertFrom-Json
+            $responseBranch = $responseBranchJson.Content | Out-String | ConvertFrom-Json
+	    $personBranch = $responseBranch | Where-object name -eq $account.branch.id
         
             if ([string]::IsNullOrEmpty($personBranch.id) -eq $True) {
                 $auditMessage = $auditMessage + "; Branch '$($account.branch.id)' not found!"
