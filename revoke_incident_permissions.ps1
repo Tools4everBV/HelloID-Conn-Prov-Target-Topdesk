@@ -440,7 +440,7 @@ function New-TopdeskIncident{
 }
 
 $incidentList = Get-Content -Raw -Path $path | ConvertFrom-Json
-$incident = $incidentList | Where-Object { ($_.Identification.Id -eq $pRef.id) -and ($_.HelloIDAction -eq "Grant") } | Select-Object -Property * -ExcludeProperty DisplayName, Identification, HelloIDAction
+$incident = $incidentList | Where-Object { ($_.Identification.Id -eq $pRef.id) -and ($_.HelloIDAction -eq "Revoke") } | Select-Object -Property * -ExcludeProperty DisplayName, Identification, HelloIDAction
 
 if (-Not($dryRun -eq $True)) {
     if (![string]::IsNullOrEmpty($incident)) {
