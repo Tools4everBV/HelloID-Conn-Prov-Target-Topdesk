@@ -132,3 +132,6 @@ $result = [PSCustomObject]@{
 
 Write-Output $result | ConvertTo-Json -Depth 10;
 ```
+
+# HelloID Docs
+The official HelloID documentation can be found at: https://docs.helloid.com/
