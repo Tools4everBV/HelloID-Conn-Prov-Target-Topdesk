@@ -252,6 +252,19 @@ function New-TOPdeskChange {
        
     $request = $requestObject | ConvertTo-Json -Depth 10
     try {
+        # get person by ID
+        write-verbose -verbose "Person lookup..."
+        $PersonUrl = $url + "/persons/id/${aRef}"
+        $responsePersonJson = Invoke-WebRequest -uri $PersonUrl -Method Get -Headers $headers -UseBasicParsing
+        $responsePerson = $responsePersonJson.Content | Out-String | ConvertFrom-Json
+
+        if ($responsePerson.status -eq "personArchived") {
+            write-verbose -verbose "Unarchiving account for '$($p.ExternalID)...'"
+            $unarchiveUrl = $PersonUrl + "/unarchive"
+            $null = Invoke-WebRequest -uri $unarchiveUrl -Method PATCH -Headers $headers -UseBasicParsing
+            write-verbose -verbose "Account unarchived"
+        }
+        
         Write-Verbose -Verbose "Starting to create TOPdesk change '$($changeObject.BriefDescription)'"
         $response = Invoke-RestMethod -Uri $uriChanges -Method POST -ContentType $contentType -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($request)) -UseBasicParsing
     }
