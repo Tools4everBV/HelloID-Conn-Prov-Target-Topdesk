@@ -1,32 +1,15 @@
-﻿#Initialize default properties
-$success = $False
+##########################################################
+# HelloID-Conn-Prov-Target-Spacewell-Axxerion-Create
+#
+# Version: 1.0.0.0
+##########################################################
+$VerbosePreference = "Continue"
+
+# Initialize default value's
+$c = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json
-$config = $configuration | ConvertFrom-Json 
-$auditMessage = " not created succesfully"
-
-#TOPdesk system data
-$url = $config.connection.url
-$apiKey = $config.connection.apikey
-$userName = $config.connection.username
-
-$personUrl = $url + '/persons'
-$bytes = [System.Text.Encoding]::ASCII.GetBytes("${userName}:${apiKey}")
-$base64 = [System.Convert]::ToBase64String($bytes)
-$headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json; charset=utf-8' }
-
-#Connector settings
-$createMissingDepartment = [System.Convert]::ToBoolean($config.persons.errorNoDepartmentTD)
-$errorOnMissingDepartment = [System.Convert]::ToBoolean($config.persons.errorNoDepartmentHR)
-
-$createMissingBudgetholder = [System.Convert]::ToBoolean($config.persons.errorNoBudgetHolderTD)
-$errorOnMissingBudgetholder = [System.Convert]::ToBoolean($config.persons.errorNoBudgetHolderHR)
-
-$errorOnMissingManager = [System.Convert]::ToBoolean($config.persons.errorNoManagerHR)
-
-#mapping
-$username = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
-$email = $p.Accounts.MicrosoftActiveDirectory.Mail
-$surname = ""
+$success = $false
+$auditLogs = New-Object Collections.Generic.List[PSCustomObject]
 
 $prefix = ""
 if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)))
@@ -42,247 +25,133 @@ if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)))
 
 switch($p.Name.Convention)
 {
-    "B" {$surname += $prefix + $p.Name.FamilyName}
-    "P" {$surname += $partnerprefix + $p.Name.FamilyNamePartner}
-    "BP" {$surname += $prefix + $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner}
-    "PB" {$surname += $partnerprefix + $p.Name.FamilyNamePartner + " - " + $prefix + $p.Name.FamilyName}
-    default {$surname += $prefix + $p.Name.FamilyName}
+    "B" {$surname += $p.Name.FamilyName; $AxPrefix = $prefix}
+    "P" {$surname += $p.Name.FamilyNamePartner; $AxPrefix = $partnerprefix}
+    "BP" {$surname += $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner; $AxPrefix = $prefix}
+    "PB" {$surname += $p.Name.FamilyNamePartner + " - " + $prefix + $p.Name.FamilyName ; $AxPrefix = $partnerprefix}
+    default {$surname += $p.Name.FamilyName; $AxPrefix = $prefix}
 }
 
-switch($p.details.Gender)
-{
-    "M" {$gender = "MALE"}
-    "V" {$gender = "FEMALE"}
-    default {$gender = ""}
+
+$email = $p.Accounts.MicrosoftActiveDirectory.Mail
+
+$account = [PSCustomObject]@{
+    id           = $p.ExternalId;
+    userName     = $p.ExternalId;
+    givenName    = $p.Name.Nickname;
+    familyName   = $surname;
+    prefix          = $AxPrefix;
+    cost_center =  $P.PrimaryContract.CostCenter.Name
+    job_title = $p.PrimaryContract.Title.Name;
+    emailAddress = $email;
 }
 
-$account = @{
-    surName = $surname;
-    firstName = $p.Name.NickName;
-    firstInitials = $p.Name.Initials;
-    gender = $gender;
-    email = $email;
-    jobTitle = $p.PrimaryContract.Title.Name;
-    department = @{ id = $p.PrimaryContract.Team.Name };
-	personExtraFieldA = @{ id = "Value for PersonExtraFieldA"};
-    budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name };
-    employeeNumber = $p.ExternalID;
-    networkLoginName = $username;
-    branch = @{ id = "Fixed Branch" };
-    tasLoginName = $username;
-    isManager = $False;
-    manager = @{ id = $p.PrimaryManager.ExternalId };
-    showDepartment = $True;
-}
 
-#correlation
-$correlationField = 'employeeNumber'
-$correlationValue = $p.ExternalID
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-if(-Not($dryRun -eq $True)) {
- try {
-    $create = $True
-    write-verbose -verbose "Correlate person"
-    $personCorrelationUrl = $personUrl + "/?page_size=2&query=$($correlationField)=='$($correlationValue)'"
-    $responseCorrelationJson = Invoke-WebRequest -uri $personCorrelationUrl -Method Get -Headers $headers -UseBasicParsing
-    $responseCorrelation = $responseCorrelationJson | ConvertFrom-Json
-    
-    if(-Not($null -eq $responseCorrelation) -and -Not($null -eq $responseCorrelation[0].id)) {
-        $aRef = $responseCorrelation[0].id 
-        $create = $False
-        $success = $True
-        $auditMessage = "Correlation found record $($correlationValue). Update succesful"
-        write-verbose -verbose "Person found in TOPdesk"
+#region helper functions
+function Resolve-HTTPError {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory,
+            ValueFromPipeline
+        )]
+        [object]$ErrorObject
+    )
+    process {
+        $HttpErrorObj = @{
+            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId
+            InvocationInfo        = $ErrorObject.InvocationInfo.MyCommand
+            TargetObject          = $ErrorObject.TargetObject.RequestUri
+            StackTrace            = $ErrorObject.ScriptStackTrace
+        }
+        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') {
+            $HttpErrorObj['ErrorMessage'] = $ErrorObject.ErrorDetails.Message
+        } elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
+            $stream = $ErrorObject.Exception.Response.GetResponseStream()
+            $stream.Position = 0
+            $streamReader = New-Object System.IO.StreamReader $Stream
+            $errorResponse = $StreamReader.ReadToEnd()
+            $HttpErrorObj['ErrorMessage'] = $errorResponse
+        }
+        Write-Output $HttpErrorObj
     }
+}
+#endregion
 
-    if($create){  
-        write-verbose -verbose "Person not found in TOPdesk"
-        $lookupFailure = $False
-        
-        # get branch
-        write-verbose -verbose "Branch lookup..."
-        if ([string]::IsNullOrEmpty($account.branch.id)) {
-            $auditMessage = $auditMessage + "; Branch is empty for person '$($p.ExternalId)'"
-            $lookupFailure = $True
-            write-verbose -verbose "Branch lookup failed"
-        } else {
-            $branchUrl = $url + "/branches"
-            $responseBranchJson = Invoke-WebRequest -uri $branchUrl -Method Get -Headers $headers -UseBasicParsing
-            $responseBranch = $responseBranchJson.Content | Out-String | ConvertFrom-Json
-	        $personBranch = $responseBranch | Where-object name -eq $account.branch.id
-                
-            if ([string]::IsNullOrEmpty($personBranch.id) -eq $True) {
-                $auditMessage = $auditMessage + "; Branch '$($account.branch.id)' not found!"
-                $lookupFailure = $True
-                write-verbose -verbose "Branch lookup failed"
-            } else {
-                $account.branch.id = $personBranch.id
-                write-verbose -verbose "Branch lookup succesful"
+if (-not($dryRun -eq $true)) {
+    try {
+        Write-Verbose "Creating Axxerion user '$($p.DisplayName)'"
+        $clobMBValue = @{
+            action = 'Account Grant'
+            body = @{
+                id         = $account.id;
+                username   = $account.userName;
+                email      = $account.emailAddress;
+                first_name = $account.givenName;
+                last_name  = $account.familyName;
+                prefix      = $account.prefix;
+                cost_center = $account.cost_center;
+                job_title = $account.job_title;
             }
-        }
-        
-        # get department
-        write-verbose -verbose "Department lookup..."
-        if ([string]::IsNullOrEmpty($account.department.id)) {
-            $auditMessage = $auditMessage + "; Department is empty for person '$($p.ExternalId)'"
-            $lookupFailure = $True
-            write-verbose -verbose "Department lookup failed"
-        } else {
-            $departmentUrl = $url + "/departments"
-            $responseDepartmentJson = Invoke-WebRequest -uri $departmentUrl -Method Get -Headers $headers -UseBasicParsing
-            $responseDepartment = $responseDepartmentJson.Content | Out-String | ConvertFrom-Json
-            $personDepartment = $responseDepartment | Where-object name -eq $account.department.id
+        } | ConvertTo-Json
 
-            if ([string]::IsNullOrEmpty($personDepartment.id) -eq $True) {
-                Write-Output -Verbose "Department '$($account.department.id)' not found"
-                if ($createMissingDepartment) {
-                    Write-Verbose -Verbose "Creating department '$($account.department.id)' in TOPdesk"
-                    $bodyDepartment = @{ name=$account.department.id } | ConvertTo-Json -Depth 1
-                    $responseDepartmentCreateJson = Invoke-WebRequest -uri $departmentUrl -Method POST -Headers $headers -Body ([Text.Encoding]::UTF8.GetBytes($bodyDepartment)) -UseBasicParsing
-                    $responseDepartmentCreate = $responseDepartmentCreateJson.Content | Out-String | ConvertFrom-Json
-                    Write-Verbose -Verbose "Created Department name '$($account.department.id)' with id '$($responseDepartmentCreate.id)'"
-                    $account.department.id = $responseDepartmentCreate.id
-                } else {
-                    $auditMessage = $auditMessage + "; Department '$($account.department.id)' not found"
-                    write-verbose -verbose "Department lookup failed"
-                    if ($errorOnMissingDepartment) { 
-                        $lookupFailure = $True
-                    }
-                }
-            } else {
-                $account.department.id = $personDepartment.id
-                write-verbose -verbose "Department lookup succesful"
-            }
+        $body = @{
+            datasource  = 'HelloID'
+            clobMBValue = $clobMBValue
+        } | ConvertTo-Json
+
+        $authorization = "$($c.UserName):$($c.Password)"
+        $base64Credentials = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($authorization))
+        $headers = @{
+            "Authorization" = "Basic $base64Credentials"
         }
 
-        # get budgetHolder
-        write-verbose -verbose "BudgetHolder lookup..."
-        if ([string]::IsNullOrEmpty($account.budgetHolder.id.replace(' ', '""')) -or $account.budgetHolder.id.StartsWith(' ') -or $account.budgetHolder.id.EndsWith(' ')) {
-            $auditMessage = $auditMessage + "; BudgetHolder is empty for person '$($p.ExternalId)'. Removing budgetHolder from Account object..."
-            $account.PSObject.Properties.Remove('budgetHolder')
-			#$lookupFailure = $False
-            #write-verbose -verbose "BudgetHolder lookup failed"
-        } else {
-            $budgetHolderUrl = $url + "/budgetholders"
-            $responseBudgetHolderJson = Invoke-WebRequest -uri $budgetHolderUrl -Method Get -Headers $headers -UseBasicParsing
-            $responseBudgetHolder = $responseBudgetHolderJson.Content | Out-String | ConvertFrom-Json
-            $personBudgetholder = $responseBudgetHolder| Where-object name -eq $account.budgetHolder.id
-
-            if ([string]::IsNullOrEmpty($personBudgetHolder.id) -eq $True) {
-                Write-Verbose -Verbose "BudgetHolder '$($account.budgetHolder.id)' not found"
-                if ($createMissingBudgetholder) {
-                    Write-Verbose -Verbose "Creating budgetHolder '$($Account.budgetHolder.id)' in TOPdesk"
-                    $bodyBudgetHolder = @{ name=$account.budgetHolder.id } | ConvertTo-Json -Depth 1
-                    $responseBudgetHolderCreateJson = Invoke-WebRequest -uri $budgetHolderUrl -Method POST -Headers $headers -Body ([Text.Encoding]::UTF8.GetBytes($bodyBudgetHolder)) -UseBasicParsing
-                    $responseBudgetHolderCreate =  $responseBudgetHolderCreateJson.Content | Out-String | ConvertFrom-Json
-                    Write-Verbose -Verbose "Created BudgetHolder name '$($account.budgetHolder.id)' with id: '$($responseBudgetHolderCreate.id)'"
-                    $account.budgetHolder.id = $responseBudgetholderCreate.id
-                } else {
-                    $auditMessage = $auditMessage + "; BudgetHolder '$($account.budgetHolder.id)' not found"
-                    if ($errorOnMissingBudgetholder) { 
-                        $lookupFailure = $True
-                    }
-                    write-verbose -verbose "BudgetHolder lookup failed"
-                }         
-            } else {
-                $account.budgetHolder.id = $personBudgetHolder.id
-                write-verbose -verbose "BudgetHolder lookup succesful"
-            }
+        $splatParams = @{
+            Uri     = "$($c.BaseUrl)/webservices/$($c.Customer)/rest/functions/createupdate/ImportItem"
+            Body    = $body
+            Headers = $headers
+            Method  = 'POST'
         }
-        
-        # get personExtraFieldA
-        write-verbose -verbose "personExtraFieldA lookup..."
-        if ([string]::IsNullOrEmpty($account.personExtraFieldA.id.replace(' ', '""')) -or $account.personExtraFieldA.id.StartsWith(' ') -or $account.personExtraFieldA.id.EndsWith(' ')) {
-            $auditMessage = $auditMessage + "; personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
-            $account.PSObject.Properties.Remove('personExtraFieldA')
-        } else {
-            $personExtraFieldAUrl = $url + "/personExtraFieldAEntries"
-            $responsepersonExtraFieldAJson = Invoke-WebRequest -uri $personExtraFieldAUrl -Method Get -Headers $headers -UseBasicParsing
-            $responsepersonExtraFieldA = $responsepersonExtraFieldAJson.Content | Out-String | ConvertFrom-Json
-            $personpersonExtraFieldA = $responsepersonExtraFieldA| Where-object name -eq $account.personExtraFieldA.id
-
-            if ([string]::IsNullOrEmpty($personpersonExtraFieldA.id) -eq $True) {
-                Write-Verbose -Verbose "personExtraFieldA '$($account.personExtraFieldA.id)' not found"
-                
-                $auditMessage = $auditMessage + "; personExtraFieldA '$($account.personExtraFieldA.id)' not found"
-                if ($errorOnMissingpersonExtraFieldA) { 
-                    $lookupFailure = $True
-                }
-                write-verbose -verbose "personExtraFieldA lookup failed"
-                            
-            } else {
-                $account.personExtraFieldA.id = $personpersonExtraFieldA.id
-                write-verbose -verbose "personExtraFieldA lookup succesful"
-            }
+        $createResponse = Invoke-RestMethod @splatParams
+        if (($createResponse.response -eq 'none') -and ($createResponse.errorMessage -match 'account already exists')){
+            $success = $true
+            $referenceId = $createResponse.errorMessage.Substring(71)
+            $auditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
+                Message = "Account for '$($p.DisplayName)' successfully correlated with id: '$referenceId'"
+                IsError = $false
+            })
+        } elseif ($createResponse.id){
+            $success = $true
+            $referenceId = $createResponse.id
+            $auditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
+                Message = "Account for '$($p.DisplayName)' successfully created with id: '$referenceId'"
+                IsError = $false
+            })
         }
-
-        # get manager
-        write-verbose -verbose "Manager lookup..."
-        if ([string]::IsNullOrEmpty($account.manager.id)) {
-            $auditMessage = $auditMessage + "; Manager is empty for person '$($p.ExternalId)'"
-            write-verbose -verbose "Manager lookup failed"
-            if ($errorOnMissingManager) {
-                $lookupFailure = $True
-            }
-        } else {
-            $personManagerUrl = $personUrl + "/?page_size=2&query=$($correlationField)=='$($account.manager.id)'"
-            $responseManagerJson = Invoke-WebRequest -uri $personManagerUrl -Method Get -Headers $headers -UseBasicParsing        
-            $responseManager = $responseManagerJson.Content | Out-String | ConvertFrom-Json
-            if ([string]::IsNullOrEmpty($responseManager.id) -eq $True) {
-                $auditMessage = $auditMessage + "; Manager '$($account.manager.id)' not found"
-                write-verbose -verbose "Manager lookup failed"
-                if ($errorOnMissingManager) {
-                    $lookupFailure = $True
-                }
-            } else {
-                $account.manager.id = $responseManager.id
-              
-                # set isManager if not configured
-                if (!($responseManager.isManager)) {
-                    $managerUrl = $url + "/persons/id/" + $responseManager.id
-                    $bodyManagerEdit = '{"isManager": true }'
-                    $null = Invoke-WebRequest -uri $managerUrl -Method PATCH -Headers $headers -Body $bodyManagerEdit -UseBasicParsing
-                }
-                write-verbose -verbose "Manager lookup succesful"
-            }
-        }
-               
-        if (!($lookupFailure)) {
-            write-verbose -verbose "Creating account for '$($p.ExternalID)'"
-            $bodyPersonCreate = $account | ConvertTo-Json -Depth 10
-            $responsePersonCreate = Invoke-WebRequest -uri $personUrl -Method POST -Headers $headers -Body ([Text.Encoding]::UTF8.GetBytes($bodyPersonCreate)) -UseBasicParsing
-            $responsePersonCreateJson = $responsePersonCreate.Content | Out-String | ConvertFrom-Json
-            if(![string]::IsNullOrEmpty($responsePersonCreateJson.id)) {
-                $aRef = $responsePersonCreateJson.id
-                $success = $True
-                $auditMessage = "created succesfully"
-            }  
-        } else {
-            $success = $False
-        }
-    }
-
     } catch {
-        if ($_.Exception.Response.StatusCode -eq "Forbidden") {
-            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.Exception.Message)'"
-            $auditMessage = " not created succesfully: '$($_.Exception.Message)'" 
-        } elseif (![string]::IsNullOrEmpty($_.ErrorDetails.Message)) {
-            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.ErrorDetails.Message)'" 
-            $auditMessage = " not created succesfully: '$($_.ErrorDetails.Message)'"
+        $ex = $PSItem
+        $success = $false
+        if ( $($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+            $errorObject = Resolve-HTTPError -Error $ex
+            $auditMessage = "Could not create user account for '$($p.DisplayName)', Error $($errorObject.ErrorMessage)"
         } else {
-            Write-Verbose -Verbose "Something went wrong $($_.ScriptStackTrace). Error message: '$($_)'" 
-            $auditMessage = " not created succesfully: '$($_)'" 
-        }        
-        $success = $False
+            $auditMessage = "Could not create user account for '$($p.DisplayName)', Error: $($ex.Exception.Message)"
+        }
+        $auditLogs.Add([PSCustomObject]@{
+            Action  = "CreateAccount"
+            Message = $auditMessage
+            IsError = $true
+        })
+        Write-Verbose $auditLogs.Message
     }
 }
 
-#build up result
-$result = [PSCustomObject]@{ 
-	Success= $success;
-    AccountReference=$aRef;
-	AuditDetails=$auditMessage;
-    Account=$account;
+$result = [PSCustomObject]@{
+    Success          = $success
+    Account          = $account
+    AccountReference = $referenceId
+    AuditLogs        = $auditLogs
 }
 
 Write-Output $result | ConvertTo-Json -Depth 10
