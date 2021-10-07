@@ -111,11 +111,11 @@
       "label": "When a budgetholder does not exist in TOPdesk",
       "options": [
         {
-          "value": "false",
+          "value": "true",
           "label": "Create budgetholder"
         },
         {
-          "value": "true",
+          "value": "false",
           "label": "Stop processing"
         }
       ]
