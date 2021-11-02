@@ -192,7 +192,7 @@ if(-Not($dryRun -eq $true)) {
             Write-Verbose -Verbose -Message "personExtraFieldA lookup..."
             if ([string]::IsNullOrEmpty($account.personExtraFieldA) -or [string]::IsNullOrEmpty($account.personExtraFieldA.id.replace(' ', '""')) -or $account.personExtraFieldA.id.StartsWith(' ') -or $account.personExtraFieldA.id.EndsWith(' ')) {
                 $auditMessage = $auditMessage + "; personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
-                Write-Verbose -Verbose -Message -Message "personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
+                Write-Verbose -Verbose -Message "personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
                 $account.PSObject.Properties.Remove('personExtraFieldA')
             } else {
                 $personExtraFieldAUrl = $url + "/personExtraFieldAEntries"
