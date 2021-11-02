@@ -148,7 +148,7 @@ if(-Not($dryRun -eq $true)) {
                         }
                     }
                 } else {
-                    if ($personDepartment.Count -eq 1) {
+                    if (-Not ($personDepartment -is [array])) {
                         $account.department.id = $personDepartment.id
                         Write-Verbose -Verbose -Message "Department lookup succesful"
                     } else {
