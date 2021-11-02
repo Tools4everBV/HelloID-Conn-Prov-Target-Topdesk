@@ -29,19 +29,16 @@ $email = $p.Accounts.MicrosoftActiveDirectory.Mail
 $surname = ""
 
 $prefix = ""
-if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)))
-{
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix))) {
     $prefix = $p.Name.FamilyNamePrefix + " "
 }
 
 $partnerprefix = ""
-if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)))
-{
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix))) {
     $partnerprefix = $p.Name.FamilyNamePartnerPrefix + " "
 }
 
-switch($p.Name.Convention)
-{
+switch($p.Name.Convention) {
     "B" {$surname += $prefix + $p.Name.FamilyName}
     "P" {$surname += $partnerprefix + $p.Name.FamilyNamePartner}
     "BP" {$surname += $prefix + $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner}
@@ -49,39 +46,38 @@ switch($p.Name.Convention)
     default {$surname += $prefix + $p.Name.FamilyName}
 }
 
-switch($p.details.Gender)
-{
+switch($p.details.Gender) {
     "M" {$gender = "MALE"}
     "V" {$gender = "FEMALE"}
     default {$gender = ""}
 }
 
 $account = @{
-    surName = $surname;
-    firstName = $p.Name.NickName;
-    firstInitials = $p.Name.Initials;
-    gender = $gender;
-    email = $email;
-    jobTitle = $p.PrimaryContract.Title.Name;
-    department = @{ id = $p.PrimaryContract.Team.Name };
-	personExtraFieldA = @{ id = "Value for PersonExtraFieldA"};
-    budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name };
-    employeeNumber = $p.ExternalID;
-    networkLoginName = $username;
-    branch = @{ id = "Fixed Branch" };
-    tasLoginName = $username;
-    isManager = $False;
-    manager = @{ id = $p.PrimaryManager.ExternalId };
-    showDepartment = $True;
+    surName = $surname
+    firstName = $p.Name.NickName
+    firstInitials = $p.Name.Initials
+    gender = $gender
+    email = $email
+    jobTitle = $p.PrimaryContract.Title.Name
+    department = @{ id = $p.PrimaryContract.Team.Name }
+	personExtraFieldA = @{ id = "Value for PersonExtraFieldA"}
+    budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name }
+    employeeNumber = $p.ExternalID
+    networkLoginName = $username
+    branch = @{ id = "Fixed Branch" }
+    tasLoginName = $username
+    isManager = $false
+    manager = @{ id = $p.PrimaryManager.ExternalId }
+    showDepartment = $true
 }
 
 #correlation
 $correlationField = 'employeeNumber'
 $correlationValue = $p.ExternalID
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-if(-Not($dryRun -eq $True)) {
+if(-Not($dryRun -eq $true)) {
  try {
-    $create = $True
+    $create = $true
     write-verbose -verbose "Correlate person"
     $personCorrelationUrl = $personUrl + "/?page_size=2&query=$($correlationField)=='$($correlationValue)'"
     $responseCorrelationJson = Invoke-WebRequest -uri $personCorrelationUrl -Method Get -Headers $headers -UseBasicParsing
@@ -189,11 +185,13 @@ if(-Not($dryRun -eq $True)) {
                 write-verbose -verbose "BudgetHolder lookup succesful"
             }
         }
-        
+
         # get personExtraFieldA
         write-verbose -verbose "personExtraFieldA lookup..."
-        if ([string]::IsNullOrEmpty($account.personExtraFieldA.id.replace(' ', '""')) -or $account.personExtraFieldA.id.StartsWith(' ') -or $account.personExtraFieldA.id.EndsWith(' ')) {
+        if ([string]::IsNullOrEmpty($account.personExtraFieldA) -or [string]::IsNullOrEmpty($account.personExtraFieldA.id.replace(' ', '""')) -or $account.personExtraFieldA.id.StartsWith(' ') -or $account.personExtraFieldA.id.EndsWith(' ')) {
+
             $auditMessage = $auditMessage + "; personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
+            Write-Verbose -Verbose -Message "personExtraFieldA is empty for person '$($p.ExternalId)'. Removing personExtraFieldA from Account object..."
             $account.PSObject.Properties.Remove('personExtraFieldA')
         } else {
             $personExtraFieldAUrl = $url + "/personExtraFieldAEntries"
@@ -203,13 +201,13 @@ if(-Not($dryRun -eq $True)) {
 
             if ([string]::IsNullOrEmpty($personpersonExtraFieldA.id) -eq $True) {
                 Write-Verbose -Verbose "personExtraFieldA '$($account.personExtraFieldA.id)' not found"
-                
+
                 $auditMessage = $auditMessage + "; personExtraFieldA '$($account.personExtraFieldA.id)' not found"
                 if ($errorOnMissingpersonExtraFieldA) { 
                     $lookupFailure = $True
                 }
                 write-verbose -verbose "personExtraFieldA lookup failed"
-                            
+
             } else {
                 $account.personExtraFieldA.id = $personpersonExtraFieldA.id
                 write-verbose -verbose "personExtraFieldA lookup succesful"
@@ -220,7 +218,7 @@ if(-Not($dryRun -eq $True)) {
         write-verbose -verbose "Manager lookup..."
         if ([string]::IsNullOrEmpty($account.manager.id)) {
             $auditMessage = $auditMessage + "; Manager is empty for person '$($p.ExternalId)'"
-            write-verbose -verbose "Manager lookup failed"
+            write-verbose -Verbose "Manager lookup failed"
             if ($errorOnMissingManager) {
                 $lookupFailure = $True
             }
@@ -279,10 +277,10 @@ if(-Not($dryRun -eq $True)) {
 
 #build up result
 $result = [PSCustomObject]@{ 
-	Success= $success;
-    AccountReference=$aRef;
-	AuditDetails=$auditMessage;
-    Account=$account;
+	Success= $success
+    AccountReference=$aRef
+	AuditDetails=$auditMessage
+    Account=$account
 }
 
 Write-Output $result | ConvertTo-Json -Depth 10
