@@ -1,12 +1,14 @@
-$config = $configuration | ConvertFrom-Json 
+$config = $configuration | ConvertFrom-Json
 $path = $config.notifications.jsonPath
 
 try {
-    If (Test-Path $path) {
+    if (Test-Path $path) {
         $changeList = Get-Content -Raw -Path $path | ConvertFrom-Json
-        $changes = $changeList | Where-Object {$_.HelloIDAction -eq "Grant" } | Select-Object -Property displayName, identification
+
+        $changes = $changeList | Select-Object -Property displayName, identification
         write-output $changes | ConvertTo-Json -Depth 10
     }
+
 }
 catch{
         $result = $_.Exception.Response.GetResponseStream()
@@ -14,5 +16,6 @@ catch{
         $reader.BaseStream.Position = 0
         $reader.DiscardBufferedData()
         $errResponse = $reader.ReadToEnd()
-        $auditMessage = "${errResponse}"
+        $auditMessage = "${errResponse}  $_"
+        Write-Verbose -Verbose -Message $auditMessage
 }
