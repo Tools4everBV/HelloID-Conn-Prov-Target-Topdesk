@@ -46,7 +46,7 @@ switch($p.Name.Convention) {
     default {$surname += $prefix + $p.Name.FamilyName}
 }
 
-# In some configutations this is in dutch (Man/Vrouw)
+# In some configurations this is in dutch (Man/Vrouw)
 switch($p.details.Gender) {
     "M" {$gender = "MALE"}
     "V" {$gender = "FEMALE"}
@@ -60,7 +60,7 @@ $account = @{
     #gender = $gender
     email = $email
     jobTitle = $p.PrimaryContract.Title.Name
-    department = @{ id = $p.PrimaryContract.Team.Name }
+    department = @{ id = $p.PrimaryContract.Department.DisplayName }
 	#personExtraFieldA = @{ id = "Value for PersonExtraFieldA"}
     #budgetHolder = @{ id = $p.PrimaryContract.CostCenter.code + " " + $P.PrimaryContract.CostCenter.Name }
     employeeNumber = $p.ExternalID

@@ -5,7 +5,6 @@
 		},
 		"DisplayName": "Aanvraag/Inname laptop",
 		"Grant": {
-			"HelloIDAction": "Grant",
 			"Requester": "tester@test.com",
 			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Action": null,
@@ -20,7 +19,6 @@
 			"Priority": "P1"
 		},
 		"Revoke": {
-			"HelloIDAction": "Revoke",
 			"Requester": "employee",
 			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Action": null,
@@ -41,7 +39,6 @@
 		},
 		"DisplayName": "Aanvraag/Inname mobiele telefoon",
 		"Grant": {
-			"HelloIDAction": "Grant",
 			"Requester": "tester@test.com",
 			"Request": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Action": null,
@@ -56,7 +53,6 @@
 			"Priority": "P1"
 		},
 		"Revoke": {
-			"HelloIDAction": "Revoke",
 			"Requester": "manager",
 			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een mobiele telefoon, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Action": null,

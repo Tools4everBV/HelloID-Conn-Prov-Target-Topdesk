@@ -265,48 +265,48 @@ $entitlementSet = $changeList | Where-Object {($_.Identification.Id -eq $pRef.id
 $change = $entitlementSet.Grant
 
 if ([string]::IsNullOrEmpty($entitlementSet)) {
+    # Entitlementset niet gevonden...
     write-verbose -Verbose -Message ($entitlementSet | ConvertTo-Json)
     Write-Verbose -Verbose -Message "could not find entitlement set"
     $auditMessage = "Entitlement $($entitlementSet.displayname) not found. Please check the Change definition file at '$path'. If you made changes to the file, please check the file with a JSON validation tool."
     $success = $false
-}
+} else {
+    # Entitlementset bestaat
+    if ($config.notifications.disable -eq $true) {
+        $dryRun = $true
+        $success = $true
+    }
 
-
-if ($config.notifications.disable -eq $true)
-{
-    $dryRun = $true
-    $success = $true
-}
-
-if (![string]::IsNullOrEmpty($change)) {
-   if (-Not($dryRun -eq $True)) {
-        #DryRun = False, post change
-        try {
+    if (![string]::IsNullOrEmpty($change)) {
+        if (-Not($dryRun -eq $True)) {
+            #DryRun = False, post change
+            try {
+                $change.Request = Invoke-Expression "`"$($change.Request)`""
+                $change.BriefDescription = Invoke-Expression "`"$($change.BriefDescription)`""
+                $changeResult = New-TOPdeskChange -changeObject $change
+                $success = $True
+                $auditMessage = "$($change.BriefDescription) - $($changeResult.number)"
+            } catch {
+                $result = $_.Exception.Response.GetResponseStream()
+                $reader = New-Object System.IO.StreamReader($result)
+                $reader.BaseStream.Position = 0
+                $reader.DiscardBufferedData()
+                $errResponse = $reader.ReadToEnd();
+                $auditMessage = "${errResponse}";
+            }
+        } else {
+            #DryRun = True logging only
             $change.Request = Invoke-Expression "`"$($change.Request)`""
             $change.BriefDescription = Invoke-Expression "`"$($change.BriefDescription)`""
-            $changeResult = New-TOPdeskChange -changeObject $change
-            $success = $True
-            $auditMessage = "$($change.BriefDescription) - $($changeResult.number)"
-        } catch {
-            $result = $_.Exception.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($result)
-            $reader.BaseStream.Position = 0
-            $reader.DiscardBufferedData()
-            $errResponse = $reader.ReadToEnd();
-            $auditMessage = "${errResponse}";
+            Write-Verbose -verbose -Message $($change.request)
+            Write-Verbose -verbose -Message $($change.BriefDescription)
         }
     } else {
-        #DryRun = True logging only
-        $change.Request = Invoke-Expression "`"$($change.Request)`""
-        $change.BriefDescription = Invoke-Expression "`"$($change.BriefDescription)`""
-        Write-Verbose -verbose -Message $($change.request)
-        Write-Verbose -verbose -Message $($change.BriefDescription)
-    }
-} else {
-    #Change is empty
-    $auditMessage = "$($entitlementSet.displayname) not created, Grant is not configured."
-    if (-Not($dryRun -eq $True)) {
-        $success = $true
+        #Change is empty
+        $auditMessage = "$($entitlementSet.displayname) not created, Grant is not configured."
+        if (-Not($dryRun -eq $True)) {
+            $success = $true
+        }
     }
 }
 
