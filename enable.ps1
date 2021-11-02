@@ -143,8 +143,13 @@ if(-Not($dryRun -eq $true)){
                         }
                     }
                 } else {
-                    $account.department.id = $personDepartment.id
-                    Write-Verbose -Verbose -Message "Department lookup succesful"
+                    if ($personDepartment.Count -eq 1) {
+                        $account.department.id = $personDepartment.id
+                        Write-Verbose -Verbose -Message "Department lookup succesful"
+                    } else {
+                        $auditMessage = $auditMessage + "; Multiple [$($personDepartment.Count)] departments found for person. Please make sure all referenced department names are unique in TOPdesk."
+                        $lookupFailure = $true
+                    }
                 }
             }
 
