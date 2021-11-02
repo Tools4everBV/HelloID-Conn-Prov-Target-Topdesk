@@ -32,19 +32,16 @@ $email = $p.Accounts.MicrosoftActiveDirectory.Mail
 $surname = ""
 
 $prefix = ""
-if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)))
-{
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix))) {
     $prefix = $p.Name.FamilyNamePrefix + " "
 }
 
 $partnerprefix = ""
-if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)))
-{
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix))) {
     $partnerprefix = $p.Name.FamilyNamePartnerPrefix + " "
 }
 
-switch($p.Name.Convention)
-{
+switch($p.Name.Convention) {
     "B" {$surname += $prefix + $p.Name.FamilyName}
     "P" {$surname += $partnerprefix + $p.Name.FamilyNamePartner}
     "BP" {$surname += $prefix + $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner}
