@@ -30,9 +30,9 @@ function New-TOPdeskChange {
     $base64 = [System.Convert]::ToBase64String($bytes)
     $headers = @{ Authorization = "BASIC $base64"; Accept = 'application/json'; "Content-Type" = 'application/json' }
 
-    $uriChanges = $url + "/tas/api/operatorChanges"
-    $uriRequester = $url + "/tas/api/persons?email=$($changeObject.Requester)"
-    $uriTemplates = $url + "/tas/api/applicableChangeTemplates"
+    $uriChanges = $url + "/operatorChanges"
+    $uriRequester = $url + "/persons?email=$($changeObject.Requester)"
+    $uriTemplates = $url + "/applicableChangeTemplates"
 
     Write-Verbose -Verbose -Message "Creating request for change"
     if ($changeObject.Requester) {
