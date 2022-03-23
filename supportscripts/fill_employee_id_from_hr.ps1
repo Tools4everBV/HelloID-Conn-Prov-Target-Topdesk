@@ -37,18 +37,18 @@ ForEach ($person in $personsTopdesk) {
                     Write-Error "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.Exception.Message)'"
                     $_
                 } elseif (![string]::IsNullOrEmpty($_.ErrorDetails.Message)) {
-                    Write-Error  "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.ErrorDetails.Message)'" 
+                    Write-Error  "Something went wrong $($_.ScriptStackTrace). Error message: '$($_.ErrorDetails.Message)'"
                     $_
                 } else {
-                    Write-Error "Something went wrong $($_.ScriptStackTrace). Error message: '$($_)'" 
-                }  
-            } 
+                    Write-Error "Something went wrong $($_.ScriptStackTrace). Error message: '$($_)'"
+                }
+            }
         } else {
             Write-Error  "Emailadress is empty for person"
             Write-Error $person | ConvertTo-Json
         }
     } else {
         Write-Error  "Person is archived"
-        Write-Error $person | ConvertTo-Json    
+        Write-Error $person | ConvertTo-Json
     }
 }
