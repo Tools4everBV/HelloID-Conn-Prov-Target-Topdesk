@@ -3,7 +3,6 @@
 #
 # Version: 1.0.0
 #####################################################
-
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $rRef = $resourceContext | ConvertFrom-Json
@@ -23,18 +22,26 @@ switch ($($config.IsDebug)) {
 #region functions
 function Set-AuthorizationHeaders {
     [CmdletBinding()]
-    param ()
-    process {
-        # Create basic authentication string
-        $bytes = [System.Text.Encoding]::ASCII.GetBytes("$($config.connection.userName):$($config.connection.apiKey)")
-        $base64 = [System.Convert]::ToBase64String($bytes)
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $UserName,
 
-        # Set authentication headers
-        $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
-        $authHeaders.Add("Authorization", "BASIC $base64")
-        $authHeaders.Add("Accept", 'application/json')
-        Write-Output $authHeaders
-    }
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ApiKey
+    )
+    # Create basic authentication string
+    $bytes = [System.Text.Encoding]::ASCII.GetBytes("$UserName):$ApiKey)")
+    $base64 = [System.Convert]::ToBase64String($bytes)
+
+    # Set authentication headers
+    $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
+    $authHeaders.Add("Authorization", "BASIC $base64")
+    $authHeaders.Add("Accept", 'application/json')
+    Write-Output $authHeaders
 }
 
 function Invoke-TOPdeskRestMethod {
@@ -81,16 +88,25 @@ function Invoke-TOPdeskRestMethod {
 
 function Get-TOPdeskDepartments {
     [CmdletBinding()]
-    param ()
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $baseUrl,
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]
+        $Headers
+    )
+
     $splatGoupParams = @{
-        Uri     = "$($config.connection.baseUrl)/tas/api/departments"
+        Uri     = "$baseUrl/tas/api/departments"
         Method  = 'GET'
-        Headers = Set-AuthorizationHeaders
+        Headers = $Headers
     }
     $responseGet = Invoke-TOPdeskRestMethod @splatGoupParams
     Write-Verbose "Retrieved $($responseGet.count) departments from TOPdesk"
-    return $responseGet
-}
+    Write-Output $responseGet
+    }
 
 function New-TOPdeskDepartment {
     [CmdletBinding()]
@@ -98,24 +114,32 @@ function New-TOPdeskDepartment {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Name
+        $Name,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $baseUrl,
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]
+        $Headers
     )
 
     $splatParams = @{
-        Uri     = "$($config.connection.baseUrl)/tas/api/departments"
+        Uri     = "$baseUrl/tas/api/departments"
         Method  = 'POST'
-        Headers = Set-AuthorizationHeaders
+        Headers = $Headers
         body    = @{name=$Name} | ConvertTo-Json
     }
     $responseCreate = Invoke-TOPdeskRestMethod @splatParams
     Write-Verbose "Created department with name [$($name)] and id [$($responseCreate.id)] in TOPdesk"
-    return $responseCreate
+    Write-Output $responseCreate
 }
 #endregion
 
 #Begin
 try {
-    $TopdeskDepartments = Get-TOPdeskDepartments
+    $authHeaders = Set-AuthorizationHeaders -UserName $Config.connection.userName -ApiKey $Config.connection.apiKey
+    $TopdeskDepartments = Get-TOPdeskDepartments -Headers $Config.connection.authHeaders -baseUrl $Config.connection.baseUrl
 
     # Remove items with no name
     [Void]$TopdeskDepartments.Where({ $_.Name-ne "" })
@@ -128,8 +152,8 @@ try {
             # Create department
             if (-not ($dryRun -eq $true)) {
                 try {
-                    Write-Verbose "Creating TOPdesk department with the name [$($HelloIdDepartment.displayName)] in TOPdesk..."                  
-                    $newDepartment = New-TOPdeskDepartment -Name $HelloIdDepartment.displayName
+                    Write-Verbose "Creating TOPdesk department with the name [$($HelloIdDepartment.displayName)] in TOPdesk..."
+                    $newDepartment = New-TOPdeskDepartment -Name $HelloIdDepartment.displayName -baseUrl $Config.connection.baseUrl -Headers $authHeaders
                     $auditLogs.Add([PSCustomObject]@{
                         Message = "Created TOPdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
                         IsError = $false

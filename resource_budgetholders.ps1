@@ -1,9 +1,8 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Resource-BudgetHolders
-# Usually mapped to Cost Centers
+#
 # Version: 1.0.0
 #####################################################
-
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $rRef = $resourceContext | ConvertFrom-Json
@@ -23,18 +22,26 @@ switch ($($config.IsDebug)) {
 #region functions
 function Set-AuthorizationHeaders {
     [CmdletBinding()]
-    param ()
-    process {
-        # Create basic authentication string
-        $bytes = [System.Text.Encoding]::ASCII.GetBytes("$($config.connection.userName):$($config.connection.apiKey)")
-        $base64 = [System.Convert]::ToBase64String($bytes)
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $UserName,
 
-        # Set authentication headers
-        $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
-        $authHeaders.Add("Authorization", "BASIC $base64")
-        $authHeaders.Add("Accept", 'application/json')
-        Write-Output $authHeaders
-    }
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ApiKey
+    )
+    # Create basic authentication string
+    $bytes = [System.Text.Encoding]::ASCII.GetBytes("$UserName):$ApiKey)")
+    $base64 = [System.Convert]::ToBase64String($bytes)
+
+    # Set authentication headers
+    $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
+    $authHeaders.Add("Authorization", "BASIC $base64")
+    $authHeaders.Add("Accept", 'application/json')
+    Write-Output $authHeaders
 }
 
 function Invoke-TOPdeskRestMethod {
@@ -81,16 +88,25 @@ function Invoke-TOPdeskRestMethod {
 
 function Get-TOPdeskBudgetHolders {
     [CmdletBinding()]
-    param ()
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $baseUrl,
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]
+        $Headers
+    )
+
     $splatGoupParams = @{
-        Uri     = "$($config.connection.baseUrl)/tas/api/budgetholders"
+        Uri     = "$baseUrl/tas/api/budgethold"
         Method  = 'GET'
-        Headers = Set-AuthorizationHeaders
+        Headers = $Headers
     }
-    $responseGetGroup = Invoke-TOPdeskRestMethod @splatGoupParams
-    Write-Verbose "Retrieved $($responseGetGroup.count) budgetholders from TOPdesk"
-    return $responseGetGroup
-}
+    $responseGet = Invoke-TOPdeskRestMethod @splatGoupParams
+    Write-Verbose "Retrieved $($responseGet.count) budgetholders from TOPdesk"
+    Write-Output $responseGet
+    }
 
 function New-TOPdeskBudgetHolder {
     [CmdletBinding()]
@@ -98,24 +114,32 @@ function New-TOPdeskBudgetHolder {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Name
+        $Name,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $baseUrl,
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]
+        $Headers
     )
 
     $splatParams = @{
-        Uri     = "$($config.connection.baseUrl)/tas/api/budgetholders"
+        Uri     = "$baseUrl/tas/api/budgetholder"
         Method  = 'POST'
-        Headers = Set-AuthorizationHeaders
+        Headers = $Headers
         body    = @{name=$Name} | ConvertTo-Json
     }
     $responseCreate = Invoke-TOPdeskRestMethod @splatParams
     Write-Verbose "Created budgetholder with name [$($name)] and id [$($responseCreate.id)] in TOPdesk"
-    return $responseCreate
+    Write-Output $responseCreate
 }
 #endregion
 
 #Begin
 try {
-    $TopdeskBudgetHolders= Get-TOPdeskBudgetHolders
+    $authHeaders = Set-AuthorizationHeaders -UserName $Config.connection.userName -ApiKey $Config.connection.apiKey
+    $TopdeskBudgetHolders = Get-TOPdeskBudgetHolders -Headers $Config.connection.authHeaders -baseUrl $Config.connection.baseUrl
 
     # Remove items with no name
     [Void]$TopdeskBudgetHolders.Where({ $_.Name-ne "" })
@@ -124,14 +148,14 @@ try {
     # Process
     $success = $true
     foreach ($HelloIdBudgetHolder in $rRef.sourceData) {
-        if (-not($TopdeskBudgetHolders -contains $HelloIdBudgetHolder.Name)) {
+        if (-not($TopdeskBudgetHolders.Name -contains $HelloIdBudgetHolder.name)) {
             # Create budgetholder
             if (-not ($dryRun -eq $true)) {
                 try {
-                    Write-Verbose "Creating TOPdesk budgetholder with the name [$($HelloIdBudgetHolder.Name)] in TOPdesk..."
-                    $newBudgetHolder= New-TOPdeskBudgetHolder -Name $HelloIdBudgetHolder.Name
+                    Write-Verbose "Creating TOPdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in TOPdesk..."
+                    $newBudgetHolder = New-TOPdeskBudgetHolder -Name $HelloIdBudgetHolder.name -baseUrl $Config.connection.baseUrl -Headers $authHeaders
                     $auditLogs.Add([PSCustomObject]@{
-                        Message = "Created TOPdesk budgetholder with the name [$($newBudgetHolder.Name)] and ID [$($newBudgetHolder.id)]"
+                        Message = "Created TOPdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
                         IsError = $false
                     })
                 } catch {
@@ -150,10 +174,10 @@ try {
                     })
                 }
             } else {
-                Write-Verbose "Preview: Would create topdesk budgetholder $($HelloIdBudgetHolder.Name)"
+                Write-Verbose "Preview: Would create topdesk budgetholder $($HelloIdBudgetHolder.name)"
             }
         } else {
-            Write-Verbose "Not creating budgetholder [$($HelloIdBudgetHolder.Name)] as it already exists in TOPdesk"
+            Write-Verbose "Not creating budgetholder [$($HelloIdBudgetHolder.name)] as it already exists in TOPdesk"
         }
     }
 } catch {
