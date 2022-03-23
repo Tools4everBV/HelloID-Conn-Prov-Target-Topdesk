@@ -30,7 +30,7 @@ function Set-AuthorizationHeaders {
         $base64 = [System.Convert]::ToBase64String($bytes)
 
         # Set authentication headers
-        $authHeaders = New-Object "System.Collections.Generic.Dictionary[[String], [String]]"
+        $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
         $authHeaders.Add("Authorization", "BASIC $base64")
         $authHeaders.Add("Accept", 'application/json')
         Write-Output $authHeaders
