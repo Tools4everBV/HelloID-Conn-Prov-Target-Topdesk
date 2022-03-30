@@ -529,7 +529,7 @@ function Get-TopdeskPersonManager {
     if ([string]::IsNullOrEmpty($Account.manager.id)) {
 
         # Check settings if it should clear the manager or generate an error
-        if ([System.Convert]::ToBoolean($lookupErrorNoManagerReference)) {
+        if (-Not ([System.Convert]::ToBoolean($lookupErrorNoManagerReference))) {
 
             # True, no manager id = throw error
             $errorMessage = "The manager reference is empty and the connector is configured to stop when this happens."
