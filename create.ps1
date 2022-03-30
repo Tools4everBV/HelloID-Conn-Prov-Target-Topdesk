@@ -286,7 +286,7 @@ function Get-TopdesDepartment {
         if ([string]::IsNullOrEmpty($department.id)) {
             if ([System.Convert]::ToBoolean($LookupErrorTopdesk)) {
                 ### True, no department found = throw error
-                $errorMessage = "Department not found in Topdesk and the connector is configured to stop when this happens."
+                $errorMessage = "Department [$($account.department.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
                 $auditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
