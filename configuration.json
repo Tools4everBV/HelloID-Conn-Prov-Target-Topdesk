@@ -1,6 +1,6 @@
 [
   {
-    "key": "connection.baseUrl",
+    "key": "baseUrl",
     "type": "input",
     "defaultValue": "https://customer-test.topdesk.net",
     "templateOptions": {
@@ -10,7 +10,7 @@
     }
   },
   {
-    "key": "connection.username",
+    "key": "username",
     "type": "input",
     "defaultValue": "",
     "templateOptions": {
@@ -20,7 +20,7 @@
     }
   },
   {
-    "key": "connection.apikey",
+    "key": "apikey",
     "type": "input",
     "defaultValue": "",
     "templateOptions": {
@@ -31,7 +31,7 @@
     }
   },
   {
-    "key": "notifications.jsonPath",
+    "key": "notificationJsonPath",
     "type": "input",
     "defaultValue": "",
     "templateOptions": {
@@ -46,12 +46,11 @@
     "defaultValue": true,
     "templateOptions": {
       "label": "Toggle debug logging",
-      "description": "When toggled, debug logging will be displayed",
       "required": false
     }
   },
   {
-    "key": "notifications.disable",
+    "key": "disableNotifications",
     "type": "checkbox",
     "defaultValue": false,
     "templateOptions": {
@@ -60,55 +59,73 @@
     }
   },
   {
-    "key": "lookup.errorDepartment",
+    "key": "lookupErrorTopdesk",
     "type": "radio",
     "defaultValue": "true",
     "templateOptions": {
-      "label": "When a department is empty or does not exist in TOPdesk",
+      "label": "When an item can't be found in  TOPdesk",
       "options": [
         {
-          "value": "false",
-          "label": "Leave empty or clear the department field"
+          "value": "true",
+          "label": "Stop processing and generate an error"
         },
         {
-          "value": "true",
-          "label": "Stop processing"
+          "value": "false",
+          "label": "Keep the current value and continue"
         }
       ]
     }
   },
   {
-    "key": "lookup.errorBudgetHolder",
+    "key": "lookupErrorHrDepartment",
     "type": "radio",
     "defaultValue": "true",
     "templateOptions": {
-      "label": "When a budgetholder is empty or does not exist in TOPdesk",
+      "label": "When a department is empty because it's missing in the source data",
       "options": [
         {
-          "value": "false",
-          "label": "Leave empty or clear the budgetholder field"
+          "value": "true",
+          "label": "Stop processing and generate an error"
         },
         {
-          "value": "true",
-          "label": "Stop processing"
+          "value": "false",
+          "label": "Clear the department field in TOPdesk"
         }
       ]
     }
   },
   {
-    "key": "lookup.errorNoManager",
+    "key": "lookupErrorHrBudgetHolder",
+    "type": "radio",
+    "defaultValue": "true",
+    "templateOptions": {
+      "label": "When a budgetholder is empty because it's missing in the source data",
+      "options": [
+        {
+          "value": "true",
+          "label": "Stop processing and generate an error"
+        },
+        {
+          "value": "false",
+          "label": "Clear the budgetholder field in TOPdesk"
+        }
+      ]
+    }
+  },
+  {
+    "key": "lookupErrorNoManagerReference",
     "type": "radio",
     "defaultValue": "true",
     "templateOptions": {
       "label": "When a manager reference is emtpy",
       "options": [
         {
-          "value": "false",
-          "label": "Leave empty or clear the manager field"
+          "value": "true",
+          "label": "Stop processing and generate an error"
         },
         {
-          "value": "true",
-          "label": "Stop processing"
+          "value": "false",
+          "label": "Clear the manager field in TOPdesk"
         }
       ]
     }
