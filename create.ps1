@@ -64,7 +64,7 @@ $account = [PSCustomObject]@{
     firstName           = $p.Name.NickName
     firstInitials       = $p.Name.Initials
     gender              = $gender
-    email               = $email
+    email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
@@ -609,6 +609,7 @@ function Set-TopdeskPersonArchiveStatus {
         $TopdeskPerson.status = $archiveStatus
     }
 }
+
 function Set-TopdeskPersonIsManager {
     [CmdletBinding()]
     param (
@@ -811,7 +812,7 @@ try {
                     BaseUrl         = $config.baseUrl
                     Archive         = $true
                 }
-                Set-TopdeskPerson @splatParamsManagerArchive
+                Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
             }
         }
     }
