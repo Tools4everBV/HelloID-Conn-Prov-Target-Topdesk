@@ -27,7 +27,6 @@ function Set-AuthorizationHeaders {
         [ValidateNotNullOrEmpty()]
         [string]
         $UserName,
-
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -51,18 +50,14 @@ function Invoke-TOPdeskRestMethod {
         [ValidateNotNullOrEmpty()]
         [string]
         $Method,
-
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Uri,
-
         [object]
         $Body,
-
         [string]
         $ContentType = 'application/json; charset=utf-8',
-
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers
@@ -106,7 +101,7 @@ function Get-TOPdeskBudgetHolders {
     $responseGet = Invoke-TOPdeskRestMethod @splatGoupParams
     Write-Verbose "Retrieved $($responseGet.count) budgetholders from TOPdesk"
     Write-Output $responseGet
-    }
+}
 
 function New-TOPdeskBudgetHolder {
     [CmdletBinding()]
