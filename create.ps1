@@ -81,7 +81,7 @@ $account = [PSCustomObject]@{
     surName             = New-TopdeskSurname -Person $p        # Generate surname according to the naming convention code.
     firstName           = $p.Name.NickName
     firstInitials       = $p.Name.Initials
-    gennder             = New-TopdeskGender  -Person $p
+    gennder             = New-TopdeskGender -Person $p
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
@@ -97,6 +97,7 @@ $account = [PSCustomObject]@{
 
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
+
 #endregion mapping
 
 #region helperfunctions
@@ -184,7 +185,6 @@ function Get-TopdeskBranch {
         [Object]
         [ref]$Account,
 
-        #[Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -232,7 +232,6 @@ function Get-TopdeskBranch {
         }
     }
 }
-
 function Get-TopdesDepartment {
     [CmdletBinding()]
     param (
@@ -247,12 +246,10 @@ function Get-TopdesDepartment {
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        #[Bool]
         $LookupErrorHrDepartment,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        #[Bool]
         $LookupErrorTopdesk,
 
         [Parameter(Mandatory)]
@@ -260,7 +257,6 @@ function Get-TopdesDepartment {
         [Object]
         [ref]$Account,
 
-        #[Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -336,12 +332,10 @@ function Get-TopdeskBudgetHolder {
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        #[Bool]
         $LookupErrorHrBudgetHolder,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        #[Bool]
         $LookupErrorTopdesk,
 
         [Parameter(Mandatory)]
@@ -349,7 +343,6 @@ function Get-TopdeskBudgetHolder {
         [Object]
         [ref]$Account,
 
-        #[Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -433,7 +426,6 @@ function Get-TopdeskPersonByCorrelationAttribute {
         [String]
         $CorrelationAttribute,
 
-        #[Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -468,12 +460,15 @@ function Get-TopdeskPersonByCorrelationAttribute {
 
     # Check if only one result is returned
     if ([string]::IsNullOrEmpty($responseGet)) {
+
         # no results found
         Write-Output $null
     } elseif ($responseGet.Count -eq 1) {
+
         # one record found, correlate, return user
         write-output $responseGet
     } else {
+
         # Multiple records found, correlation
         $errorMessage = "Multiple [$($responseGet.Count)] persons found with [$CorrelationAttribute] [$($account.$CorrelationAttribute)]. Login names: [$($responseGet.tasLoginName)]"
         $auditLogs.Add([PSCustomObject]@{
@@ -508,10 +503,10 @@ function Get-TopdeskPersonById {
         Headers = $Headers
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
+
     # Output result if something was found. Result is empty when nothing is found (i think) - TODO: Test this!!!
     Write-Output $responseGet
 }
-
 function Get-TopdeskPersonManager {
     [CmdletBinding()]
     param (
@@ -653,7 +648,7 @@ function Set-TopdeskPersonIsManager {
     # Check the current status of the Person and compare it with the status in ArchiveStatus
     if ($isManager -ne $TopdeskPerson.isManager) {
 
-        # Turn of / off manager
+        # Turn on / off isManager
         $body = [PSCustomObject]@{
             isManager = $isManager
         }
@@ -668,7 +663,6 @@ function Set-TopdeskPersonIsManager {
         $TopdeskPerson.status = $isManager
     }
 }
-
 
 function Set-TopdeskPerson {
     [CmdletBinding()]
@@ -791,7 +785,7 @@ try {
     $TopdeskManager = Get-TopdeskPersonManager @splatParamsManager
 
     if ($auditLogs.isError -contains -$true) {
-        Throw "Errors occured while looking up required values"
+        Throw "Error(s) occured while looking up required values"
     }
 #endregion lookup
 
@@ -823,7 +817,8 @@ try {
 
             # Archive manager if required
             if ($shouldArchive -and $TopdeskManager.status -ne 'personArchived') {
-                # Archive person
+
+                # Archive manager
                 $splatParamsManagerArchive = @{
                     TopdeskPerson   = [ref]$TopdeskManager
                     Headers         = $authHeaders
@@ -856,12 +851,12 @@ try {
         switch ($action) {
             'Create' {
                 Write-Verbose "Creating Topdesk person for: [$($p.DisplayName)]"
-                $splatParamsPersonUnarchive = @{
+                $splatParamsPersonNew = @{
                     Account         = $account
                     Headers         = $authHeaders
                     BaseUrl         = $config.baseUrl
                 }
-                New-TopdeskPerson @splatParamsPersonUnarchive
+                New-TopdeskPerson @splatParamsPersonNew
 
             } 'Correlate'{
                 Write-Verbose "Correlating and updating Topdesk person for: [$($p.DisplayName)]"
@@ -880,19 +875,19 @@ try {
                 }
 
                 # Update TOPdesk person
-                $splatParamsPersonUnarchive = @{
+                $splatParamsPersonUpdate = @{
                     TopdeskPerson   = $TopdeskPerson
                     Account         = $account
                     Headers         = $authHeaders
                     BaseUrl         = $config.baseUrl
                 }
-                Set-TopdeskPerson @splatParamsPersonUnarchive
+                Set-TopdeskPerson @splatParamsPersonUpdate
             }
         }
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "$action account for: [$($p.DisplayName)] was successful."
+            Message = " successfully"   # Might need to change the audit message after testing
             IsError = $false
         })
     }
@@ -901,13 +896,13 @@ try {
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not create person. Error: $($ex.ErrorDetails.Message)"
+        $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
     } else {
-        $errorMessage = "Could not create person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not $action person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
 
     # Only log when there are no lookup values, as these generate their own audit message
-    if (-Not($ex.Exception.Message -eq 'Errors occured while looking up required values')) {
+    if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -923,3 +918,4 @@ try {
     }
     Write-Output $result | ConvertTo-Json -Depth 10
 }
+#endregion Write
