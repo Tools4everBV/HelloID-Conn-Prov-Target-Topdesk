@@ -35,26 +35,44 @@ function New-TopdeskSurname {
         $person
     )
 
-    if([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)) {
+    if([string]::IsNullOrEmpty($person.Name.FamilyNamePrefix)) {
         $prefix = ""
     } else {
-        $prefix = $p.Name.FamilyNamePrefix + " "
+        $prefix = $person.Name.FamilyNamePrefix + " "
     }
 
-    if([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)) {
+    if([string]::IsNullOrEmpty($person.Name.FamilyNamePartnerPrefix)) {
         $partnerPrefix = ""
     } else {
-        $partnerPrefix = $p.Name.FamilyNamePartnerPrefix + " "
+        $partnerPrefix = $person.Name.FamilyNamePartnerPrefix + " "
     }
 
-    $TopdeskSurname = switch($p.Name.Convention) {
-                    "B"  { $prefix + $p.Name.FamilyName }
-                    "BP" { $prefix + $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner }
-                    "P"  { $partnerPrefix + $p.Name.FamilyNamePartner }
-                    "PB" { $partnerPrefix + $p.Name.FamilyNamePartner + " - " + $prefix + $p.Name.FamilyName }
-                    default { $prefix + $p.Name.FamilyName }
+    $TopdeskSurname = switch($person.Name.Convention) {
+                    "B"  { $prefix + $person.Name.FamilyName }
+                    "BP" { $prefix + $person.Name.FamilyName + " - " + $partnerprefix + $person.Name.FamilyNamePartner }
+                    "P"  { $partnerPrefix + $person.Name.FamilyNamePartner }
+                    "PB" { $partnerPrefix + $person.Name.FamilyNamePartner + " - " + $prefix + $person.Name.FamilyName }
+                    default { $prefix + $person.Name.FamilyName }
     }
     Write-Output $TopdeskSurname
+}
+
+function New-TopdeskGender {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [object]
+        $person
+    )
+
+    $gender = switch($person.details.Gender) {
+        "M" { "MALE"}
+        "V" { "FEMALE"}
+        default { 'UNDEFINED'}
+    }
+
+    Write-Output $gender
 }
 
 # Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
@@ -63,13 +81,13 @@ $account = [PSCustomObject]@{
     surName             = New-TopdeskSurname -Person $p        # Generate surname according to the naming convention code.
     firstName           = $p.Name.NickName
     firstInitials       = $p.Name.Initials
-    gender              = $gender
+    gennder             = New-TopdeskGender  -Person $p
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
     jobTitle            = $p.PrimaryContract.Title.Name
-    branch              = @{ lookupValue = 'Fixed Branch' } #$p.PrimaryContract.Location.Name
+    branch              = @{ lookupValue = 'Fixed branch' } #$p.PrimaryContract.Location.Name
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
     budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     isManager           = $false
