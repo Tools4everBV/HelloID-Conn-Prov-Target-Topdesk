@@ -1,8 +1,9 @@
 #####################################################
-# HelloID-Conn-Prov-Target-TOPdesk-Enable
+# HelloID-Conn-Prov-Target-Topdesk-Enable
 #
-# Version: 1.0.0
+# Version: 2.0
 #####################################################
+
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json

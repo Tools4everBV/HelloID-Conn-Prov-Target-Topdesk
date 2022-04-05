@@ -1,7 +1,7 @@
 #####################################################
-# HelloID-Conn-Prov-Target-TOPdesk-Disable
+# HelloID-Conn-Prov-Target-Topdesk-Disable
 #
-# Version: 1.0.0
+# Version: 2.0
 #####################################################
 
 # Initialize default values
