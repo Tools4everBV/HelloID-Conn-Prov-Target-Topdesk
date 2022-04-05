@@ -35,7 +35,7 @@
 		},
 		"DisplayName": "Aanvraag/Inname mobiele telefoon",
 		"Grant": {
-			"CallerEmail": "employee",
+			"CallerEmail": "Employee",
 			"RequestShort": "Aanvraag mobiele telefoon ($($p.displayName))",
 			"RequestDescription": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Branch": "Utrecht",
@@ -47,7 +47,7 @@
 			"CloseTicket": true
 		},
 		"Revoke": {
-			"CallerEmail": "manager",
+			"CallerEmail": "Manager",
 			"RequestShort": "Inname mobiele telefoon ($($p.displayName))",
 			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een mobiele telefoon, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Branch": "Utrecht",

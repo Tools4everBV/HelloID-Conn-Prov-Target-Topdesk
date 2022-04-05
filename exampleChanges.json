@@ -19,7 +19,7 @@
 			"Priority": "P1"
 		},
 		"Revoke": {
-			"Requester": "employee",
+			"Requester": "Employee",
 			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Action": null,
 			"BriefDescription": "Inname Laptop ($($p.displayName))",
@@ -39,7 +39,7 @@
 		},
 		"DisplayName": "Aanvraag/Inname mobiele telefoon",
 		"Grant": {
-			"Requester": "employee",
+			"Requester": "Employee",
 			"Request": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Action": null,
 			"BriefDescription": "Aanvraag mobiele telefoon ($($p.displayName))",
@@ -53,7 +53,7 @@
 			"Priority": "P1"
 		},
 		"Revoke": {
-			"Requester": "manager",
+			"Requester": "Manager",
 			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een mobiele telefoon, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Action": null,
 			"BriefDescription": "Inname mobiele telefoon ($($p.displayName))",
@@ -68,10 +68,10 @@
 		}
 	},
 	{
-		"identification": {
+		"Identification": {
 			"id": "C003"
 		},
-		"displayName": "Aanvraag Smartphone (Alleen grant)",
+		"DisplayName": "Aanvraag Smartphone (Alleen grant)",
 		"Grant": {
 			"Requester": "Manager",
 			"Request": "Er is door een leidinggevende een smartphone + simkaart aangevraagd voor een nieuwe medewerker.\nGraag registreren op onderstaande medewerker:\nVoornaam medewerker, $($p.Name.GivenName),\nAchternaam medewerker $($p.Name.FamilyName),\nTelefoonnummer privé, $($p.Contact.Business.Phone.Mobile),\nAfdeling: $($p.PrimaryContract.Department.DisplayName),\nKostenplaats: $($p.PrimaryContract.CostCenter.Name),\nFunctie: $($p.PrimaryContract.Title.Name)\nManager: $($p.PrimaryManager.Displayname)",
@@ -89,10 +89,10 @@
 		"Revoke": {}
 	},
 	{
-		"identification": {
+		"Identification": {
 			"id": "C004"
 		},
-		"displayName": "Uitdiensttreding medewerker (Alleen revoke)",
+		"DisplayName": "Uitdiensttreding medewerker (Alleen revoke)",
 		"Grant": {},
 		"Revoke": {
 			"Requester": "Manager",
