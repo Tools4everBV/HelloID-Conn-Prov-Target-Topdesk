@@ -274,7 +274,7 @@ function Get-TopdesDepartment {
     # When department.lookupValue is null or empty (it is empty in the source or it's a mapping error)
     if ([string]::IsNullOrEmpty($account.department.lookupValue)) {
         if ([System.Convert]::ToBoolean($LookupErrorHrDepartment)) {
-            
+
             # True, no department in lookup value = throw error
             $errorMessage = "The lookup value for Department is empty and the connector is configured to stop when this happens."
             $auditLogs.Add([PSCustomObject]@{
@@ -801,7 +801,7 @@ try {
 
     # Process
     if (-not($dryRun -eq $true)){
-        Write-Verbose "Activating and updating Topdesk person for: [$($p.DisplayName)]"
+        Write-Verbose "Updating Topdesk person for: [$($p.DisplayName)]"
 
         # Unarchive person if required
         if ($TopdeskPerson.status -eq 'personArchived') {

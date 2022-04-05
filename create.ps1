@@ -507,6 +507,7 @@ function Get-TopdeskPersonById {
     # Output result if something was found. Result is empty when nothing is found (i think) - TODO: Test this!!!
     Write-Output $responseGet
 }
+
 function Get-TopdeskPersonManager {
     [CmdletBinding()]
     param (
@@ -724,7 +725,6 @@ function New-TopdeskPerson {
     }
     $null = Invoke-TopdeskRestMethod @splatParams
 }
-
 #endregion helperfunctions
 
 #region lookup

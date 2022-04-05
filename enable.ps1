@@ -205,7 +205,7 @@ function Get-TopdeskBranch {
                 IsError = $true
             })
     } else {
-        
+
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
             Uri     = "$baseUrl/tas/api/branches"
@@ -275,7 +275,7 @@ function Get-TopdesDepartment {
     # When department.lookupValue is null or empty (it is empty in the source or it's a mapping error)
     if ([string]::IsNullOrEmpty($account.department.lookupValue)) {
         if ([System.Convert]::ToBoolean($LookupErrorHrDepartment)) {
-            
+
             # True, no department in lookup value = throw error
             $errorMessage = "The lookup value for Department is empty and the connector is configured to stop when this happens."
             $auditLogs.Add([PSCustomObject]@{
@@ -283,14 +283,14 @@ function Get-TopdesDepartment {
                 IsError = $true
             })
         } else {
-            
+
             # False, no department in lookup value = clear value
             Write-Verbose "Clearing department. (lookupErrorHrdDepartment = False)"
             $account.department.PSObject.Properties.Remove('lookupValue')
             $account.department | Add-Member -NotePropertyName id -NotePropertyValue $null
         }
     } else {
-        
+
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
             Uri     = "$baseUrl/tas/api/departments"
@@ -654,6 +654,7 @@ function Set-TopdeskPersonIsManager {
         $TopdeskPerson.status = $isManager
     }
 }
+
 function Set-TopdeskPerson {
     [CmdletBinding()]
     param (
