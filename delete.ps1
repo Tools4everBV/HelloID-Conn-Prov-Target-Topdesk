@@ -283,9 +283,9 @@ try {
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not create person. Error: $($ex.ErrorDetails.Message)"
+        $errorMessage = "Could not archive person. Error: $($ex.ErrorDetails.Message)"
     } else {
-        $errorMessage = "Could not create person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not archive person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
 
     $auditLogs.Add([PSCustomObject]@{
