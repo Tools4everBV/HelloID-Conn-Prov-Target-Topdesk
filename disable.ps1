@@ -33,7 +33,7 @@ if(-Not($dryRun -eq $true)){
     try {
         $lookupFailure = $false
 
-        Write-Verbose -Verbose -Message "Archiving reason lookup..."
+        Write-Verbose -Message "Archiving reason lookup..."
         if ([string]::IsNullOrEmpty($PersonArchivingReason.id)) {
             $auditMessage = $auditMessage + "; Archiving reason is not set'"
             $lookupFailure = $true
@@ -45,7 +45,7 @@ if(-Not($dryRun -eq $true)){
             $archivingReason = $responseArchivingReason | Where-object name -eq $PersonArchivingReason.id
 
             if ([string]::IsNullOrEmpty($archivingReason.id) -eq $true) {
-                Verbose -Verbose -Message "Archiving Reason '$($PersonArchivingReason.id)' not found"
+                Write-Verbose -Verbose -Message "Archiving Reason '$($PersonArchivingReason.id)' not found"
                 $auditMessage = $auditMessage + "; Archiving Reason '$($PersonArchivingReason.id)' not found"
                 $lookupFailure = $true
                 Write-Verbose -Verbose -Message "Archiving Reason lookup failed"
