@@ -19,6 +19,6 @@ try {
     write-output $permissions | ConvertTo-Json -Depth 10
 } catch {
     $ex = $PSItem
-    $errorMessage = "Could not retrieve TOPdesk permissions. Error: $($ex.Exception.Message)"
+    $errorMessage = "Could not retrieve Topdesk permissions. Error: $($ex.Exception.Message)"
     Write-Verbose $errorMessage
 }

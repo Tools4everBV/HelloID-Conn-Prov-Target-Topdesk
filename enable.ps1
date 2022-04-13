@@ -85,8 +85,8 @@ $account = [PSCustomObject]@{
     gennder             = New-TopdeskGender -Person $p
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
-    networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
+    networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
+    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = 'Fixed branch' } #$p.PrimaryContract.Location.Name
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
@@ -164,6 +164,7 @@ function Invoke-TopdeskRestMethod {
         }
     }
 }
+
 function Get-TopdeskBranch {
     [CmdletBinding()]
     param (
@@ -568,6 +569,7 @@ function Get-TopdeskPersonManager {
         Write-Output $personManager
     }
 }
+
 function Set-TopdeskPersonArchiveStatus {
     [CmdletBinding()]
     param (

@@ -13,7 +13,6 @@
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"ChangeType": "Simple",
-			"ExternalNumber": null,
 			"Impact": "Persoon",
 			"Benefit": null,
 			"Priority": "P1"
@@ -27,7 +26,6 @@
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"ChangeType": "Simple",
-			"ExternalNumber": null,
 			"Impact": "Persoon",
 			"Benefit": null,
 			"Priority": "P1"
@@ -47,7 +45,6 @@
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"ChangeType": "Simple",
-			"ExternalNumber": null,
 			"Impact": "Persoon",
 			"Benefit": null,
 			"Priority": "P1"
@@ -61,7 +58,6 @@
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"ChangeType": "Simple",
-			"ExternalNumber": null,
 			"Impact": "Persoon",
 			"Benefit": null,
 			"Priority": "P1"
@@ -81,7 +77,6 @@
 			"Category": "Hardware",
 			"SubCategory": "Smartphone",
 			"ChangeType": "Extensive",
-			"ExternalNumber": null,
 			"Impact": "Persoon",
 			"Benefit": null,
 			"Priority": null
@@ -103,7 +98,6 @@
 			"Category": "Accountbeheer",
 			"SubCategory": "Account",
 			"ChangeType": "Extensive",
-			"ExternalNumber": null,
 			"Impact": "Persoon",
 			"Benefit": null,
 			"Priority": null

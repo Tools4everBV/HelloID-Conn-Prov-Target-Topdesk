@@ -67,9 +67,9 @@ function New-TopdeskGender {
     )
 
     $gender = switch($person.details.Gender) {
-        "M" { "MALE"}
-        "V" { "FEMALE"}
-        default { 'UNDEFINED'}
+        "M" { "MALE" }
+        "V" { "FEMALE" }
+        default { 'UNDEFINED' }
     }
 
     Write-Output $gender
@@ -84,8 +84,8 @@ $account = [PSCustomObject]@{
     gennder             = New-TopdeskGender -Person $p
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
-    networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.SamAccountName
+    networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
+    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = 'Fixed branch' } #$p.PrimaryContract.Location.Name
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
@@ -837,6 +837,9 @@ try {
         $action = 'Correlate'
         # example to only set certain attributes when creating a person, but skip them when updating
         # $Account.PSObject.Properties.Remove('showDepartment')
+
+        # Do not change isManager when correlatingserPrincipalName
+        $Account.PSObject.Properties.Remove('isManager')
     }
 
     # Add an auditMessage showing what will happen during enforcement
