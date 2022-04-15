@@ -281,7 +281,40 @@ function Get-TopdeskRequesterByType {
     Write-Output $responseGet.id
 }
 
+function Get-TopdeskChangeType {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        #[ValidateNotNullOrEmpty()]
+        [string]
+        $changeType,                        # 'simple' or 'extensive'
 
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
+    )
+
+    # Show audit message if type is empty
+    if ([string]::IsNullOrEmpty($changeType)) {
+        $errorMessage = "The change type is not set. It should be set to 'simple' or 'Extensive'"
+        $auditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
+        return
+    }
+
+    # Show audit message if type is not 
+    if (-not ($changeType -eq 'simple' -or $changeType -eq 'extensive')) {
+        $errorMessage = "The configured change type [$changeType] is invalid. It should be set to 'simple' or 'extensive'"
+        $auditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
+        return
+    }
+
+    return $ChangeType.ToLower()
+}
 
 #endregion
 
@@ -295,19 +328,22 @@ try {
     #Get-TopdeskChangePriority
 
 #region lookuptemplate
-
-    # Lookup template from json file
+    if ($config.notifications.disable -eq $true) {
+        Throw "Notifications are disabled"
+    }
+    
+# Lookup template from json file
     $splatParamsHelloIdTopdeskTemplate = @{
         Headers          = $Headers
         baseUrl          = $baseUrl
         Id               = $pRef.id
-        AuditLogs        = $auditLogs
+        AuditLogs        = [Ref]$auditLogs
     }
     $template = Get-HelloIdTopdeskTemplateById @splatParamsHelloIdTopdeskTemplate
 
     # If template is not empty (both by design or due to an error), process to lookup the information in the template
     if ([string]::IsNullOrEmpty($template)) {
-        Throw 'HelloID Template not found'
+        Throw 'HelloID template not found'
     }
 
     # Lookup Topdesk template id (sja xyz)
@@ -315,33 +351,124 @@ try {
         Headers          = $Headers
         baseUrl          = $baseUrl
         Id               = $template.Template
-        AuditLogs        = $auditLogs
+        AuditLogs        = [Ref]$auditLogs
     }
-    $template = Get-TopdeskTemplateById @splatParamsTopdeskTemplate
+    $templateId = Get-TopdeskTemplateById @splatParamsTopdeskTemplate
+
+    # Add value to  request object
+    $requestObject += @{
+        template = @{
+            id = $templateId
+        }
+    }
 
     # Resolve variables in the BriefDescription field
     $splatParamsBriefDescription = @{
         description       = $template.BriefDescription
     }
-    $briefDescription = Format-Description -@splatParamsBriefDescription
+    $briefDescription = Format-Description @splatParamsBriefDescription
+
+    # Add value to request object
+    $requestObject += @{
+        briefDescription = $briefDescription
+    }
+
 
     # Resolve variables in the request field
     $splatParamsRequest = @{
-        description       = $template.request
+        description       = $template.Request
     }
-    $request = Format-Description -@splatParamsRequest
+    $request = Format-Description @splatParamsRequest
+
+    # Add value to request object
+    $requestObject += @{
+        request = $request
+    }
 
     # Resolve requester
     $splatParamsTopdeskRequester = @{
-        Headers          = $Headers
-        baseUrl          = $baseUrl
-        Type             = $template.requester
-        AuditLogs        = $auditLogs
+        Headers                 = $Headers
+        baseUrl                 = $baseUrl
+        Type                    = $template.Requester
+        accountReference        = $aRef
+        managerAccountReference = $mRef
+        AuditLogs               = $auditLogs
     }
-    $requester = Get-TopdeskRequesterByType @splatParamsTopdeskRequester
+    $requesterId = Get-TopdeskRequesterByType @splatParamsTopdeskRequester
 
+    # Add value to request object
+    $requestObject += @{
+        requester = @{
+            id = $requesterId
+        }
+    }
 
     # Validate change type
+    $splatParamsTopdeskTemplate = @{
+        changeType       = $template.ChangeType
+        AuditLogs        = [Ref]$auditLogs
+    }
+    $changeType = Get-TopdeskChangeType @splatParamsTopdeskTemplate
+    
+    # Add value to request object
+    $requestObject += @{
+        changeType  = @{
+            changeType = $changeType
+        }
+    }
+
+    ## Support for optional parameters, are only added when they exist and are not set to null
+    # Action
+    if (-not [string]::IsNullOrEmpty($template.Action)) {
+        $requestObject += @{
+            action = $template.Action
+        }
+    }
+
+    # Category
+    if (-not [string]::IsNullOrEmpty($template.Category)) {
+        $requestObject += @{
+            category = $template.Category
+        }
+    }
+
+    # SubCategory
+    if (-not [string]::IsNullOrEmpty($template.SubCategory)) {
+        $requestObject += @{
+            subCategory = $template.SubCategory
+        }
+    }
+
+    # ExternalNumber
+    if (-not [string]::IsNullOrEmpty($template.ExternalNumber)) {
+        $requestObject += @{
+            externalNumber = $template.ExternalNumber
+        }
+    }
+
+    # Impact
+    if (-not [string]::IsNullOrEmpty($template.Impact)) {
+        $requestObject += @{
+            impact = $template.Impact
+        }
+    }
+
+    # Benefit
+    if (-not [string]::IsNullOrEmpty($template.Benefit)) {
+        $requestObject += @{
+            benefit = $template.Benefit
+        }
+    }
+
+    # Priority
+    if (-not [string]::IsNullOrEmpty($template.Priority)) {
+        $requestObject += @{
+            priority = $template.Priority
+        }
+    }
+
+    # alles is goed. 
+
 
     # Something with the person. If the person is archived, unarchive the person (employee/manager) rearchive afterwards
 
@@ -353,11 +480,8 @@ try {
 
 
 
-# alles is goed. Check of the berichten verzonden moeten worden (Dit moet wellicht --voor-- de lookup fase uitgevoerd worden.)
-if ($config.notifications.disable -eq $true) {
-    $dryRun = $true
-    $success = $true
-}
+
+
     # Add an auditMessage showing what will happen during enforcement
     if ($dryRun -eq $true) {
         $auditLogs.Add([PSCustomObject]@{
@@ -377,29 +501,41 @@ if ($config.notifications.disable -eq $true) {
 } catch {
     $success = $false
     $ex = $PSItem
+    #another option: "Notifications are disabled"
+
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
     } else {
         $errorMessage = "Could not $action person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
-    }
+    } 
 
-    # Only log when there are no lookup values, as these generate their own audit message
-    if ($ex.Exception.Message -eq 'HelloID Template not found') {
-        $success = -not($auditLogs.isError -contains -$true)
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
-    }
+    switch ($ex.Exception.Message) {
 
-    # Only log when there are no lookup values, as these generate their own audit message
-    if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
+        'HelloID Template not found' { 
+                # Only log when there are no lookup values, as these generate their own audit message
+                $success = -not($auditLogs.isError -contains $true)
+        } 
+        
+        'Error(s) occured while looking up required values' { 
+            # Only log when there are no lookup values, as these generate their own audit message
+        }
 
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        'Notifications are disabled' {
+            # Don't do anything when notifications are disabled
+            $message = 'Not creating Topdesk change, because the notifications are disabled in the connector configuration.'
+            $auditLogs.Add([PSCustomObject]@{
+                Message = $message
+                IsError = $false
+            })
+            
+
+        } default {
+            $auditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+        }
     }
 # End
 } finally {
