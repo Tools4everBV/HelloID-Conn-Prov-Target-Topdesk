@@ -41,8 +41,8 @@ function New-TopdeskIncident{
     $uriCallTypes = $url + "/incidents/call_types"
     $uriCallerEmail = $url + "/persons?email=$($incidentObject.CallerEmail)"
     $uriUrgencies = $url + "/incidents/urgencies"
+    $uriDurations = $url + "/incidents/durations"
 
-  
     if($incidentObject.Branch){
         Write-Verbose -Verbose "Branch is specified. Checking whether the branch exists"
         try{
@@ -69,7 +69,34 @@ function New-TopdeskIncident{
             }
         }
     }
-	
+
+    if($incidentObject.Duration){
+        Write-Verbose -Verbose "Duration is specified. Checking whether the duration exists"
+        try{
+            $responseDurations = Invoke-WebRequest -Uri $uriDurations -Method GET -ContentType $contentType -Headers $headers -UseBasicParsing | ConvertFrom-Json
+            $durationAssign = $responseDurations | Where-Object{$_.id -eq $incidentObject.Duration} 
+            if($null -eq $durationAssign){
+                Write-Verbose -Verbose "Duration '$($incidentObject.Duration)' not found, duration is ignored"
+            }elseif("2" -le $durationAssign.count){
+                Write-Verbose -Verbose "Multiple Durations '$($incidentObject.Duration)' found, duration is ignored"            
+            }else{
+                $requestObject += @{
+                    duration = @{
+                        id = $durationAssign.id
+                    }
+                }
+                Write-Verbose -Verbose "Added duration '$($durationAssign.name)' to the request"
+            }
+        }catch{
+            if($_.Exception.Message -eq "The remote server returned an error: (400) Bad Request."){
+                $message  = ($_.ErrorDetails.Message | convertFrom-Json).message
+                throw "Could not get durations, errorcode: '0x$('{0:X8}' -f $_.Exception.HResult)', message: $($_.Exception.Message) $message"
+            }else{
+                throw "Could not get durations, errorcode: '0x$('{0:X8}' -f $_.Exception.HResult)', message: $($_.Exception.Message)"
+            }
+        }
+    }
+
     if($incidentObject.OperatorGroup){
         Write-Verbose -Verbose "Getting operator groups"
         try{
@@ -442,7 +469,7 @@ function New-TopdeskIncident{
 $incidentList = Get-Content -Raw -Path $path | ConvertFrom-Json
 $incident = $incidentList | Where-Object { ($_.Identification.Id -eq $pRef.id) -and ($_.HelloIDAction -eq "Grant") } | Select-Object -Property * -ExcludeProperty DisplayName, Identification, HelloIDAction
 
-if (-Not($dryRun -eq $True)) {
+if (-Not($dryRun -eq $False)) {
     if (![string]::IsNullOrEmpty($incident)) {
         try {
             $incident.RequestDescription = Invoke-Expression "`"$($incident.RequestDescription)`""
