@@ -101,7 +101,7 @@ $account = [PSCustomObject]@{
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     jobTitle            = $p.PrimaryContract.Title.Name
-    branch              = @{ lookupValue = $p.Location.Name } # or  'Fixed branch' 
+    branch              = @{ lookupValue = $p.$p.PrimaryContract.Location.Name } # or  'Fixed branch' 
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
     budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     isManager           = $false
