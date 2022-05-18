@@ -3,6 +3,7 @@
 #
 # Version: 2.0
 #####################################################
+$dryRun = $false`
 
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
@@ -79,7 +80,7 @@ function Invoke-TopdeskRestMethod {
                 Method      = $Method
                 ContentType = $ContentType
             }
-
+  
             if ($Body) {
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
@@ -115,7 +116,7 @@ function Get-HelloIdTopdeskTemplateById {
 
     # Check if file exists.
     try {
-        $permissionList = Get-Content -Raw -Path $config.notificationJsonPath | ConvertFrom-Json
+        $permissionList = Get-Content -Raw -Encoding utf8 -Path $config.notificationJsonPath | ConvertFrom-Json
     } catch {
         $ex = $PSItem
         $errorMessage = "Could not retrieve Topdesk permissions file. Error: $($ex.Exception.Message)"
@@ -216,6 +217,37 @@ function Format-Description {
     Write-Output $descriptionFormatted
 }
 
+function Confirm-Description {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Description,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $AttributeName,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $AllowedLength,
+
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
+    )
+
+    if ($Description.Length -gt $AllowedLength) {
+        $errorMessage = "The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten this attribute iin the JSON file. (Value: [$Description)"
+        $auditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
+    }
+}
+
 function Get-TopdeskRequesterByType {
     [CmdletBinding()]
     param (
@@ -263,7 +295,7 @@ function Get-TopdeskRequesterByType {
     # Validate employee entry
     if ($type -eq 'manager') {
         if ([string]::IsNullOrEmpty($managerAccountReference) -And [string]::IsNullOrEmpty($managerFallback)) {
-            
+
             $errorMessage = "Could not set requester: The manager account reference is empty and no fallback email is configured."
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
@@ -326,7 +358,7 @@ function Get-TopdeskChangeType {
 
     # Show audit message if type is empty
     if ([string]::IsNullOrEmpty($changeType)) {
-        $errorMessage = "The change type is not set. It should be set to 'simple' or 'Extensive'"
+        $errorMessage = "The change type is not set. It should be set to 'simple' or 'extensive'"
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -370,11 +402,12 @@ function New-TopdeskChange {
     )
 
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/operatorChanges"
+        Uri     = "$BaseUrl/tas/api/operatorChanges"
         Method  = 'POST'
         Headers = $Headers
         Body    = $TopdeskChange | ConvertTo-Json
     }
+    Write-Verbose ($TopdeskChange | ConvertTo-Json)
     $change = Invoke-TopdeskRestMethod @splatParams
 
     Write-Verbose "Created change with number [$($change.number)]"
@@ -385,7 +418,7 @@ function New-TopdeskChange {
 #endregion
 
 try {
-#possibly todo
+    #possibly todo
     #Get-TopdeskChangeAction
     #Get-TopdeskChangeCategory
     #Get-TopdeskChangeSubCategory
@@ -407,7 +440,7 @@ try {
         AuditLogs       = [Ref]$auditLogs
     }
     $template = Get-HelloIdTopdeskTemplateById @splatParamsHelloIdTopdeskTemplate
-
+    
     # If template is not empty (both by design or due to an error), process to lookup the information in the template
     if ([string]::IsNullOrEmpty($template)) {
         Throw 'HelloID template not found'
@@ -419,7 +452,7 @@ try {
     # Lookup Topdesk template id (sja xyz)
     $splatParamsTopdeskTemplate = @{
         Headers          = $authHeaders
-        baseUrl          = $config.baseUrl
+        BaseUrl          = $config.baseUrl
         Id               = $template.Template
         AuditLogs        = [Ref]$auditLogs
     }
@@ -437,6 +470,15 @@ try {
         description       = $template.BriefDescription
     }
     $briefDescription = Format-Description @splatParamsBriefDescription
+
+    #Validate length of briefDescription
+    $splatParamsValidateBriefDescription = @{
+        Description      = $briefDescription
+        AllowedLength    = 80
+        AttributeName    = 'BriefDescription'
+        AuditLogs        = [Ref]$auditLogs
+    }
+    $null = Confirm-Description @splatParamsValidateBriefDescription
 
     # Add value to request object
     $requestObject += @{
@@ -535,8 +577,8 @@ try {
             priority = $template.Priority
         }
     }
-
-    if ($auditLogs.isError -contains -$true) {
+    
+    if ($auditLogs.isError -contains $true) {
         Throw "Error(s) occured while looking up required values"
     }
 
@@ -560,7 +602,7 @@ try {
             AuditLogs               = [Ref]$auditLogs
         }
         $TopdeskChange = New-TopdeskChange @splatParamsTopdeskChange
-    
+
     # Todo: stuff to requester (better make this a function)
     # Something with the person. If the person is archived, unarchive the person (employee/manager) rearchive afterwards
     # # Prepare manager record, if manager has to be set
@@ -605,22 +647,22 @@ try {
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Grant TOPdesk entitlement: [$($pRef.id)] with number [$($change.number)] was successful."
+            Message = "Grant TOPdesk entitlement: [$($pRef.id)] with number [$($TopdeskChange.number)] was successful."
             IsError = $false
         })
     }
 } catch {
     $success = $false
     $ex = $PSItem
-    Write-Verbose ($ex | ConvertTo-Json)
+    
     switch ($ex.Exception.Message) {
 
-        'HelloID Template not found' { 
+        'HelloID Template not found' {
                 # Only log when there are no lookup values, as these generate their own audit message, set success based on error state
                 $success = -Not($auditLogs.isError -contains $true)
         }
 
-        'Error(s) occured while looking up required values' { 
+        'Error(s) occured while looking up required values' {
             # Only log when there are no lookup values, as these generate their own audit message
         }
 
@@ -634,12 +676,13 @@ try {
             })
 
         } default {
+            Write-Verbose ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
                 $errorMessage ="Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
             } else {
                 $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
-            }
+            } 
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true

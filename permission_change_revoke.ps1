@@ -3,7 +3,7 @@
 #
 # Version: 2.0
 #####################################################
-$dryRun = $false
+$dryRun = $false`
 
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
@@ -72,7 +72,6 @@ function Invoke-TopdeskRestMethod {
         [System.Collections.IDictionary]
         $Headers
     )
-
     process {
         try {
             $splatParams = @{
@@ -81,7 +80,6 @@ function Invoke-TopdeskRestMethod {
                 Method      = $Method
                 ContentType = $ContentType
             }
-
             if ($Body) {
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
@@ -117,7 +115,7 @@ function Get-HelloIdTopdeskTemplateById {
 
     # Check if file exists.
     try {
-        $permissionList = Get-Content -Raw -Path $config.notificationJsonPath | ConvertFrom-Json
+        $permissionList = Get-Content -Raw -Encoding utf8 -Path $config.notificationJsonPath | ConvertFrom-Json
     } catch {
         $ex = $PSItem
         $errorMessage = "Could not retrieve Topdesk permissions file. Error: $($ex.Exception.Message)"
@@ -216,6 +214,37 @@ function Format-Description {
 
     $descriptionFormatted = $ExecutionContext.InvokeCommand.ExpandString($Description)
     Write-Output $descriptionFormatted
+}
+
+function Confirm-Description {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Description,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $AttributeName,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $AllowedLength,
+
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
+    )
+
+    if ($Description.Length -gt $AllowedLength) {
+        $errorMessage = "The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten this attribute iin the JSON file. (Value: [$Description)"
+        $auditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
+    }
 }
 
 function Get-TopdeskRequesterByType {
@@ -328,7 +357,7 @@ function Get-TopdeskChangeType {
 
     # Show audit message if type is empty
     if ([string]::IsNullOrEmpty($changeType)) {
-        $errorMessage = "The change type is not set. It should be set to 'simple' or 'Extensive'"
+        $errorMessage = "The change type is not set. It should be set to 'simple' or 'extensive'"
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -372,11 +401,12 @@ function New-TopdeskChange {
     )
 
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/operatorChanges"
+        Uri     = "$BaseUrl/tas/api/operatorChanges"
         Method  = 'POST'
         Headers = $Headers
         Body    = $TopdeskChange | ConvertTo-Json
     }
+
     $change = Invoke-TopdeskRestMethod @splatParams
 
     Write-Verbose "Created change with number [$($change.number)]"
@@ -387,7 +417,7 @@ function New-TopdeskChange {
 #endregion
 
 try {
-#possibly todo
+    #possibly todo
     #Get-TopdeskChangeAction
     #Get-TopdeskChangeCategory
     #Get-TopdeskChangeSubCategory
@@ -421,7 +451,7 @@ try {
     # Lookup Topdesk template id (sja xyz)
     $splatParamsTopdeskTemplate = @{
         Headers          = $authHeaders
-        baseUrl          = $config.baseUrl
+        BaseUrl          = $config.baseUrl
         Id               = $template.Template
         AuditLogs        = [Ref]$auditLogs
     }
@@ -440,11 +470,19 @@ try {
     }
     $briefDescription = Format-Description @splatParamsBriefDescription
 
+    #Validate length of briefDescription
+    $splatParamsValidateBriefDescription = @{
+        Description      = $briefDescription
+        AllowedLength    = 80
+        AttributeName    = 'BriefDescription'
+        AuditLogs        = [Ref]$auditLogs
+    }
+    $null = Confirm-Description @splatParamsValidateBriefDescription
+
     # Add value to request object
     $requestObject += @{
         briefDescription = $briefDescription
     }
-
 
     # Resolve variables in the request field
     $splatParamsRequest = @{
@@ -538,7 +576,7 @@ try {
         }
     }
 
-    if ($auditLogs.isError -contains -$true) {
+    if ($auditLogs.isError -contains $true) {
         Throw "Error(s) occured while looking up required values"
     }
 
@@ -546,13 +584,13 @@ try {
     if ($dryRun -eq $true) {
 
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Revoke Topdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)], will be executed during enforcement"
+            Message = "Revoke Topdesk entitlement: [$($pRef.id)] for: [$($p.DisplayName)], will be executed during enforcement"
         })
         Write-Verbose ($requestObject | ConvertTo-Json)
     }
 
     if (-not($dryRun -eq $true)) {
-        Write-Verbose "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
+        Write-Verbose "Revoking TOPdesk entitlement: [$($pRef.id)] for: [$($p.DisplayName)]"
 
         # Create change in Topdesk
         $splatParamsTopdeskChange = @{
@@ -607,22 +645,22 @@ try {
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Revoke TOPdesk entitlement: [$($pRef.id)] with number [$($change.number)] was successful."
+            Message = "Revoke TOPdesk entitlement: [$($pRef.id)] with number [$($TopdeskChange.number)] was successful."
             IsError = $false
         })
     }
 } catch {
     $success = $false
     $ex = $PSItem
-    Write-Verbose ($ex | ConvertTo-Json)
+
     switch ($ex.Exception.Message) {
 
-        'HelloID Template not found' { 
+        'HelloID Template not found' {
                 # Only log when there are no lookup values, as these generate their own audit message, set success based on error state
                 $success = -Not($auditLogs.isError -contains $true)
         }
 
-        'Error(s) occured while looking up required values' { 
+        'Error(s) occured while looking up required values' {
             # Only log when there are no lookup values, as these generate their own audit message
         }
 
@@ -636,13 +674,13 @@ try {
             })
 
         } default {
+            Write-Verbose ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
                 $errorMessage ="Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
             } else {
                 $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
             }
-
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
