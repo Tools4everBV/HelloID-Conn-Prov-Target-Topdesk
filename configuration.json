@@ -41,6 +41,16 @@
     }
   },
   {
+    "key": "notificationRequesterFallback",
+    "type": "input",
+    "defaultValue": "",
+    "templateOptions": {
+      "label": "Fallback email",
+      "description": "When a manager is set as the requester but the manager account reference is empty",
+      "required": false
+    }
+  },
+  {
     "key": "isDebug",
     "type": "checkbox",
     "defaultValue": true,
