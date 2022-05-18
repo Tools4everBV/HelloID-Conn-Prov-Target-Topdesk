@@ -639,7 +639,7 @@ try {
                 $errorMessage ="Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
             } else {
                 $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
-            } 
+            }
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
