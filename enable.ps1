@@ -49,13 +49,26 @@ function New-TopdeskSurname {
     }
 
     $TopdeskSurname = switch($person.Name.Convention) {
-                    "B"  { $prefix + $person.Name.FamilyName }
-                    "BP" { $prefix + $person.Name.FamilyName + " - " + $partnerprefix + $person.Name.FamilyNamePartner }
-                    "P"  { $partnerPrefix + $person.Name.FamilyNamePartner }
-                    "PB" { $partnerPrefix + $person.Name.FamilyNamePartner + " - " + $prefix + $person.Name.FamilyName }
+                    "B"  { $person.Name.FamilyName }
+                    "BP" { $person.Name.FamilyName + " - " + $partnerprefix + $person.Name.FamilyNamePartner }
+                    "P"  { $person.Name.FamilyNamePartner }
+                    "PB" { $person.Name.FamilyNamePartner + " - " + $prefix + $person.Name.FamilyName }
                     default { $prefix + $person.Name.FamilyName }
     }
-    Write-Output $TopdeskSurname
+
+    $TopdeskPrefix = switch($person.Name.Convention) {
+                    "B"  { $prefix }
+                    "BP" { $prefix }
+                    "P"  { $partnerPrefix }
+                    "PB" { $partnerPrefix }
+                    default { $prefix }
+    }
+
+    $output = [PSCustomObject]@{
+        prefixes    = $TopdeskPrefix
+        surname     = $TopdeskSurname
+    }
+    Write-Output $output
 }
 
 function New-TopdeskGender {
@@ -68,9 +81,9 @@ function New-TopdeskGender {
     )
 
     $gender = switch($person.details.Gender) {
-        "M" { "MALE"}
-        "V" { "FEMALE"}
-        default { 'UNDEFINED'}
+        "M" { "MALE" }
+        "V" { "FEMALE" }
+        default { 'UNDEFINED' }
     }
 
     Write-Output $gender
@@ -79,21 +92,22 @@ function New-TopdeskGender {
 # Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
 # https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
 $account = [PSCustomObject]@{
-    surName             = New-TopdeskSurname -Person $p        # Generate surname according to the naming convention code.
+    surName             = (New-TopdeskSurname -Person $p).surname       # Generate surname according to the naming convention code.
+    prefixes            = (New-TopdeskSurname -Person $p).prefixes
     firstName           = $p.Name.NickName
     firstInitials       = $p.Name.Initials
-    gennder             = New-TopdeskGender -Person $p
+    gender              = New-TopdeskGender -Person $p
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     jobTitle            = $p.PrimaryContract.Title.Name
-    branch              = @{ lookupValue = 'Fixed branch' } #$p.PrimaryContract.Location.Name
+    branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-    budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
+    #budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     #isManager           = $false
     manager             = @{ id = $mRef }
-    showDepartment      = $true
+    #showDepartment      = $true
 }
 #endregion mapping
 
@@ -155,7 +169,6 @@ function Invoke-TopdeskRestMethod {
                 ContentType = $ContentType
             }
             if ($Body) {
-                Write-Verbose 'Adding body to request'
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
             Invoke-RestMethod @splatParams -Verbose:$false
@@ -182,7 +195,6 @@ function Get-TopdeskBranch {
         [Object]
         [ref]$Account,
 
-        #[Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -229,13 +241,13 @@ function Get-TopdeskBranch {
         } else {
 
             # Branch is found in Topdesk, set in Topdesk
-            $Account.branch.PSObject.Properties.Remove('lookupValue')
-            $Account.branch | Add-Member -NotePropertyName id -NotePropertyValue $branch.id
+            $Account.branch.Remove('lookupValue')
+            $Account.branch.Add('id', $branch.id)
         }
     }
 }
 
-function Get-TopdesDepartment {
+function Get-TopdeskDepartment {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -265,7 +277,7 @@ function Get-TopdesDepartment {
     )
 
     # Check if department.lookupValue property exists in the account object set in the mapping
-    if (-not($account.department.Keys -Contains 'lookupValue')) {
+    if (-not($Account.department.Keys -Contains 'lookupValue')) {
         $errorMessage = "Requested to lookup department, but department.lookupValue is not set. This is a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
@@ -275,7 +287,7 @@ function Get-TopdesDepartment {
     }
 
     # When department.lookupValue is null or empty (it is empty in the source or it's a mapping error)
-    if ([string]::IsNullOrEmpty($account.department.lookupValue)) {
+    if ([string]::IsNullOrEmpty($Account.department.lookupValue)) {
         if ([System.Convert]::ToBoolean($LookupErrorHrDepartment)) {
 
             # True, no department in lookup value = throw error
@@ -287,9 +299,9 @@ function Get-TopdesDepartment {
         } else {
 
             # False, no department in lookup value = clear value
-            Write-Verbose "Clearing department. (lookupErrorHrdDepartment = False)"
-            $account.department.PSObject.Properties.Remove('lookupValue')
-            $account.department | Add-Member -NotePropertyName id -NotePropertyValue $null
+            Write-Verbose "Clearing department. (lookupErrorHrDepartment = False)"
+            $Account.department.PSObject.Properties.Remove('lookupValue')
+            $Account.department | Add-Member -NotePropertyName id -NotePropertyValue $null
         }
     } else {
 
@@ -300,14 +312,14 @@ function Get-TopdesDepartment {
             Headers = $Headers
         }
         $responseGet = Invoke-TopdeskRestMethod @splatParams
-        $department = $responseGet | Where-object name -eq $account.department.lookupValue
+        $department = $responseGet | Where-object name -eq $Account.department.lookupValue
 
         # When department is not found in Topdesk
         if ([string]::IsNullOrEmpty($department.id)) {
             if ([System.Convert]::ToBoolean($LookupErrorTopdesk)) {
 
                 # True, no department found = throw error
-                $errorMessage = "Department [$($account.department.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
+                $errorMessage = "Department [$($Account.department.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
                 $auditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
@@ -315,14 +327,15 @@ function Get-TopdesDepartment {
             } else {
 
                 # False, no department found = remove department field (leave empty on creation or keep current value on update)
-                $account.PSObject.Properties.Remove('department')
+                $Account.department.Remove('lookupValue')
+                $Account.PSObject.Properties.Remove('department')
                 Write-Verbose "Not overwriting or setting department as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
             }
         } else {
 
             # Department is found in Topdesk, set in Topdesk
-            $account.department.PSObject.Properties.Remove('lookupValue')
-            $account.department | Add-Member -NotePropertyName id -NotePropertyValue $department.id
+            $Account.department.Remove('lookupValue')
+            $Account.department.Add('id', $department.id)
         }
     }
 }
@@ -357,7 +370,7 @@ function Get-TopdeskBudgetHolder {
     )
 
     # Check if budgetholder.lookupValue property exists in the account object set in the mapping
-    if (-not($account.budgetholder.Keys -Contains 'lookupValue')) {
+    if (-not($Account.budgetholder.Keys -Contains 'lookupValue')) {
         $errorMessage = "Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
@@ -367,7 +380,7 @@ function Get-TopdeskBudgetHolder {
     }
 
     # When budgetholder.lookupValue is null or empty (it is empty in the source or it's a mapping error)
-    if ([string]::IsNullOrEmpty($account.budgetholder.lookupValue)) {
+    if ([string]::IsNullOrEmpty($Account.budgetholder.lookupValue)) {
         if ([System.Convert]::ToBoolean($lookupErrorHrBudgetHolder)) {
 
             # True, no budgetholder in lookup value = throw error
@@ -379,8 +392,8 @@ function Get-TopdeskBudgetHolder {
         } else {
 
             # False, no budgetholder in lookup value = clear value
-            $account.budgetHolder.PSObject.Properties.Remove('lookupValue')
-            $account.budgetHolder | Add-Member -NotePropertyName id -NotePropertyValue $null
+            $Account.budgetHolder.PSObject.Properties.Remove('lookupValue')
+            $Account.budgetHolder | Add-Member -NotePropertyName id -NotePropertyValue $null
             Write-Verbose "Clearing budgetholder. (lookupErrorHrBudgetHolder = False)"
         }
     } else {
@@ -392,14 +405,14 @@ function Get-TopdeskBudgetHolder {
             Headers = $Headers
         }
         $responseGet = Invoke-TopdeskRestMethod @splatParams
-        $budgetHolder = $responseGet | Where-object name -eq $account.budgetHolder.lookupValue
+        $budgetHolder = $responseGet | Where-object name -eq $Account.budgetHolder.lookupValue
 
         # When budgetholder is not found in Topdesk
         if ([string]::IsNullOrEmpty($budgetHolder.id)) {
             if ([System.Convert]::ToBoolean($lookupErrorTopdesk)) {
 
                 # True, no budgetholder found = throw error
-                $errorMessage = "Budgetholder [$($account.budgetHolder.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
+                $errorMessage = "Budgetholder [$($Account.budgetHolder.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
                 $auditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
@@ -407,14 +420,15 @@ function Get-TopdeskBudgetHolder {
             } else {
 
                 # False, no budgetholder found = remove budgetholder field (leave empty on creation or keep current value on update)
-                $account.PSObject.Properties.Remove('budgetHolder')
+                $Account.budgetHolder.Remove('lookupValue')
+                $Account.PSObject.Properties.Remove('budgetHolder')
                 Write-Verbose "Not overwriting or setting Budgetholder as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
             }
         } else {
 
             # Budgetholder is found in Topdesk, set in Topdesk
-            $account.budgetHolder.PSObject.Properties.Remove('lookupValue')
-            $account.budgetHolder | Add-Member -NotePropertyName id -NotePropertyValue $budgetHolder.id
+            $Account.budgetHolder.Remove('lookupValue')
+            $Account.PSObject.Properties.Remove('budgetHolder')
         }
     }
 }
@@ -445,10 +459,9 @@ function Get-TopdeskPersonById {
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
 
-    # Output result if something was found. Result is empty when nothing is found (i think) - TODO: Test this!!!
+    # Output result if something was found. Result is empty when nothing is found (todo: test this)
     Write-Output $responseGet
 }
-
 function Get-TopdeskPerson {
     [CmdletBinding()]
     param (
@@ -484,7 +497,7 @@ function Get-TopdeskPerson {
     # AcountReference is available, query person
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $baseUrl
+        baseUrl                   = $BaseUrl
         PersonReference           = $AccountReference
     }
     $person = Get-TopdeskPersonById @splatParams
@@ -499,7 +512,6 @@ function Get-TopdeskPerson {
         Write-Output $person
     }
 }
-
 function Get-TopdeskPersonManager {
     [CmdletBinding()]
     param (
@@ -554,7 +566,7 @@ function Get-TopdeskPersonManager {
     # mRef is available, query manager
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $baseUrl
+        baseUrl                   = $BaseUrl
         PersonReference           = $managerReference
     }
     $personManager = Get-TopdeskPersonById @splatParams
@@ -608,7 +620,7 @@ function Set-TopdeskPersonArchiveStatus {
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/person/$($TopdeskPerson.id)/$archiveUri"
+            Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
         }
@@ -648,7 +660,7 @@ function Set-TopdeskPersonIsManager {
         }
         Write-Verbose "Set isManager to [$isManager] to person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/person/$($TopdeskPerson.id)"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
             Method  = 'PATCH'
             Headers = $Headers
             Body    = $body
@@ -683,7 +695,7 @@ function Set-TopdeskPerson {
 
     Write-Verbose "Updating person"
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/person/$($TopdeskPerson.id)"
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
         Method  = 'PATCH'
         Headers = $Headers
         Body    = $Account | ConvertTo-Json
@@ -758,41 +770,39 @@ try {
 
     # Prepare manager record, if manager has to be set
     if (-Not([string]::IsNullOrEmpty($account.manager.id))) {
-        if ($TopdeskManager.isManager -eq $false) {
-            if ($TopdeskManager.status -eq 'personArchived') {
+        if ($TopdeskManager.status -eq 'personArchived') {
 
-                # Unarchive person
-                $shouldArchive  = $true
-                $splatParamsManagerUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskManager
-                    Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
-                    Archive         = $false
-                }
-                Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
-            }
-
-            # Set isManager to true
-            $splatParamsManagerIsManager = @{
+            # Unarchive manager
+            $shouldArchive  = $true
+            $splatParamsManagerUnarchive = @{
                 TopdeskPerson   = [ref]$TopdeskManager
                 Headers         = $authHeaders
                 BaseUrl         = $config.baseUrl
-                IsManager       = $true
+                Archive         = $false
             }
-            Set-TopdeskPersonIsManager @splatParamsManagerIsManager
+            Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
+        }
 
-            # Archive manager if required
-            if ($shouldArchive -and $TopdeskManager.status -ne 'personArchived') {
+        # Set isManager to true
+        $splatParamsManagerIsManager = @{
+            TopdeskPerson   = [ref]$TopdeskManager
+            Headers         = $authHeaders
+            BaseUrl         = $config.baseUrl
+            IsManager       = $true
+        }
+        Set-TopdeskPersonIsManager @splatParamsManagerIsManager
 
-                # Archive manager
-                $splatParamsManagerArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskManager
-                    Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
-                    Archive         = $true
-                }
-                Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
+        # Archive manager if required
+        if ($shouldArchive -and $TopdeskManager.status -ne 'personArchived') {
+
+            # Archive manager
+            $splatParamsManagerArchive = @{
+                TopdeskPerson   = [ref]$TopdeskManager
+                Headers         = $authHeaders
+                BaseUrl         = $config.baseUrl
+                Archive         = $true
             }
+            Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
         }
     }
 
@@ -840,7 +850,12 @@ try {
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
+        if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+            $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
+        } else {
+            #$errorObj = Resolve-HTTPError -ErrorObject $ex
+            $errorMessage = "Could not $action person. Error: $($ex.Exception.Message)"
+        }
     } else {
         $errorMessage = "Could not $action person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
