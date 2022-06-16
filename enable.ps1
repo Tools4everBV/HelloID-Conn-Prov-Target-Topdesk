@@ -104,10 +104,10 @@ $account = [PSCustomObject]@{
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-    #budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
-    #isManager           = $false
+    budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
+    #isManager           = $false #Only set this on a new person
     manager             = @{ id = $mRef }
-    #showDepartment      = $true
+    #showDepartment      = $true #Example - Only set this on a new person
 }
 #endregion mapping
 
@@ -212,17 +212,16 @@ function Get-TopdeskBranch {
     # When branch.lookupValue is null or empty (it is empty in the source or it's a mapping error)
     if ([string]::IsNullOrEmpty($Account.branch.lookupValue)) {
 
-            # As branch is always a required field,  no branch in lookup value = error
-            $errorMessage = "The lookup value for Branch is empty but it's a required field."
-            $auditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+        # As branch is always a required field, no branch in lookup value = error
+        $errorMessage = "The lookup value for Branch is empty but it's a required field."
+        $auditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
     } else {
-
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/branches"
+            Uri     = "$BaseUrl/tas/api/branches"
             Method  = 'GET'
             Headers = $Headers
         }
@@ -512,6 +511,7 @@ function Get-TopdeskPerson {
         Write-Output $person
     }
 }
+
 function Get-TopdeskPersonManager {
     [CmdletBinding()]
     param (
@@ -523,6 +523,11 @@ function Get-TopdeskPersonManager {
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $lookupErrorNoManagerReference,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -547,7 +552,7 @@ function Get-TopdeskPersonManager {
     if ([string]::IsNullOrEmpty($Account.manager.id)) {
 
         # Check settings if it should clear the manager or generate an error
-        if (-Not ([System.Convert]::ToBoolean($lookupErrorNoManagerReference))) {
+        if ([System.Convert]::ToBoolean($lookupErrorNoManagerReference)) {
 
             # True, no manager id = throw error
             $errorMessage = "The manager reference is empty and the connector is configured to stop when this happens."
@@ -620,7 +625,7 @@ function Set-TopdeskPersonArchiveStatus {
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
         }
@@ -753,10 +758,11 @@ try {
 
     # get manager
     $splatParamsManager = @{
-        Account                   = [ref]$account
-        AuditLogs                 = [ref]$auditLogs
-        Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
+        Account                         = [ref]$account
+        AuditLogs                       = [ref]$auditLogs
+        Headers                         = $authHeaders
+        lookupErrorNoManagerReference   = $config.lookupErrorNoManagerReference
+        baseUrl                         = $config.baseUrl
     }
     $TopdeskManager = Get-TopdeskPersonManager @splatParamsManager
 
