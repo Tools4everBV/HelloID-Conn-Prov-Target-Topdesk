@@ -101,13 +101,14 @@ $account = [PSCustomObject]@{
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     jobTitle            = $p.PrimaryContract.Title.Name
-    branch              = @{ lookupValue = $p.$p.PrimaryContract.Location.Name } # or  'Fixed branch' 
+    branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }   # or  'Fixed branch' 
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
     budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     isManager           = $false
     manager             = @{ id = $mRef }
-    showDepartment      = $true # Example
+    showDepartment      = $true #Example
 }
+Write-Verbose ($account | ConvertTo-Json)
 
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
@@ -322,7 +323,6 @@ function Get-TopdeskDepartment {
                     IsError = $true
                 })
             } else {
-
                 # False, no department found = remove department field (leave empty on creation or keep current value on update)
                 $Account.department.Remove('lookupValue')
                 $Account.PSObject.Properties.Remove('department')
@@ -720,7 +720,7 @@ function Set-TopdeskPerson {
 
     Write-Verbose "Updating person"
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
         Method  = 'PATCH'
         Headers = $Headers
         Body    = $Account | ConvertTo-Json
@@ -755,7 +755,7 @@ function New-TopdeskPerson {
     }
 
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons"
+        Uri     = "$BaseUrl/tas/api/persons"
         Method  = 'POST'
         Headers = $Headers
         Body    = $Account | ConvertTo-Json
@@ -901,7 +901,8 @@ try {
         $action = 'Correlate'
         # example to only set certain attributes when creating a person, but skip them when updating
         # $Account.PSObject.Properties.Remove('showDepartment')
-        # Do not change isManager when correlatingserPrincipalName
+        
+        # Do not change isManager when correlating
         $account.PSObject.Properties.Remove('isManager')
     }
 
@@ -962,6 +963,7 @@ try {
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+        #write-verbose ($ex | ConvertTo-Json)
 
         if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
             $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
