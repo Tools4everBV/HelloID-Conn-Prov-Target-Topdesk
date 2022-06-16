@@ -82,7 +82,6 @@ function Invoke-TopdeskRestMethod {
                 ContentType = $ContentType
             }
             if ($Body) {
-                Write-Verbose 'Adding body to request'
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
             Invoke-RestMethod @splatParams -Verbose:$false
@@ -112,7 +111,7 @@ function Get-TopdeskPersonById {
 
     # Lookup value is filled in, lookup person in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons/id/$PersonReference"
+        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -160,7 +159,7 @@ function Set-TopdeskPersonArchiveStatus {
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/person/$($TopdeskPerson.id)/$archiveUri"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
         }
@@ -204,7 +203,7 @@ function Get-TopdeskPerson {
     # AcountReference is available, query person
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $baseUrl
+        baseUrl                   = $BaseUrl
         PersonReference           = $AccountReference
     }
     $person = Get-TopdeskPersonById @splatParams
@@ -223,6 +222,8 @@ function Get-TopdeskPerson {
 
 #region lookup
 try {
+    $action = 'Disable'
+
     # Setup authentication headers
     $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apiKey
 
@@ -268,9 +269,14 @@ try {
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not archive person. Error: $($ex.ErrorDetails.Message)"
+        if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+            $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
+        } else {
+            #$errorObj = Resolve-HTTPError -ErrorObject $ex
+            $errorMessage = "Could not $action person. Error: $($ex.Exception.Message)"
+        }
     } else {
-        $errorMessage = "Could not archive person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not $action person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
 
     $auditLogs.Add([PSCustomObject]@{
