@@ -101,14 +101,13 @@ $account = [PSCustomObject]@{
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     jobTitle            = $p.PrimaryContract.Title.Name
-    branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }   # or  'Fixed branch' 
+    branch              = @{ lookupValue = $p.PrimaryContract.Location.Name } # or 'Fixed branch'
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
     budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     isManager           = $false
     manager             = @{ id = $mRef }
     showDepartment      = $true #Example
 }
-Write-Verbose ($account | ConvertTo-Json)
 
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
@@ -215,16 +214,16 @@ function Get-TopdeskBranch {
 
     # When branch.lookupValue is null or empty (it is empty in the source or it's a mapping error)
     if ([string]::IsNullOrEmpty($Account.branch.lookupValue)) {
-           # As branch is always a required field,  no branch in lookup value = error
-            $errorMessage = "The lookup value for Branch is empty but it's a required field."
-            $auditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+        # As branch is always a required field, no branch in lookup value = error
+        $errorMessage = "The lookup value for Branch is empty but it's a required field."
+        $auditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
     } else {
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/branches"
+            Uri     = "$BaseUrl/tas/api/branches"
             Method  = 'GET'
             Headers = $Headers
         }
@@ -248,6 +247,7 @@ function Get-TopdeskBranch {
         }
     }
 }
+
 function Get-TopdeskDepartment {
     [CmdletBinding()]
     param (
@@ -278,7 +278,7 @@ function Get-TopdeskDepartment {
     )
 
     # Check if department.lookupValue property exists in the account object set in the mapping
-    if (-not($account.department.Keys -Contains 'lookupValue')) {
+    if (-not($Account.department.Keys -Contains 'lookupValue')) {
         $errorMessage = "Requested to lookup department, but department.lookupValue is not set. This is a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
@@ -288,8 +288,9 @@ function Get-TopdeskDepartment {
     }
 
     # When department.lookupValue is null or empty (it is empty in the source or it's a mapping error)
-    if ([string]::IsNullOrEmpty($account.department.lookupValue)) {
+    if ([string]::IsNullOrEmpty($Account.department.lookupValue)) {
         if ([System.Convert]::ToBoolean($LookupErrorHrDepartment)) {
+
             # True, no department in lookup value = throw error
             $errorMessage = "The lookup value for Department is empty and the connector is configured to stop when this happens."
             $auditLogs.Add([PSCustomObject]@{
@@ -297,12 +298,14 @@ function Get-TopdeskDepartment {
                 IsError = $true
             })
         } else {
+
             # False, no department in lookup value = clear value
-            Write-Verbose "Clearing department. (lookupErrorHrdDepartment = False)"
-            $account.department.PSObject.Properties.Remove('lookupValue')
-            $account.department | Add-Member -NotePropertyName id -NotePropertyValue $null
+            Write-Verbose "Clearing department. (lookupErrorHrDepartment = False)"
+            $Account.department.PSObject.Properties.Remove('lookupValue')
+            $Account.department | Add-Member -NotePropertyName id -NotePropertyValue $null
         }
     } else {
+
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
             Uri     = "$baseUrl/tas/api/departments"
@@ -310,19 +313,20 @@ function Get-TopdeskDepartment {
             Headers = $Headers
         }
         $responseGet = Invoke-TopdeskRestMethod @splatParams
-        $department = $responseGet | Where-object name -eq $account.department.lookupValue
+        $department = $responseGet | Where-object name -eq $Account.department.lookupValue
 
         # When department is not found in Topdesk
         if ([string]::IsNullOrEmpty($department.id)) {
             if ([System.Convert]::ToBoolean($LookupErrorTopdesk)) {
 
                 # True, no department found = throw error
-                $errorMessage = "Department [$($account.department.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
+                $errorMessage = "Department [$($Account.department.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
                 $auditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
                 })
             } else {
+
                 # False, no department found = remove department field (leave empty on creation or keep current value on update)
                 $Account.department.Remove('lookupValue')
                 $Account.PSObject.Properties.Remove('department')
@@ -367,7 +371,7 @@ function Get-TopdeskBudgetHolder {
     )
 
     # Check if budgetholder.lookupValue property exists in the account object set in the mapping
-    if (-not($account.budgetholder.Keys -Contains 'lookupValue')) {
+    if (-not($Account.budgetholder.Keys -Contains 'lookupValue')) {
         $errorMessage = "Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
@@ -377,7 +381,7 @@ function Get-TopdeskBudgetHolder {
     }
 
     # When budgetholder.lookupValue is null or empty (it is empty in the source or it's a mapping error)
-    if ([string]::IsNullOrEmpty($account.budgetholder.lookupValue)) {
+    if ([string]::IsNullOrEmpty($Account.budgetholder.lookupValue)) {
         if ([System.Convert]::ToBoolean($lookupErrorHrBudgetHolder)) {
 
             # True, no budgetholder in lookup value = throw error
@@ -389,8 +393,8 @@ function Get-TopdeskBudgetHolder {
         } else {
 
             # False, no budgetholder in lookup value = clear value
-            $account.budgetHolder.PSObject.Properties.Remove('lookupValue')
-            $account.budgetHolder | Add-Member -NotePropertyName id -NotePropertyValue $null
+            $Account.budgetHolder.PSObject.Properties.Remove('lookupValue')
+            $Account.budgetHolder | Add-Member -NotePropertyName id -NotePropertyValue $null
             Write-Verbose "Clearing budgetholder. (lookupErrorHrBudgetHolder = False)"
         }
     } else {
@@ -402,13 +406,14 @@ function Get-TopdeskBudgetHolder {
             Headers = $Headers
         }
         $responseGet = Invoke-TopdeskRestMethod @splatParams
-        $budgetHolder = $responseGet | Where-object name -eq $account.budgetHolder.lookupValue
+        $budgetHolder = $responseGet | Where-object name -eq $Account.budgetHolder.lookupValue
 
         # When budgetholder is not found in Topdesk
         if ([string]::IsNullOrEmpty($budgetHolder.id)) {
             if ([System.Convert]::ToBoolean($lookupErrorTopdesk)) {
+
                 # True, no budgetholder found = throw error
-                $errorMessage = "Budgetholder [$($account.budgetHolder.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
+                $errorMessage = "Budgetholder [$($Account.budgetHolder.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
                 $auditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
@@ -417,7 +422,7 @@ function Get-TopdeskBudgetHolder {
 
                 # False, no budgetholder found = remove budgetholder field (leave empty on creation or keep current value on update)
                 $Account.budgetHolder.Remove('lookupValue')
-                $account.PSObject.Properties.Remove('budgetHolder')
+                $Account.PSObject.Properties.Remove('budgetHolder')
                 Write-Verbose "Not overwriting or setting Budgetholder as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
             }
         } else {
@@ -456,7 +461,7 @@ function Get-TopdeskPersonByCorrelationAttribute {
     )
 
     # Check if the correlation attribute exists in the account object set in the mapping
-    if (-not([bool]$account.PSObject.Properties[$CorrelationAttribute])) {
+    if (-not([bool]$Account.PSObject.Properties[$CorrelationAttribute])) {
         $errorMessage = "The correlation attribute [$CorrelationAttribute] is  missing in the account mapping. This is a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
@@ -466,7 +471,7 @@ function Get-TopdeskPersonByCorrelationAttribute {
     }
 
     # Check if the correlationAttribute is not empty
-    if ([string]::IsNullOrEmpty($account.$CorrelationAttribute)) {
+    if ([string]::IsNullOrEmpty($Account.$CorrelationAttribute)) {
         $errorMessage = "The correlation attribute [$CorrelationAttribute] is empty. This is likely a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
@@ -477,7 +482,7 @@ function Get-TopdeskPersonByCorrelationAttribute {
 
     # Lookup value is filled in, lookup value in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons?page_size=2&query=$($correlationAttribute)=='$($account.$CorrelationAttribute)'"
+        Uri     = "$BaseUrl/tas/api/persons?page_size=2&query=$($CorrelationAttribute)=='$($Account.$CorrelationAttribute)'"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -523,7 +528,7 @@ function Get-TopdeskPersonById {
 
     # Lookup value is filled in, lookup person in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons/id/$PersonReference"
+        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -553,7 +558,7 @@ function Get-TopdeskPersonManager {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$Account,
+        $Account,
 
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
@@ -582,6 +587,7 @@ function Get-TopdeskPersonManager {
                 IsError = $true
             })
         } else {
+
             # False, as manager.Id is already empty, nothing needs to be done here
             Write-Verbose "Clearing manager. (lookupErrorNoManagerReference = False)"
         }
@@ -591,7 +597,7 @@ function Get-TopdeskPersonManager {
     # mRef is available, query manager
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $baseUrl
+        baseUrl                   = $BaseUrl
         PersonReference           = $managerReference
     }
     $personManager = Get-TopdeskPersonById @splatParams
@@ -645,7 +651,7 @@ function Set-TopdeskPersonArchiveStatus {
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
         }
@@ -685,7 +691,7 @@ function Set-TopdeskPersonIsManager {
         }
         Write-Verbose "Set isManager to [$isManager] to person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
             Method  = 'PATCH'
             Headers = $Headers
             Body    = $body
@@ -901,7 +907,7 @@ try {
         $action = 'Correlate'
         # example to only set certain attributes when creating a person, but skip them when updating
         # $Account.PSObject.Properties.Remove('showDepartment')
-        
+
         # Do not change isManager when correlating
         $account.PSObject.Properties.Remove('isManager')
     }
