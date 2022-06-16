@@ -452,7 +452,7 @@ function Get-TopdeskPersonById {
 
     # Lookup value is filled in, lookup person in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons/id/$PersonReference"
+        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -461,6 +461,7 @@ function Get-TopdeskPersonById {
     # Output result if something was found. Result is empty when nothing is found (todo: test this)
     Write-Output $responseGet
 }
+
 function Get-TopdeskPerson {
     [CmdletBinding()]
     param (
@@ -656,6 +657,7 @@ function Set-TopdeskPersonIsManager {
         [Bool]
         $isManager
     )
+
     # Check the current status of the Person and compare it with the status in ArchiveStatus
     if ($isManager -ne $TopdeskPerson.isManager) {
 
@@ -734,7 +736,7 @@ try {
         lookupErrorHrDepartment   = $config.lookupErrorHrDepartment
         lookupErrorTopdesk        = $config.lookupErrorTopdesk
     }
-    Get-TopdesDepartment @splatParamsDepartment
+    Get-TopdeskDepartment @splatParamsDepartment
 
     # Resolve budgetholder id
     $splatParamsBudgetholder = @{
