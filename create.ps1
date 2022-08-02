@@ -80,9 +80,9 @@ function New-TopdeskGender {
     )
 
     $gender = switch($person.details.Gender) {
-        "M" { "MALE"}
-        "V" { "FEMALE"}
-        default { 'UNDEFINED'}
+        "M" { "MALE" }
+        "V" { "FEMALE" }
+        default { 'UNDEFINED' }
     }
 
     Write-Output $gender
