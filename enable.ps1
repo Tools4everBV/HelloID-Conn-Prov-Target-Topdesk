@@ -102,12 +102,12 @@ $account = [PSCustomObject]@{
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
     jobTitle            = $p.PrimaryContract.Title.Name
-    branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }
+    branch              = @{ lookupValue = $p.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-    budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
-    #isManager           = $false #Only set this on a new person
+    #budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
+    #isManager           = $false
     manager             = @{ id = $mRef }
-    #showDepartment      = $true #Example - Only set this on a new person
+    #showDepartment      = $true
 }
 #endregion mapping
 
@@ -212,16 +212,17 @@ function Get-TopdeskBranch {
     # When branch.lookupValue is null or empty (it is empty in the source or it's a mapping error)
     if ([string]::IsNullOrEmpty($Account.branch.lookupValue)) {
 
-        # As branch is always a required field, no branch in lookup value = error
-        $errorMessage = "The lookup value for Branch is empty but it's a required field."
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+            # As branch is always a required field,  no branch in lookup value = error
+            $errorMessage = "The lookup value for Branch is empty but it's a required field."
+            $auditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
     } else {
+
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/branches"
+            Uri     = "$baseUrl/tas/api/branches"
             Method  = 'GET'
             Headers = $Headers
         }
@@ -452,16 +453,15 @@ function Get-TopdeskPersonById {
 
     # Lookup value is filled in, lookup person in Topdesk
     $splatParams = @{
-        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
+        Uri     = "$baseUrl/tas/api/persons/id/$PersonReference"
         Method  = 'GET'
         Headers = $Headers
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
 
-    # Output result if something was found. Result is empty when nothing is found (todo: test this)
+    # Output result if something was found. Result is empty when nothing is found
     Write-Output $responseGet
 }
-
 function Get-TopdeskPerson {
     [CmdletBinding()]
     param (
@@ -497,7 +497,7 @@ function Get-TopdeskPerson {
     # AcountReference is available, query person
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $BaseUrl
+        BaseUrl                   = $BaseUrl
         PersonReference           = $AccountReference
     }
     $person = Get-TopdeskPersonById @splatParams
@@ -533,7 +533,7 @@ function Get-TopdeskPersonManager {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Object]
-        $Account,
+        [Ref]$Account,
 
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
@@ -572,8 +572,8 @@ function Get-TopdeskPersonManager {
     # mRef is available, query manager
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $BaseUrl
-        PersonReference           = $managerReference
+        baseUrl                   = $baseUrl
+        PersonReference           = $Account.manager.id
     }
     $personManager = Get-TopdeskPersonById @splatParams
 
@@ -626,7 +626,7 @@ function Set-TopdeskPersonArchiveStatus {
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+            Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
         }
@@ -657,7 +657,6 @@ function Set-TopdeskPersonIsManager {
         [Bool]
         $isManager
     )
-
     # Check the current status of the Person and compare it with the status in ArchiveStatus
     if ($isManager -ne $TopdeskPerson.isManager) {
 
@@ -723,7 +722,7 @@ try {
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
+        BaseUrl                   = $config.baseUrl
     }
     Get-TopdeskBranch @splatParamsBranch
 
@@ -732,39 +731,39 @@ try {
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
-        lookupErrorHrDepartment   = $config.lookupErrorHrDepartment
-        lookupErrorTopdesk        = $config.lookupErrorTopdesk
+        BaseUrl                   = $config.baseUrl
+        LookupErrorHrDepartment   = $config.lookupErrorHrDepartment
+        LookupErrorTopdesk        = $config.lookupErrorTopdesk
     }
     Get-TopdeskDepartment @splatParamsDepartment
 
-    # Resolve budgetholder id
-    $splatParamsBudgetholder = @{
-        Account                   = [ref]$account
-        AuditLogs                 = [ref]$auditLogs
-        Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
-        lookupErrorHrBudgetholder = $config.lookupErrorHrBudgetholder
-        lookupErrorTopdesk        = $config.lookupErrorTopdesk
-    }
-    Get-TopdeskBudgetholder @splatParamsBudgetholder
+    # # Resolve budgetholder id
+    # $splatParamsBudgetholder = @{
+    #     Account                   = [ref]$account
+    #     AuditLogs                 = [ref]$auditLogs
+    #     Headers                   = $authHeaders
+    #     BaseUrl                   = $config.baseUrl
+    #     LookupErrorHrBudgetholder = $config.lookupErrorHrBudgetholder
+    #     LookupErrorTopdesk        = $config.lookupErrorTopdesk
+    # }
+    # Get-TopdeskBudgetholder @splatParamsBudgetholder
 
     # get person
     $splatParamsPerson = @{
         AccountReference          = $aRef
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
+        BaseUrl                   = $config.baseUrl
     }
     $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
     # get manager
     $splatParamsManager = @{
-        Account                         = [ref]$account
-        AuditLogs                       = [ref]$auditLogs
-        Headers                         = $authHeaders
-        lookupErrorNoManagerReference   = $config.lookupErrorNoManagerReference
-        baseUrl                         = $config.baseUrl
+        Account                   		= [ref]$account
+        AuditLogs                 		= [ref]$auditLogs
+        Headers                   		= $authHeaders
+        LookupErrorNoManagerReference 	= $config.lookupErrorNoManagerReference
+        baseUrl                   		= $config.baseUrl
     }
     $TopdeskManager = Get-TopdeskPersonManager @splatParamsManager
 
@@ -849,7 +848,7 @@ try {
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = " successfully"   # Might need to change the audit message after testing
+            Message = "Account with id [$($TopdeskPerson.id) successfully enabled"
             IsError = $false
         })
     }
@@ -879,9 +878,15 @@ try {
 } finally {
    $result = [PSCustomObject]@{
         Success          = $success
-        AccountReference = $accountReference
+        AccountReference = $aref
         Auditlogs        = $auditLogs
         Account          = $account
+        ExportData = [PSCustomObject]@{
+            externalId          = $aRef
+            employeeNumber      = $account.employeeNumber
+            networkLoginName    = $account.networkLoginName
+            tasLoginName        = $account.tasLoginName
+        }
     }
     Write-Output $result | ConvertTo-Json -Depth 10
 }
