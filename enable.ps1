@@ -111,7 +111,7 @@ $account = [PSCustomObject]@{
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-    #budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
+    budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     #isManager           = $false
     manager             = @{ id = $mRef }
     #showDepartment      = $true
