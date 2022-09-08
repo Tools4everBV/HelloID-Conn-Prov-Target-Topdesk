@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Resource-BudgetHolders
 #
-# Version: 1.0.0
+# Version: 2.0.0
 #####################################################
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
@@ -94,7 +94,7 @@ function Get-TOPdeskBudgetHolders {
     )
 
     $splatGoupParams = @{
-        Uri     = "$baseUrl/tas/api/budgethold"
+        Uri     = "$baseUrl/tas/api/budgetholders"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -120,7 +120,7 @@ function New-TOPdeskBudgetHolder {
     )
 
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/budgetholder"
+        Uri     = "$baseUrl/tas/api/budgetholders"
         Method  = 'POST'
         Headers = $Headers
         body    = @{name=$Name} | ConvertTo-Json
