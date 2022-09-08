@@ -88,6 +88,12 @@ function New-TopdeskGender {
     Write-Output $gender
 }
 
+function Get-RandomCharacters($length, $characters) { 
+    $random = 1..$length | ForEach-Object { Get-Random -Maximum $characters.length }
+    $private:ofs=""
+    return [String]$characters[$random]
+}
+
 # Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
 # https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
 $account = [PSCustomObject]@{
@@ -99,16 +105,18 @@ $account = [PSCustomObject]@{
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
+    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName    # When setting a username, a (dummy) password will need to be set.
+    password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-    #budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
+    budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     isManager           = $false
     manager             = @{ id = $mRef }
     #showDepartment      = $true
+    showAllBranches     = $true
 }
-Write-Verbose ($account | ConvertTo-Json)
+Write-Verbose ($account | ConvertTo-Json) # Debug output
 
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
@@ -399,7 +407,7 @@ function Get-TopdeskBudgetHolder {
 
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/budgetholders"
+            Uri     = "$BaseUrl/tas/api/budgetholders"
             Method  = 'GET'
             Headers = $Headers
         }
@@ -525,7 +533,7 @@ function Get-TopdeskPersonById {
 
     # Lookup value is filled in, lookup person in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons/id/$PersonReference"
+        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -550,7 +558,7 @@ function Get-TopdeskPersonManager {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
-        $lookupErrorNoManagerReference,
+        $LookupErrorNoManagerReference,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -593,7 +601,7 @@ function Get-TopdeskPersonManager {
     # mRef is available, query manager
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $baseUrl
+        BaseUrl                   = $BaseUrl
         PersonReference           = $Account.manager.id
     }
     $personManager = Get-TopdeskPersonById @splatParams
@@ -688,12 +696,12 @@ function Set-TopdeskPersonIsManager {
         $body = [PSCustomObject]@{
             isManager = $isManager
         }
-        Write-Verbose "Setting isManager to [$isManager] to person with networkLoginName [$($TopdeskPerson.networkLoginName)] and id [$($TopdeskPerson.id)]"
+        Write-Verbose "Setting flag isManager to [$isManager] to person with networkLoginName [$($TopdeskPerson.networkLoginName)] and id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
             Method  = 'PATCH'
             Headers = $Headers
-            Body    = $body
+            Body    = $body | ConvertTo-Json
         }
         $null = Invoke-TopdeskRestMethod @splatParams
         $TopdeskPerson.status = $isManager
@@ -808,7 +816,7 @@ try {
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
+        BaseUrl                   = $config.baseUrl
     }
     Get-TopdeskBranch @splatParamsBranch
 
@@ -817,22 +825,22 @@ try {
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
-        lookupErrorHrDepartment   = $config.lookupErrorHrDepartment
-        lookupErrorTopdesk        = $config.lookupErrorTopdesk
+        BaseUrl                   = $config.baseUrl
+        LookupErrorHrDepartment   = $config.lookupErrorHrDepartment
+        LookupErrorTopdesk        = $config.lookupErrorTopdesk
     }
     Get-TopdeskDepartment @splatParamsDepartment
 
     # # Resolve budgetholder id
-    # $splatParamsBudgetholder = @{
-    #     Account                   = [ref]$account
-    #     AuditLogs                 = [ref]$auditLogs
-    #     Headers                   = $authHeaders
-    #     baseUrl                   = $config.baseUrl
-    #     lookupErrorHrBudgetholder = $config.lookupErrorHrBudgetholder
-    #     lookupErrorTopdesk        = $config.lookupErrorTopdesk
-    # }
-    # Get-TopdeskBudgetholder @splatParamsBudgetholder
+    $splatParamsBudgetholder = @{
+        Account                   = [ref]$account
+        AuditLogs                 = [ref]$auditLogs
+        Headers                   = $authHeaders
+        BaseUrl                   = $config.baseUrl
+        lookupErrorHrBudgetholder = $config.lookupErrorHrBudgetholder
+        lookupErrorTopdesk        = $config.lookupErrorTopdesk
+    }
+    Get-TopdeskBudgetholder @splatParamsBudgetholder
 
     # get person
     $splatParamsPerson = @{
@@ -840,29 +848,20 @@ try {
         AuditLogs                 = [ref]$auditLogs
         CorrelationAttribute      = $correlationAttribute
         Headers                   = $authHeaders
-        baseUrl                   = $config.baseUrl
+        BaseUrl                   = $config.baseUrl
     }
     $TopdeskPerson = Get-TopdeskPersonByCorrelationAttribute @splatParamsPerson
     #Write-verbose ($TopdeskPerson | ConvertTo-Json)
 
     # get manager
-    #Write-verbose "TEST ACCOUNT"
-    #Write-verbose  ($account | ConvertTo-Json)
-    #Write-verbose "TEST auditLogs"
-    ##Write-verbose ($auditLogs | ConvertTo-Json)
-    #Write-verbose "TEST authHeaders"
-    #write-verbose ($authHeaders | ConvertTo-Json)
-    #Write-verbose "TEST config"
-    #write-verbose ($config | ConvertTo-Json)
-
     $splatParamsManager = @{
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
-        lookupErrorNoManagerReference = $config.lookupErrorNoManagerReference
-        baseUrl                   = $config.baseUrl
+        LookupErrorNoManagerReference = $config.lookupErrorNoManagerReference
+        BaseUrl                   = $config.baseUrl
     }
-    #write-verbose -verbose ($splatParamsManager | ConvertTo-Json)
+
     $TopdeskManager = Get-TopdeskPersonManager @splatParamsManager
 
     if ($auditLogs.isError -contains -$true) {
@@ -969,7 +968,7 @@ try {
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Account with id [$($TopdeskPerson.id) successfully created"
+            Message = "Account with id [$($TopdeskPerson.id)] successfully created"
             IsError = $false
         })
     }
