@@ -26,7 +26,7 @@ function Set-AuthorizationHeaders {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $UserName,
+        $Username,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -34,13 +34,14 @@ function Set-AuthorizationHeaders {
         $ApiKey
     )
     # Create basic authentication string
-    $bytes = [System.Text.Encoding]::ASCII.GetBytes("$UserName):$ApiKey)")
+    $bytes = [System.Text.Encoding]::ASCII.GetBytes("${Username}:${Apikey}")
     $base64 = [System.Convert]::ToBase64String($bytes)
 
     # Set authentication headers
     $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
     $authHeaders.Add("Authorization", "BASIC $base64")
     $authHeaders.Add("Accept", 'application/json')
+
     Write-Output $authHeaders
 }
 
@@ -76,7 +77,6 @@ function Invoke-TOPdeskRestMethod {
                 ContentType = $ContentType
             }
             if ($Body) {
-                Write-Verbose 'Adding body to request'
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
             Invoke-RestMethod @splatParams -Verbose:$false
@@ -92,21 +92,23 @@ function Get-TOPdeskDepartments {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $baseUrl,
+        $BaseUrl,
+
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers
     )
 
-    $splatGoupParams = @{
+    $splatParams = @{
         Uri     = "$baseUrl/tas/api/departments"
         Method  = 'GET'
         Headers = $Headers
     }
-    $responseGet = Invoke-TOPdeskRestMethod @splatGoupParams
+
+    $responseGet = Invoke-TOPdeskRestMethod @splatParams
     Write-Verbose "Retrieved $($responseGet.count) departments from TOPdesk"
     Write-Output $responseGet
-    }
+}
 
 function New-TOPdeskDepartment {
     [CmdletBinding()]
@@ -115,17 +117,19 @@ function New-TOPdeskDepartment {
         [ValidateNotNullOrEmpty()]
         [string]
         $Name,
+
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $baseUrl,
+
+        $BaseUrl,
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers
     )
 
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/departments"
+        Uri     = "$BaseUrl/tas/api/departments"
         Method  = 'POST'
         Headers = $Headers
         body    = @{name=$Name} | ConvertTo-Json
@@ -134,26 +138,56 @@ function New-TOPdeskDepartment {
     Write-Verbose "Created department with name [$($name)] and id [$($responseCreate.id)] in TOPdesk"
     Write-Output $responseCreate
 }
+
+
+function Resolve-HTTPError {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory,
+            ValueFromPipeline
+        )]
+        [object]$ErrorObject
+    )
+    process {
+        $httpErrorObj = [PSCustomObject]@{
+            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId
+            MyCommand             = $ErrorObject.InvocationInfo.MyCommand
+            RequestUri            = $ErrorObject.TargetObject.RequestUri
+            ScriptStackTrace      = $ErrorObject.ScriptStackTrace
+            ErrorMessage          = ''
+        }
+        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') {
+            $httpErrorObj.ErrorMessage = $ErrorObject.ErrorDetails.Message
+        }
+        elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
+            $httpErrorObj.ErrorMessage = [System.IO.StreamReader]::new($ErrorObject.Exception.Response.GetResponseStream()).ReadToEnd()
+        }
+        Write-Output $httpErrorObj
+    }
+}
 #endregion
 
 #Begin
 try {
-    $authHeaders = Set-AuthorizationHeaders -UserName $Config.connection.userName -ApiKey $Config.connection.apiKey
-    $TopdeskDepartments = Get-TOPdeskDepartments -Headers $Config.connection.authHeaders -baseUrl $Config.connection.baseUrl
+    $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apikey
+    $TopdeskDepartments = Get-TOPdeskDepartments -Headers $authHeaders -BaseUrl $Config.baseUrl
 
     # Remove items with no name
-    [Void]$TopdeskDepartments.Where({ $_.Name-ne "" })
-    [Void]$rRef.sourceData.Where({ $_.DisplayName -ne "" })
+    $TopdeskDepartments = $TopdeskDepartments.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
+    $rRefSourceData = $rRef.sourceData.Where({ $_.displayName -ne "" -and  $_.displayName -ne $null })
 
     # Process
     $success = $true
-    foreach ($HelloIdDepartment in $rRef.sourceData) {
-        if (-not($TopdeskDepartments.Name -contains $HelloIdDepartment.displayName)) {
+    foreach ($HelloIdDepartment in $rRefSourceData) {
+
+        if (-not($TopdeskDepartments.name -contains $HelloIdDepartment.displayName)) {
             # Create department
             if (-not ($dryRun -eq $true)) {
                 try {
-                    Write-Verbose "Creating TOPdesk department with the name [$($HelloIdDepartment.displayName)] in TOPdesk..."
-                    $newDepartment = New-TOPdeskDepartment -Name $HelloIdDepartment.displayName -baseUrl $Config.connection.baseUrl -Headers $authHeaders
+                    write-verbose ($HelloIdDepartment | ConvertTo-Json)
+                    Write-Verbose "Creating TOPdesk department with the name [ $($HelloIdDepartment.displayName) ] in TOPdesk..."
+                    $newDepartment = New-TOPdeskDepartment -Name $HelloIdDepartment.displayName -BaseUrl $Config.baseUrl -Headers $authHeaders
+
                     $auditLogs.Add([PSCustomObject]@{
                         Message = "Created TOPdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
                         IsError = $false
@@ -183,11 +217,13 @@ try {
 } catch {
     $success = $false
     $ex = $PSItem
+    #write-verbose ($ex.Exception.message | ConvertTo-Json)
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not create departments. Error: $($ex.ErrorDetails.Message)"
+        $errorObj = Resolve-HTTPError -ErrorObject $ex
+        $errorMessage = "Could not read or create departments. Error: $($errorObj.ErrorMessage)"
     } else {
-        $errorMessage = "Could not create departments. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not read or create departments. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     $auditLogs.Add([PSCustomObject]@{
         Message = $errorMessage
