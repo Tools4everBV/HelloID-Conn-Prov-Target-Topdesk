@@ -9,6 +9,7 @@ $config = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json
 $success = $false
 $auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
+$aRef = $AccountReference | ConvertFrom-Json
 
 # Set debug logging
 switch ($($config.IsDebug)) {
@@ -86,8 +87,8 @@ function Invoke-TopdeskRestMethod {
                 Method      = $Method
                 ContentType = $ContentType
             }
+
             if ($Body) {
-                Write-Verbose 'Adding body to request'
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
             Invoke-RestMethod @splatParams -Verbose:$false
@@ -117,7 +118,7 @@ function Get-TopdeskPersonById {
 
     # Lookup value is filled in, lookup person in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons/id/$PersonReference"
+        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -165,7 +166,7 @@ function Set-TopdeskPersonArchiveStatus {
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/person/$($TopdeskPerson.id)/$archiveUri"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
         }
@@ -199,7 +200,7 @@ function Set-TopdeskPerson {
 
     Write-Verbose "Updating person"
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/person/$($TopdeskPerson.id)"
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
         Method  = 'PATCH'
         Headers = $Headers
         Body    = $Account | ConvertTo-Json
@@ -209,14 +210,17 @@ function Set-TopdeskPerson {
 #endregion helperfunctions
 
 try {
+    $action = 'Process'
+
+    # Setup authentication headers
+    $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apiKey
+
     $splatParams = @{
-        Headers                   = $Headers
-        BaseUrl                   = $baseUrl
+        Headers                   = $authHeaders
+        BaseUrl                   = $config.baseUrl
         PersonReference           = $aRef
     }
     $TopdeskPerson = Get-TopdeskPersonById @splatParams
-
-
 
     if ([string]::IsNullOrEmpty($TopdeskPerson)) {
 
@@ -281,9 +285,15 @@ try {
 } catch {
     $success = $false
     $ex = $PSItem
+    Write-Verbose ($ex | ConvertTo-Json)
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not archive person. Error: $($ex.ErrorDetails.Message)"
+        if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+            $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
+        } else {
+            #$errorObj = Resolve-HTTPError -ErrorObject $ex
+            $errorMessage = "Could not $action person. Error: $($ex.Exception.Message)"
+        }
     } else {
         $errorMessage = "Could not archive person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }

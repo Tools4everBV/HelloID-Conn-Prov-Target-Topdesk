@@ -7,6 +7,8 @@
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json
+$aRef = $AccountReference | ConvertFrom-Json
+
 $success = $false
 $auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
 
@@ -168,6 +170,7 @@ function Set-TopdeskPersonArchiveStatus {
     }
 }
 
+
 function Get-TopdeskPerson {
     [CmdletBinding()]
     param (
@@ -203,7 +206,7 @@ function Get-TopdeskPerson {
     # AcountReference is available, query person
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $BaseUrl
+        BaseUrl                   = $BaseUrl
         PersonReference           = $AccountReference
     }
     $person = Get-TopdeskPersonById @splatParams
@@ -222,8 +225,6 @@ function Get-TopdeskPerson {
 
 #region lookup
 try {
-    $action = 'Disable'
-
     # Setup authentication headers
     $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apiKey
 
@@ -276,7 +277,7 @@ try {
             $errorMessage = "Could not $action person. Error: $($ex.Exception.Message)"
         }
     } else {
-        $errorMessage = "Could not $action person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not archive person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
 
     $auditLogs.Add([PSCustomObject]@{
