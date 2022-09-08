@@ -89,6 +89,13 @@ function New-TopdeskGender {
     Write-Output $gender
 }
 
+function Get-RandomCharacters($length, $characters) {
+    $random = 1..$length | ForEach-Object { Get-Random -Maximum $characters.length }
+    $private:ofs=""
+    return [String]$characters[$random]
+}
+
+
 # Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
 # https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
 $account = [PSCustomObject]@{
@@ -100,11 +107,12 @@ $account = [PSCustomObject]@{
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
+    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName    # When setting a username, a (dummy) password will need to be set.
+    password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-    #budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
+    budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     #isManager           = $false
     manager             = @{ id = $mRef }
     #showDepartment      = $true
@@ -222,7 +230,7 @@ function Get-TopdeskBranch {
 
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/branches"
+            Uri     = "$BaseUrl/tas/api/branches"
             Method  = 'GET'
             Headers = $Headers
         }
@@ -307,7 +315,7 @@ function Get-TopdeskDepartment {
 
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/departments"
+            Uri     = "$BaseUrl/tas/api/departments"
             Method  = 'GET'
             Headers = $Headers
         }
@@ -400,7 +408,7 @@ function Get-TopdeskBudgetHolder {
 
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/budgetholders"
+            Uri     = "$BaseUrl/tas/api/budgetholders"
             Method  = 'GET'
             Headers = $Headers
         }
@@ -453,7 +461,7 @@ function Get-TopdeskPersonById {
 
     # Lookup value is filled in, lookup person in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/persons/id/$PersonReference"
+        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
         Method  = 'GET'
         Headers = $Headers
     }
@@ -574,7 +582,7 @@ function Get-TopdeskPersonManager {
     # mRef is available, query manager
     $splatParams = @{
         Headers                   = $Headers
-        baseUrl                   = $baseUrl
+        BaseUrl                   = $BaseUrl
         PersonReference           = $Account.manager.id
     }
     $personManager = Get-TopdeskPersonById @splatParams
@@ -628,7 +636,7 @@ function Set-TopdeskPersonArchiveStatus {
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
         }
@@ -668,12 +676,12 @@ function Set-TopdeskPersonIsManager {
         $body = [PSCustomObject]@{
             isManager = $isManager
         }
-        Write-Verbose "Set isManager to [$isManager] to person with id [$($TopdeskPerson.id)]"
+        Write-Verbose "Setting flag isManager to [$isManager] to person with networkLoginName [$($TopdeskPerson.networkLoginName)] and id [$($TopdeskPerson.id)]"
         $splatParams = @{
             Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
             Method  = 'PATCH'
             Headers = $Headers
-            Body    = $body
+            Body    = $body | ConvertTo-Json
         }
         $null = Invoke-TopdeskRestMethod @splatParams
         $TopdeskPerson.status = $isManager
@@ -703,13 +711,14 @@ function Set-TopdeskPerson {
         $TopdeskPerson
     )
 
-    Write-Verbose "Updating person"
+    #Write-Verbose "Updating person"
     $splatParams = @{
         Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
         Method  = 'PATCH'
         Headers = $Headers
         Body    = $Account | ConvertTo-Json
     }
+    #Write-Verbose ($splatParams | ConvertTo-Json)
     $null = Invoke-TopdeskRestMethod @splatParams
 }
 #endregion helperfunctions
@@ -741,16 +750,16 @@ try {
     }
     Get-TopdeskDepartment @splatParamsDepartment
 
-    # # Resolve budgetholder id
-    # $splatParamsBudgetholder = @{
-    #     Account                   = [ref]$account
-    #     AuditLogs                 = [ref]$auditLogs
-    #     Headers                   = $authHeaders
-    #     BaseUrl                   = $config.baseUrl
-    #     LookupErrorHrBudgetholder = $config.lookupErrorHrBudgetholder
-    #     LookupErrorTopdesk        = $config.lookupErrorTopdesk
-    # }
-    # Get-TopdeskBudgetholder @splatParamsBudgetholder
+    # Resolve budgetholder id
+    $splatParamsBudgetholder = @{
+        Account                   = [ref]$account
+        AuditLogs                 = [ref]$auditLogs
+        Headers                   = $authHeaders
+        BaseUrl                   = $config.baseUrl
+        LookupErrorHrBudgetholder = $config.lookupErrorHrBudgetholder
+        LookupErrorTopdesk        = $config.lookupErrorTopdesk
+    }
+    Get-TopdeskBudgetholder @splatParamsBudgetholder
 
     # get person
     $splatParamsPerson = @{
