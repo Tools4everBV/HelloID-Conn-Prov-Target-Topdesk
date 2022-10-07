@@ -3,7 +3,7 @@
 #
 # Version: 2.0
 #####################################################
-
+#write-verbose -verbose $configuration
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 
@@ -14,11 +14,11 @@ $config = $configuration | ConvertFrom-Json
 $VerbosePreference = 'Continue'
 
 try {
-    $permissionList = Get-Content -Raw -Path $config.notificationJsonPath | ConvertFrom-Json
+    $permissionList = Get-Content -Raw -Encoding utf8 -Path $config.notificationJsonPath | ConvertFrom-Json
     $permissions = $permissionList | Select-Object -Property displayName, identification
     write-output $permissions | ConvertTo-Json -Depth 10
 } catch {
     $ex = $PSItem
-    $errorMessage = "Could not retrieve Topdesk permissions. Error: $($ex.Exception.Message)"
+    $errorMessage = "Could not retrieve TOPdesk permissions. Error: $($ex.Exception.Message)"
     Write-Verbose $errorMessage
 }

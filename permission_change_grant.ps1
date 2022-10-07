@@ -3,7 +3,6 @@
 #
 # Version: 2.0
 #####################################################
-$dryRun = $false`
 
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
@@ -233,19 +232,26 @@ function Confirm-Description {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
+        $id,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
         $AllowedLength,
 
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
-
     if ($Description.Length -gt $AllowedLength) {
-        $errorMessage = "The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten this attribute iin the JSON file. (Value: [$Description)"
+        $errorMessage = "Could not grant TOPdesk entitlement [$id]: The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
+        
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
-    }
+    } #else { 
+        #Write-Verbose "The length for string [$Description] is [$($Description.Length)] which is shorter than the allowed length [$allowedLength]"
+    #}
 }
 
 function Get-TopdeskRequesterByType {
@@ -281,7 +287,7 @@ function Get-TopdeskRequesterByType {
     # Validate employee entry
     if ($type -eq 'employee') {
         if ([string]::IsNullOrEmpty($accountReference)) {
-            $errorMessage = "Could not set requester: The account reference is empty."
+            $errorMessage = "Could not set requester: The account reference is empty." # add Could not grant TOPdesk entitlement: [$($pRef.id)]
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
@@ -294,22 +300,27 @@ function Get-TopdeskRequesterByType {
 
     # Validate employee entry
     if ($type -eq 'manager') {
-        if ([string]::IsNullOrEmpty($managerAccountReference) -And [string]::IsNullOrEmpty($managerFallback)) {
-
-            $errorMessage = "Could not set requester: The manager account reference is empty and no fallback email is configured."
-            $auditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
-            return
-        } else {
-            if (-Not [string]::IsNullOrEmpty($managerAccountReference)) {
-                Write-Output $managerAccountReference
+        write-verbose "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
+        if ([string]::IsNullOrEmpty($managerAccountReference)) {
+            write-verbose "Type: Manager - managerAccountReference leeg"
+            if ([string]::IsNullOrEmpty($managerFallback)) {
+                write-verbose "Type: Manager - managerAccountReference - leeg - fallback leeg"
+                $errorMessage = "Could not set requester: The manager account reference is empty and no fallback email is configured." # Could not grant TOPdesk entitlement: [$($pRef.id)]
+                $auditLogs.Add([PSCustomObject]@{
+                    Message = $errorMessage
+                    IsError = $true
+                })
                 return
+            } else {
+                write-verbose "Type: Manager - managerAccountReference - leeg - fallback gevuld"
+                # Set fallback adress and look it up below
+                $type = $managerFallback
             }
+        } else {
+            write-verbose "Type: Manager - managerAccountReference - gevuld: [$managerAccountReference]"
+            Write-Output $managerAccountReference
+            return
         }
-        # Set fallback adress and look it up below
-        $type = $managerFallback
     }
 
     # Query email address (manager fallback or static)
@@ -414,20 +425,12 @@ function New-TopdeskChange {
 
     Write-Output $change
 }
-
 #endregion
 
 try {
-    #possibly todo
-    #Get-TopdeskChangeAction
-    #Get-TopdeskChangeCategory
-    #Get-TopdeskChangeSubCategory
-    #Get-TopdeskChangeChangeType
-    #Get-TopdeskChangeImpact
-    #Get-TopdeskChangePriority
 
 #region lookuptemplate
-    if ($config.disableNotifications -eq $true) {
+    if ($config.disableNotifications -eq 'true') {
         Throw "Notifications are disabled"
     }
     $action = 'Process'
@@ -477,14 +480,14 @@ try {
         AllowedLength    = 80
         AttributeName    = 'BriefDescription'
         AuditLogs        = [Ref]$auditLogs
+        id               = $pref.id
     }
-    $null = Confirm-Description @splatParamsValidateBriefDescription
+    Confirm-Description @splatParamsValidateBriefDescription
 
     # Add value to request object
     $requestObject += @{
         briefDescription = $briefDescription
     }
-
 
     # Resolve variables in the request field
     $splatParamsRequest = @{
@@ -603,7 +606,7 @@ try {
         }
         $TopdeskChange = New-TopdeskChange @splatParamsTopdeskChange
 
-    # Todo: stuff to requester (better make this a function)
+    # Todo: stuff to requester (have to test if this is required)
     # Something with the person. If the person is archived, unarchive the person (employee/manager) rearchive afterwards
     # # Prepare manager record, if manager has to be set
     # if (-Not([string]::IsNullOrEmpty($account.manager.id))) {
@@ -668,7 +671,7 @@ try {
 
         'Notifications are disabled' {
             # Don't do anything when notifications are disabled, mark them as a success
-            $success = true
+            $success = $true
             $message = 'Not creating Topdesk change, because the notifications are disabled in the connector configuration.'
             $auditLogs.Add([PSCustomObject]@{
                 Message = $message

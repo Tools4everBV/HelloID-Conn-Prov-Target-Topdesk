@@ -60,6 +60,22 @@ Re-implementation required if persons need to be managed later
 ## Extra fields
 To add the extra fields, you can insert the following code here.... and there... etc(must edit this part)
 
+## Error messages
+Branch
+> Requested to lookup branch, but branch.lookupValue is missing. This is a scripting issue.
+> The lookup value for Branch is empty but it's a required field.
+> Branch with name [<name>] isn't found in Topdesk but it's a required field.
+Department
+> Requested to lookup department, but department.lookupValue is not set. This is a scripting issue.
+> The lookup value for Department is empty and the connector is configured to stop when this happens.
+> Department [<name>] not found in Topdesk and the connector is configured to stop when this happens.
+Budgetholder
+> Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue.
+> The lookup value for Budgetholder is empty and the connector is configured to stop when this happens.
+> Budgetholder [<name>] not found in Topdesk and the connector is configured to stop when this happens.
+
+
+
 ## Getting help
 
 > _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-Configure-a-custom-PowerShell-target-system) pages_

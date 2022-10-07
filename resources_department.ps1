@@ -93,7 +93,7 @@ function Get-TOPdeskDepartments {
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
-
+        
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers
@@ -121,7 +121,7 @@ function New-TOPdeskDepartment {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-
+        
         $BaseUrl,
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
@@ -175,11 +175,11 @@ try {
     # Remove items with no name
     $TopdeskDepartments = $TopdeskDepartments.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
     $rRefSourceData = $rRef.sourceData.Where({ $_.displayName -ne "" -and  $_.displayName -ne $null })
-
+    
     # Process
     $success = $true
     foreach ($HelloIdDepartment in $rRefSourceData) {
-
+        
         if (-not($TopdeskDepartments.name -contains $HelloIdDepartment.displayName)) {
             # Create department
             if (-not ($dryRun -eq $true)) {
@@ -187,7 +187,7 @@ try {
                     write-verbose ($HelloIdDepartment | ConvertTo-Json)
                     Write-Verbose "Creating TOPdesk department with the name [ $($HelloIdDepartment.displayName) ] in TOPdesk..."
                     $newDepartment = New-TOPdeskDepartment -Name $HelloIdDepartment.displayName -BaseUrl $Config.baseUrl -Headers $authHeaders
-
+                    
                     $auditLogs.Add([PSCustomObject]@{
                         Message = "Created TOPdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
                         IsError = $false

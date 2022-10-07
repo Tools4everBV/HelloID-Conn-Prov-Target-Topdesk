@@ -3,11 +3,12 @@
 #
 # Version: 2.0
 #####################################################
-$dryRun = $false`
 
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json
+$pp = $previousPerson | ConvertFrom-Json
+$pd = $personDifferences | ConvertFrom-Json
 $aRef = $AccountReference | ConvertFrom-Json
 $pRef = $permissionReference | ConvertFrom-Json
 $mRef = $managerAccountReference | ConvertFrom-Json
@@ -127,9 +128,9 @@ function Get-HelloIdTopdeskTemplateById {
     }
 
     # Check if entitlement with id exists
-    $entitlementSet = $permissionList | Where-Object {($_.Identification.id -eq $pRef.id)}
+    $entitlementSet = $permissionList | Where-Object {($_.Identification.id -eq $Id)}
     if ([string]::IsNullOrEmpty($entitlementSet)) {
-        $errorMessage = "Could not find entitlement set with id '$($pRef.id)'. This is likely an issue with the json file."
+        $errorMessage = "Could not find entitlement set with id [$Id]. This is likely an issue with the json file."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -138,8 +139,8 @@ function Get-HelloIdTopdeskTemplateById {
     }
 
     # Check if entitlement with id and specific type exists
-    if (-not($entitlementSet.PSObject.Properties.Name -Contains $type)) {
-        $errorMessage = "Could not find revoke entitlement for entitlementSet '$($pRef.id)'. This is likely an issue with the json file."
+    if (-not($entitlementSet.PSObject.Properties.Name -Contains $Type)) {
+        $errorMessage = "Could not find revoke entitlement for entitlementSet [$Id]. This is likely an issue with the json file."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -149,7 +150,7 @@ function Get-HelloIdTopdeskTemplateById {
 
     # If empty, nothing should be done.
     if ([string]::IsNullOrEmpty($entitlementSet.$type)) {
-        $message = "Action '$type' for entitlement '$($pRef.id)' is not configured."
+        $message = "Action [$Type] for entitlement [$Id] is not configured."
         $auditLogs.Add([PSCustomObject]@{
             Message = $message
             IsError = $false
@@ -239,7 +240,7 @@ function Confirm-Description {
     )
 
     if ($Description.Length -gt $AllowedLength) {
-        $errorMessage = "The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten this attribute iin the JSON file. (Value: [$Description)"
+        $errorMessage = "The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -365,7 +366,7 @@ function Get-TopdeskChangeType {
         return
     }
 
-    # Show audit message if type is not 
+    # Show audit message if type is not simple of extensive
     if (-not ($changeType -eq 'simple' -or $changeType -eq 'extensive')) {
         $errorMessage = "The configured change type [$changeType] is invalid. It should be set to 'simple' or 'extensive'"
         $auditLogs.Add([PSCustomObject]@{
@@ -399,7 +400,7 @@ function New-TopdeskChange {
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
-
+    Write-Verbose -Verbose ($TopdeskChange | ConvertTo-Json) # Test, remove when live.
     $splatParams = @{
         Uri     = "$BaseUrl/tas/api/operatorChanges"
         Method  = 'POST'
@@ -414,9 +415,52 @@ function New-TopdeskChange {
     Write-Output $change
 }
 
-#endregion
+# Custom function to convert contract to text
+function Format-ContractTable {
+    [CmdletBinding()]
+    param (
+        #[Parameter(Mandatory)]
+        $contracts,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        $arrayAllowedNames
+    )
 
-try {
+    if ([string]::IsNullOrEmpty($contracts)) {
+        $multilineStringContracts = "Geen contracten gevonden."
+        Write-Output $multilineStringContracts
+        return
+    }
+
+    $multilineStringContracts = ""
+    $counter = 0
+    foreach ($c in $contracts) {
+        $counter++
+        $multilineStringContracts = $multilineStringContracts + "Contract $counter - $($c.externalId)" + "`r`n"
+        $multilineStringContracts = $multilineStringContracts + "================================================================" + "`r`n"
+        foreach ($allowedName in $arrayAllowedNames) {
+            $allowedNameSplit = $allowedName -split "\."
+            foreach ($prop in $c.psobject.properties) {
+                if ($prop.name -eq $allowedNameSplit[0]) {
+                    if ($null -ne $prop.value -and $prop.value.gettype().name -eq "PSCustomObject" ) {
+                        foreach ($prop2 in $prop.value.psobject.properties) {
+                            if ($prop2.name -eq $allowedNameSplit[1]) {
+                                $multilineStringContracts = $multilineStringContracts + "$($prop.name).$($prop2.name): $($prop2.value)" + "`r`n"
+                                break
+                            }
+                        }
+                        break
+                    } else {
+                        $multilineStringContracts = $multilineStringContracts + "$($prop.name): $($prop.value)" + "`r`n"
+                        break
+                    }
+                }
+            }
+        }
+        $multilineStringContracts = $multilineStringContracts + "`r`n"
+    }
+    Write-Output $multilineStringContracts
+}
     #possibly todo
     #Get-TopdeskChangeAction
     #Get-TopdeskChangeCategory
@@ -425,11 +469,33 @@ try {
     #Get-TopdeskChangeImpact
     #Get-TopdeskChangePriority
 
+#endregion
+
+try {
+
 #region lookuptemplate
-    if ($config.disableNotifications -eq $true) {
+    if ($config.disableNotifications -eq 'true') {
         Throw "Notifications are disabled"
     }
     $action = 'Process'
+    
+    # Do extra custom configuration for contracts    
+    $arrayVolunteer = $config.volunteerContractTypes -split ','
+    $arrayAllowedNames = $config.notificationBodyAllowedContractAttributes -split '\n'
+
+    # * Grant
+    $contractsVolunteerInconditionTable = $p.contracts.Where({$_.Type.Code -in $arrayVolunteer -and $_.Context.InConditions -eq $true}) | Sort-Object -Property StartDate -Descending
+    $contractsEmployeeInconditionTable = $p.contracts.Where({-not($_.Type.Code -in $arrayVolunteer) -and $_.Context.InConditions -eq $true}) | Sort-Object -Property StartDate -Descending
+
+    # * Revoke
+    $contractsVolunteerNotInConditionTable = $p.contracts.Where({$_.Type.Code -in $arrayVolunteer-and $_.Context.InConditions -eq $false}) | Sort-Object -Property StartDate -Descending
+    $contractsEmployeeNotInConditionTable = $p.contracts.Where({-not($_.Type.Code -in $arrayVolunteer) -and $_.Context.InConditions -eq $false}) | Sort-Object -Property StartDate -Descending
+
+    # * Formatting
+    $contractsVolunteerIncondition = Format-ContractTable -contracts $contractsVolunteerInconditionTable -arrayAllowedNames $arrayAllowedNames
+    $contractsVolunteerNotInCondition = Format-ContractTable -contracts $contractsVolunteerNotInConditionTable -arrayAllowedNames $arrayAllowedNames
+    $contractsEmployeeIncondition = Format-ContractTable -contracts $contractsEmployeeInconditionTable -arrayAllowedNames $arrayAllowedNames
+    $contractsEmployeeNotInCondition = Format-ContractTable -contracts $contractsEmployeeNotInConditionTable -arrayAllowedNames $arrayAllowedNames
 
     # Lookup template from json file (C00X)
     $splatParamsHelloIdTopdeskTemplate = @{
@@ -483,6 +549,7 @@ try {
     $requestObject += @{
         briefDescription = $briefDescription
     }
+
 
     # Resolve variables in the request field
     $splatParamsRequest = @{
@@ -666,12 +733,13 @@ try {
 
         'Notifications are disabled' {
             # Don't do anything when notifications are disabled, mark them as a success
-            $success = true
+            $success = $true
             $message = 'Not creating Topdesk change, because the notifications are disabled in the connector configuration.'
             $auditLogs.Add([PSCustomObject]@{
                 Message = $message
                 IsError = $false
             })
+            
 
         } default {
             Write-Verbose ($ex | ConvertTo-Json) # Debug - Test
