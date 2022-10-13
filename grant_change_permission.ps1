@@ -96,8 +96,7 @@ function New-TOPdeskChange {
 
     if ($changeObject.BriefDescription) {
         if($changeObject.BriefDescription.Lenth -gt 80){
-            $i = $changeObject.BriefDescription.Lenth - 80
-            $BriefDescription = $changeObject.BriefDescription.SubString($i,80)
+            $BriefDescription = $changeObject.BriefDescription.SubString(0,80)
         }else{
             $BriefDescription = $changeObject.BriefDescription
         }
