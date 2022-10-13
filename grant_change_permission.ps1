@@ -95,8 +95,10 @@ function New-TOPdeskChange {
     }
 
     if ($changeObject.BriefDescription) {
-        $requestObject += @{
-            briefDescription = $changeObject.BriefDescription
+        if($changeObject.BriefDescription.Lenth -gt 80){
+            $BriefDescription = $changeObject.BriefDescription.SubString(0,80)
+        }else{
+            $BriefDescription = $changeObject.BriefDescription
         }
         Write-Verbose -Verbose -Message "Added brief description $($changeObject.BriefDescription) to request"
     }
