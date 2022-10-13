@@ -100,6 +100,9 @@ function New-TOPdeskChange {
         }else{
             $BriefDescription = $changeObject.BriefDescription
         }
+        $requestObject += @{
+            briefDescription = $changeObject.BriefDescription
+        }
         Write-Verbose -Verbose -Message "Added brief description $($changeObject.BriefDescription) to request"
     }
 
