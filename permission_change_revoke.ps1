@@ -414,53 +414,6 @@ function New-TopdeskChange {
 
     Write-Output $change
 }
-
-# Custom function to convert contract to text
-function Format-ContractTable {
-    [CmdletBinding()]
-    param (
-        #[Parameter(Mandatory)]
-        $contracts,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        $arrayAllowedNames
-    )
-
-    if ([string]::IsNullOrEmpty($contracts)) {
-        $multilineStringContracts = "Geen contracten gevonden."
-        Write-Output $multilineStringContracts
-        return
-    }
-
-    $multilineStringContracts = ""
-    $counter = 0
-    foreach ($c in $contracts) {
-        $counter++
-        $multilineStringContracts = $multilineStringContracts + "Contract $counter - $($c.externalId)" + "`r`n"
-        $multilineStringContracts = $multilineStringContracts + "================================================================" + "`r`n"
-        foreach ($allowedName in $arrayAllowedNames) {
-            $allowedNameSplit = $allowedName -split "\."
-            foreach ($prop in $c.psobject.properties) {
-                if ($prop.name -eq $allowedNameSplit[0]) {
-                    if ($null -ne $prop.value -and $prop.value.gettype().name -eq "PSCustomObject" ) {
-                        foreach ($prop2 in $prop.value.psobject.properties) {
-                            if ($prop2.name -eq $allowedNameSplit[1]) {
-                                $multilineStringContracts = $multilineStringContracts + "$($prop.name).$($prop2.name): $($prop2.value)" + "`r`n"
-                                break
-                            }
-                        }
-                        break
-                    } else {
-                        $multilineStringContracts = $multilineStringContracts + "$($prop.name): $($prop.value)" + "`r`n"
-                        break
-                    }
-                }
-            }
-        }
-        $multilineStringContracts = $multilineStringContracts + "`r`n"
-    }
-    Write-Output $multilineStringContracts
-}
     #possibly todo
     #Get-TopdeskChangeAction
     #Get-TopdeskChangeCategory
@@ -479,24 +432,6 @@ try {
     }
     $action = 'Process'
     
-    # Do extra custom configuration for contracts    
-    $arrayVolunteer = $config.volunteerContractTypes -split ','
-    $arrayAllowedNames = $config.notificationBodyAllowedContractAttributes -split '\n'
-
-    # * Grant
-    $contractsVolunteerInconditionTable = $p.contracts.Where({$_.Type.Code -in $arrayVolunteer -and $_.Context.InConditions -eq $true}) | Sort-Object -Property StartDate -Descending
-    $contractsEmployeeInconditionTable = $p.contracts.Where({-not($_.Type.Code -in $arrayVolunteer) -and $_.Context.InConditions -eq $true}) | Sort-Object -Property StartDate -Descending
-
-    # * Revoke
-    $contractsVolunteerNotInConditionTable = $p.contracts.Where({$_.Type.Code -in $arrayVolunteer-and $_.Context.InConditions -eq $false}) | Sort-Object -Property StartDate -Descending
-    $contractsEmployeeNotInConditionTable = $p.contracts.Where({-not($_.Type.Code -in $arrayVolunteer) -and $_.Context.InConditions -eq $false}) | Sort-Object -Property StartDate -Descending
-
-    # * Formatting
-    $contractsVolunteerIncondition = Format-ContractTable -contracts $contractsVolunteerInconditionTable -arrayAllowedNames $arrayAllowedNames
-    $contractsVolunteerNotInCondition = Format-ContractTable -contracts $contractsVolunteerNotInConditionTable -arrayAllowedNames $arrayAllowedNames
-    $contractsEmployeeIncondition = Format-ContractTable -contracts $contractsEmployeeInconditionTable -arrayAllowedNames $arrayAllowedNames
-    $contractsEmployeeNotInCondition = Format-ContractTable -contracts $contractsEmployeeNotInConditionTable -arrayAllowedNames $arrayAllowedNames
-
     # Lookup template from json file (C00X)
     $splatParamsHelloIdTopdeskTemplate = @{
         JsonPath        = $config.notificationJsonPath
