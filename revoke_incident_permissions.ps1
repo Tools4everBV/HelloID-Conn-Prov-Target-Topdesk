@@ -17,6 +17,74 @@ $path = $config.notifications.jsonPath
 if ([Net.ServicePointManager]::SecurityProtocol -notmatch "Tls12") {
     [Net.ServicePointManager]::SecurityProtocol += [Net.SecurityProtocolType]::Tls12
 }
+
+
+function Get-VariablesFromString {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $string
+    )
+    $regex = [regex]'\$\((.*?)\)'
+    $variables = [System.Collections.Generic.list[object]]::new()
+
+    $match = $regex.Match($string)
+    while ($match.Success) {
+        $variables.Add($match.Value)
+        $match = $match.NextMatch()
+    }
+    Write-Output $variables
+}
+
+function Resolve-Variables {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ref]
+        $String,
+
+        [Parameter(Mandatory)]
+        $VariablesToResolve
+    )
+    foreach ($var in $VariablesToResolve | Select-Object -Unique) {
+        ## Must be changed When changing the the way of lookup variables.
+        $varTrimmed = $var.trim('$(').trim(')')
+        $Properties = $varTrimmed.Split('.')
+
+        $curObject = (Get-Variable ($Properties | Select-Object -First 1)  -ErrorAction SilentlyContinue).Value
+        $Properties | Select-Object -Skip 1 | ForEach-Object {
+            if ($_ -ne $Properties[-1]) {
+                $curObject = $curObject.$_
+            } elseif ($null -ne $curObject.$_) {
+                $String.Value = $String.Value.Replace($var, $curObject.$_)
+            } else {
+                Write-Verbose  "Variable [$var] not found"
+                # $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
+            }
+        }
+    }
+}
+
+function Format-Description {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Description
+    )
+    try {
+        $variablesFound = Get-VariablesFromString -String $Description
+        Resolve-Variables -String ([ref]$Description) -VariablesToResolve $variablesFound
+
+        Write-Output $Description
+    } catch {
+        $PSCmdlet.ThrowTerminatingError($_)
+    }
+}
+
+
 function New-TopdeskIncident{
     [CmdletBinding()]
     param(
@@ -445,8 +513,9 @@ $incident = $incidentList | Where-Object { ($_.Identification.Id -eq $pRef.id) -
 if (-Not($dryRun -eq $True)) {
     if (![string]::IsNullOrEmpty($incident)) {
         try {
-            $incident.RequestDescription = Invoke-Expression "`"$($incident.RequestDescription)`""
-            $incident.RequestShort = Invoke-Expression "`"$($incident.RequestShort)`""
+	    $incident.RequestDescription = Format-Description -Description $incident.RequestDescription
+            $incident.RequestShort = Format-Description -Description $incident.RequestShort      
+            
             $incidentResult = New-TopdeskIncident -incidentObject $incident
 
             $success = $True;
