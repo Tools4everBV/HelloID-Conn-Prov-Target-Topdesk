@@ -59,7 +59,7 @@ function Resolve-Variables {
                 $String.Value = $String.Value.Replace($var, $curObject.$_)
             } else {
                 Write-Verbose  "Variable [$var] not found"
-                # $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
+                $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
             }
         }
     }
