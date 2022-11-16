@@ -143,7 +143,7 @@ try {
     # Process
     $success = $true
     foreach ($HelloIdBudgetHolder in $rRef.sourceData) {
-        if (-not($TopdeskBudgetHolders.Name -contains $HelloIdBudgetHolder.name)) {
+        if (-not($TopdeskBudgetHolders.Name -eq $HelloIdBudgetHolder.name)) {
             # Create budgetholder
             if (-not ($dryRun -eq $true)) {
                 try {
