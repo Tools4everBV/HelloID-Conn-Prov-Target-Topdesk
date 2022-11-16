@@ -180,7 +180,7 @@ try {
     $success = $true
     foreach ($HelloIdDepartment in $rRefSourceData) {
         
-        if (-not($TopdeskDepartments.name -contains $HelloIdDepartment.displayName)) {
+        if (-not($TopdeskDepartments.name -eq $HelloIdDepartment.displayName)) {
             # Create department
             if (-not ($dryRun -eq $true)) {
                 try {
