@@ -123,56 +123,6 @@ function Get-TopdeskPersonById {
     Write-Output $responseGet
 }
 
-function Get-ArchivingReasonId {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $BaseUrl,
-        [Parameter(Mandatory)]
-        [System.Collections.IDictionary]
-        $Headers,
-        [Parameter()]
-        [String]
-        $ArchivingReason,
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
-    )
-
-    #When property archiving reason is not filed in the configuration of the Target system
-    if ([string]::IsNullOrEmpty($ArchivingReason)) {
-        $errorMessage = "Configuration error 'Archiving Reason'. This is a configuration error."
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
-        Throw "Error(s) occured while looking up required values"
-        #return
-    }
-
-    $splatParams = @{
-        Uri     = "$baseUrl/tas/api/archiving-reasons"
-        Method  = 'GET'
-        Headers = $Headers
-    }
-
-    $responseGet = Invoke-TopdeskRestMethod @splatParams
-    $archivingReasonObject = $responseGet | Where-object name -eq $ArchivingReason
-
-    #When returned archiving reason is not found in Topdesk
-    if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
-        $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
-        Throw "Error(s) occured while looking up required values"
-    } else {
-        Write-Output $archivingReasonObject.id
-    }
-}
-
 function Set-TopdeskPersonArchiveStatus {
     [CmdletBinding()]
     param (
@@ -197,30 +147,55 @@ function Set-TopdeskPersonArchiveStatus {
 
         [Parameter()]
         [String]
-        $ArchivingReason
+        $ArchivingReason,
+
+        [Parameter()]
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
     )
 
     # Set ArchiveStatus variables based on archive parameter
     if ($Archive -eq $true) {
-        $archiveStatus = 'personArchived'
-        $archiveUri = 'archive'
-        $splatParamsArchivingReason = @{
-            BaseUrl         = $Config.baseUrl
-            Headers         = $authHeaders
-            ArchivingReason = $config.personArchivingReason
-            AuditLogs       = [ref]$auditLogs
+
+         #When the 'archiving reason' setting is not configured in the target connector configuration
+        if ([string]::IsNullOrEmpty($ArchivingReason)) {
+            $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
+            $AuditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+            Throw "Error(s) occured while looking up required values"
         }
 
-        # Check archiving reason ID
-        $archivingReasonid = Get-ArchivingReasonId @splatParamsArchivingReason
-        $body = @{ id = $archivingReasonid }
+        $splatParams = @{
+            Uri     = "$baseUrl/tas/api/archiving-reasons"
+            Method  = 'GET'
+            Headers = $Headers
+        }
+
+        $responseGet = Invoke-TopdeskRestMethod @splatParams
+        $archivingReasonObject = $responseGet | Where-object name -eq $ArchivingReason
+
+        #When the configured archiving reason is not found in Topdesk
+        if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
+            $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
+            $AuditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+            Throw "Error(s) occured while looking up required values"
+        } # else
+
+        $archiveStatus = 'personArchived'
+        $archiveUri = 'archive'
+        $body = @{ id = $archivingReasonObject.id }
     } else {
         $archiveStatus = 'person'
         $archiveUri = 'unarchive'
         $body = $null
     }
 
-    # Check the current status of the Person and compare it with the status in ArchiveStatus
+    # Check the current status of the Person and compare it with the status in archiveStatus
     if ($archiveStatus -ne $TopdeskPerson.status) {
 
         # Archive / unarchive person
@@ -253,6 +228,7 @@ function Get-TopdeskPerson {
         [String]
         $AccountReference,
 
+        [Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -262,7 +238,7 @@ function Get-TopdeskPerson {
 
         # Throw an error when account reference is empty
         $errorMessage = "The account reference is empty. This is a scripting issue."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -279,7 +255,7 @@ function Get-TopdeskPerson {
 
     if ([string]::IsNullOrEmpty($person)) {
         $errorMessage = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -321,7 +297,8 @@ try {
                 Headers         = $authHeaders
                 BaseUrl         = $config.baseUrl
                 Archive         = $true
-                ArchivingReason = $ArchivingReason
+                ArchivingReason = $config.archivingReason
+                $AuditLogs      = [ref]$auditLogs
             }
             Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
         }

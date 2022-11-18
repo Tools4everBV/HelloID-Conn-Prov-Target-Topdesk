@@ -33,30 +33,30 @@ function New-TopdeskSurname {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]
-        $person
+        $Person
     )
 
-    if([string]::IsNullOrEmpty($person.Name.FamilyNamePrefix)) {
+    if([string]::IsNullOrEmpty($Person.Name.FamilyNamePrefix)) {
         $prefix = ""
     } else {
-        $prefix = $person.Name.FamilyNamePrefix + " "
+        $prefix = $Person.Name.FamilyNamePrefix + " "
     }
 
-    if([string]::IsNullOrEmpty($person.Name.FamilyNamePartnerPrefix)) {
+    if([string]::IsNullOrEmpty($Person.Name.FamilyNamePartnerPrefix)) {
         $partnerPrefix = ""
     } else {
-        $partnerPrefix = $person.Name.FamilyNamePartnerPrefix + " "
+        $partnerPrefix = $Person.Name.FamilyNamePartnerPrefix + " "
     }
 
-    $TopdeskSurname = switch($person.Name.Convention) {
-                    "B"  { $person.Name.FamilyName }
-                    "BP" { $person.Name.FamilyName + " - " + $partnerprefix + $person.Name.FamilyNamePartner }
-                    "P"  { $person.Name.FamilyNamePartner }
-                    "PB" { $person.Name.FamilyNamePartner + " - " + $prefix + $person.Name.FamilyName }
-                    default { $prefix + $person.Name.FamilyName }
+    $TopdeskSurname = switch($Person.Name.Convention) {
+                    "B"  { $Person.Name.FamilyName }
+                    "BP" { $Person.Name.FamilyName + " - " + $partnerprefix + $Person.Name.FamilyNamePartner }
+                    "P"  { $Person.Name.FamilyNamePartner }
+                    "PB" { $Person.Name.FamilyNamePartner + " - " + $prefix + $Person.Name.FamilyName }
+                    default { $prefix + $Person.Name.FamilyName }
     }
 
-    $TopdeskPrefix = switch($person.Name.Convention) {
+    $TopdeskPrefix = switch($Person.Name.Convention) {
                     "B"  { $prefix }
                     "BP" { $prefix }
                     "P"  { $partnerPrefix }
@@ -77,10 +77,10 @@ function New-TopdeskGender {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]
-        $person
+        $Person
     )
 
-    $gender = switch($person.details.Gender) {
+    $gender = switch($Person.details.Gender) {
         "M" { "MALE" }
         "V" { "FEMALE" }
         default { 'UNDEFINED' }
@@ -210,7 +210,7 @@ function Get-TopdeskBranch {
     # Check if branch.lookupValue property exists in the account object set in the mapping
     if (-not($account.branch.Keys -Contains 'lookupValue')) {
         $errorMessage = "Requested to lookup branch, but branch.lookupValue is missing. This is a scripting issue."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -222,7 +222,7 @@ function Get-TopdeskBranch {
 
             # As branch is always a required field,  no branch in lookup value = error
             $errorMessage = "The lookup value for Branch is empty but it's a required field."
-            $auditLogs.Add([PSCustomObject]@{
+            $AuditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
             })
@@ -242,7 +242,7 @@ function Get-TopdeskBranch {
 
             # As branch is a required field, if no branch is found, an error is logged
             $errorMessage = "Branch with name [$($Account.branch.lookupValue)] isn't found in Topdesk but it's a required field."
-            $auditLogs.Add([PSCustomObject]@{
+            $AuditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
             })
@@ -287,7 +287,7 @@ function Get-TopdeskDepartment {
     # Check if department.lookupValue property exists in the account object set in the mapping
     if (-not($Account.department.Keys -Contains 'lookupValue')) {
         $errorMessage = "Requested to lookup department, but department.lookupValue is not set. This is a scripting issue."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -300,7 +300,7 @@ function Get-TopdeskDepartment {
 
             # True, no department in lookup value = throw error
             $errorMessage = "The lookup value for Department is empty and the connector is configured to stop when this happens."
-            $auditLogs.Add([PSCustomObject]@{
+            $AuditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
             })
@@ -328,7 +328,7 @@ function Get-TopdeskDepartment {
 
                 # True, no department found = throw error
                 $errorMessage = "Department [$($Account.department.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
-                $auditLogs.Add([PSCustomObject]@{
+                $AuditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
                 })
@@ -380,7 +380,7 @@ function Get-TopdeskBudgetHolder {
     # Check if budgetholder.lookupValue property exists in the account object set in the mapping
     if (-not($Account.budgetholder.Keys -Contains 'lookupValue')) {
         $errorMessage = "Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -421,7 +421,7 @@ function Get-TopdeskBudgetHolder {
 
                 # True, no budgetholder found = throw error
                 $errorMessage = "Budgetholder [$($Account.budgetHolder.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
-                $auditLogs.Add([PSCustomObject]@{
+                $AuditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
                 })
@@ -487,6 +487,7 @@ function Get-TopdeskPerson {
         [String]
         $AccountReference,
 
+        [Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -496,7 +497,7 @@ function Get-TopdeskPerson {
 
         # Throw an error when account reference is empty
         $errorMessage = "The account reference is empty. This is a scripting issue."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -513,7 +514,7 @@ function Get-TopdeskPerson {
 
     if ([string]::IsNullOrEmpty($person)) {
         $errorMessage = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -521,7 +522,6 @@ function Get-TopdeskPerson {
         Write-Output $person
     }
 }
-
 
 function Get-TopdeskPersonManager {
     [CmdletBinding()]
@@ -552,7 +552,7 @@ function Get-TopdeskPersonManager {
     # Check if manager.id property exists in the account object set in the mapping
     if (-not($Account.manager.Keys -Contains 'id')) {
         $errorMessage = "Requested to lookup manager, but manager.id is missing. This is a scripting issue."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -589,7 +589,7 @@ function Get-TopdeskPersonManager {
 
     if ([string]::IsNullOrEmpty($personManager)) {
         $errorMessage = "Manager with reference [$($Account.manager.id)] is not found."
-        $auditLogs.Add([PSCustomObject]@{
+        $AuditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
@@ -597,7 +597,6 @@ function Get-TopdeskPersonManager {
         Write-Output $personManager
     }
 }
-
 function Set-TopdeskPersonArchiveStatus {
     [CmdletBinding()]
     param (
@@ -618,19 +617,59 @@ function Set-TopdeskPersonArchiveStatus {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Bool]
-        $Archive
+        $Archive,
+
+        [Parameter()]
+        [String]
+        $ArchivingReason,
+
+        [Parameter()]
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
     )
 
     # Set ArchiveStatus variables based on archive parameter
     if ($Archive -eq $true) {
+
+         #When the 'archiving reason' setting is not configured in the target connector configuration
+        if ([string]::IsNullOrEmpty($ArchivingReason)) {
+            $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
+            $AuditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+            Throw "Error(s) occured while looking up required values"
+        }
+
+        $splatParams = @{
+            Uri     = "$baseUrl/tas/api/archiving-reasons"
+            Method  = 'GET'
+            Headers = $Headers
+        }
+
+        $responseGet = Invoke-TopdeskRestMethod @splatParams
+        $archivingReasonObject = $responseGet | Where-object name -eq $ArchivingReason
+
+        #When the configured archiving reason is not found in Topdesk
+        if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
+            $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
+            $AuditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+            Throw "Error(s) occured while looking up required values"
+        } # else
+
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
+        $body = @{ id = $archivingReasonObject.id }
     } else {
         $archiveStatus = 'person'
         $archiveUri = 'unarchive'
+        $body = $null
     }
 
-    # Check the current status of the Person and compare it with the status in ArchiveStatus
+    # Check the current status of the Person and compare it with the status in archiveStatus
     if ($archiveStatus -ne $TopdeskPerson.status) {
 
         # Archive / unarchive person
@@ -639,6 +678,7 @@ function Set-TopdeskPersonArchiveStatus {
             Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
             Headers = $Headers
+            Body    = $body | ConvertTo-Json
         }
         $null = Invoke-TopdeskRestMethod @splatParams
         $TopdeskPerson.status = $archiveStatus
@@ -799,6 +839,8 @@ try {
                 Headers         = $authHeaders
                 BaseUrl         = $config.baseUrl
                 Archive         = $false
+                ArchivingReason = $config.archivingReason
+                $AuditLogs      = [ref]$auditLogs
             }
             Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
         }
@@ -821,6 +863,8 @@ try {
                 Headers         = $authHeaders
                 BaseUrl         = $config.baseUrl
                 Archive         = $true
+                ArchivingReason = $config.archivingReason
+                $AuditLogs      = [ref]$auditLogs
             }
             Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
         }
@@ -847,6 +891,9 @@ try {
                 Headers         = $authHeaders
                 BaseUrl         = $config.baseUrl
                 Archive         = $false
+                ArchivingReason = $config.archivingReason
+                $AuditLogs      = [ref]$auditLogs
+
             }
             Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
         }
@@ -869,6 +916,8 @@ try {
                 Headers         = $authHeaders
                 BaseUrl         = $config.baseUrl
                 Archive         = $true
+                ArchivingReason = $config.archivingReason
+                $AuditLogs      = [ref]$auditLogs
             }
             Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
         }
