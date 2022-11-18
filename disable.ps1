@@ -212,8 +212,8 @@ function Set-TopdeskPersonArchiveStatus {
         }
 
         # Check archiving reason ID
-        $ArchivingReasonid = Get-ArchivingReasonId @splatParamsArchivingReason
-        $body = @{ id = $ArchivingReasonid }
+        $archivingReasonid = Get-ArchivingReasonId @splatParamsArchivingReason
+        $body = @{ id = $archivingReasonid }
     } else {
         $archiveStatus = 'person'
         $archiveUri = 'unarchive'
