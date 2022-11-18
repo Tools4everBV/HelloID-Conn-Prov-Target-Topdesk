@@ -204,6 +204,53 @@ function Get-TopdeskTemplateById {
     Write-Output $topdeskTemplate.id
 }
 
+function Get-VariablesFromString {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $string
+    )
+    $regex = [regex]'\$\((.*?)\)'
+    $variables = [System.Collections.Generic.list[object]]::new()
+
+    $match = $regex.Match($string)
+    while ($match.Success) {
+        $variables.Add($match.Value)
+        $match = $match.NextMatch()
+    }
+    Write-Output $variables
+}
+
+function Resolve-Variables {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ref]
+        $String,
+
+        [Parameter(Mandatory)]
+        $VariablesToResolve
+    )
+    foreach ($var in $VariablesToResolve | Select-Object -Unique) {
+        ## Must be changed When changing the the way of lookup variables.
+        $varTrimmed = $var.trim('$(').trim(')')
+        $Properties = $varTrimmed.Split('.')
+
+        $curObject = (Get-Variable ($Properties | Select-Object -First 1)  -ErrorAction SilentlyContinue).Value
+        $Properties | Select-Object -Skip 1 | ForEach-Object {
+            if ($_ -ne $Properties[-1]) {
+                $curObject = $curObject.$_
+            } elseif ($null -ne $curObject.$_) {
+                $String.Value = $String.Value.Replace($var, $curObject.$_)
+            } else {
+                Write-Verbose  "Variable [$var] not found"
+                $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
+            }
+        }
+    }
+}
+
 function Format-Description {
     [CmdletBinding()]
     param (
@@ -212,9 +259,14 @@ function Format-Description {
         [string]
         $Description
     )
+    try {
+        $variablesFound = Get-VariablesFromString -String $Description
+        Resolve-Variables -String ([ref]$Description) -VariablesToResolve $variablesFound
 
-    $descriptionFormatted = $ExecutionContext.InvokeCommand.ExpandString($Description)
-    Write-Output $descriptionFormatted
+        Write-Output $Description
+    } catch {
+        $PSCmdlet.ThrowTerminatingError($_)
+    }
 }
 
 function Confirm-Description {
@@ -414,53 +466,6 @@ function New-TopdeskChange {
 
     Write-Output $change
 }
-
-# Custom function to convert contract to text
-function Format-ContractTable {
-    [CmdletBinding()]
-    param (
-        #[Parameter(Mandatory)]
-        $contracts,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        $arrayAllowedNames
-    )
-
-    if ([string]::IsNullOrEmpty($contracts)) {
-        $multilineStringContracts = "Geen contracten gevonden."
-        Write-Output $multilineStringContracts
-        return
-    }
-
-    $multilineStringContracts = ""
-    $counter = 0
-    foreach ($c in $contracts) {
-        $counter++
-        $multilineStringContracts = $multilineStringContracts + "Contract $counter - $($c.externalId)" + "`r`n"
-        $multilineStringContracts = $multilineStringContracts + "================================================================" + "`r`n"
-        foreach ($allowedName in $arrayAllowedNames) {
-            $allowedNameSplit = $allowedName -split "\."
-            foreach ($prop in $c.psobject.properties) {
-                if ($prop.name -eq $allowedNameSplit[0]) {
-                    if ($null -ne $prop.value -and $prop.value.gettype().name -eq "PSCustomObject" ) {
-                        foreach ($prop2 in $prop.value.psobject.properties) {
-                            if ($prop2.name -eq $allowedNameSplit[1]) {
-                                $multilineStringContracts = $multilineStringContracts + "$($prop.name).$($prop2.name): $($prop2.value)" + "`r`n"
-                                break
-                            }
-                        }
-                        break
-                    } else {
-                        $multilineStringContracts = $multilineStringContracts + "$($prop.name): $($prop.value)" + "`r`n"
-                        break
-                    }
-                }
-            }
-        }
-        $multilineStringContracts = $multilineStringContracts + "`r`n"
-    }
-    Write-Output $multilineStringContracts
-}
     #possibly todo
     #Get-TopdeskChangeAction
     #Get-TopdeskChangeCategory
@@ -479,24 +484,6 @@ try {
     }
     $action = 'Process'
     
-    # Do extra custom configuration for contracts    
-    $arrayVolunteer = $config.volunteerContractTypes -split ','
-    $arrayAllowedNames = $config.notificationBodyAllowedContractAttributes -split '\n'
-
-    # * Grant
-    $contractsVolunteerInconditionTable = $p.contracts.Where({$_.Type.Code -in $arrayVolunteer -and $_.Context.InConditions -eq $true}) | Sort-Object -Property StartDate -Descending
-    $contractsEmployeeInconditionTable = $p.contracts.Where({-not($_.Type.Code -in $arrayVolunteer) -and $_.Context.InConditions -eq $true}) | Sort-Object -Property StartDate -Descending
-
-    # * Revoke
-    $contractsVolunteerNotInConditionTable = $p.contracts.Where({$_.Type.Code -in $arrayVolunteer-and $_.Context.InConditions -eq $false}) | Sort-Object -Property StartDate -Descending
-    $contractsEmployeeNotInConditionTable = $p.contracts.Where({-not($_.Type.Code -in $arrayVolunteer) -and $_.Context.InConditions -eq $false}) | Sort-Object -Property StartDate -Descending
-
-    # * Formatting
-    $contractsVolunteerIncondition = Format-ContractTable -contracts $contractsVolunteerInconditionTable -arrayAllowedNames $arrayAllowedNames
-    $contractsVolunteerNotInCondition = Format-ContractTable -contracts $contractsVolunteerNotInConditionTable -arrayAllowedNames $arrayAllowedNames
-    $contractsEmployeeIncondition = Format-ContractTable -contracts $contractsEmployeeInconditionTable -arrayAllowedNames $arrayAllowedNames
-    $contractsEmployeeNotInCondition = Format-ContractTable -contracts $contractsEmployeeNotInConditionTable -arrayAllowedNames $arrayAllowedNames
-
     # Lookup template from json file (C00X)
     $splatParamsHelloIdTopdeskTemplate = @{
         JsonPath        = $config.notificationJsonPath
