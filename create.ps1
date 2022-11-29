@@ -110,7 +110,7 @@ $account = [PSCustomObject]@{
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-    budgetholder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
+    budgetHolder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     isManager           = $false
     manager             = @{ id = $mRef }
     #showDepartment      = $true
@@ -434,7 +434,8 @@ function Get-TopdeskBudgetHolder {
 
             # Budgetholder is found in Topdesk, set in Topdesk
             $Account.budgetHolder.Remove('lookupValue')
-            $Account.PSObject.Properties.Remove('budgetHolder')
+            $Account.budgetHolder.Add('id', $budgetHolder.id)
+            # $Account.PSObject.Properties.Remove('budgetHolder')
         }
     }
 }
@@ -565,7 +566,6 @@ function Get-TopdeskPersonManager {
         [Object]
         [Ref]$Account,
 
-        [Parameter(Mandatory)]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
