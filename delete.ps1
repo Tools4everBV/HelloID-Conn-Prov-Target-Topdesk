@@ -153,7 +153,6 @@ function Set-TopdeskPersonArchiveStatus {
         [String]
         $ArchivingReason,
 
-        [Parameter()]
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
@@ -289,8 +288,8 @@ try {
                     Headers         = $authHeaders
                     BaseUrl         = $config.baseUrl
                     Archive         = $false
-                    ArchivingReason = $config.archivingReason
-                    $AuditLogs      = [ref]$auditLogs
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
                 }
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
             }
@@ -313,8 +312,8 @@ try {
                     Headers         = $authHeaders
                     BaseUrl         = $config.baseUrl
                     Archive         = $true
-                    ArchivingReason = $config.archivingReason
-                    $AuditLogs      = [ref]$auditLogs
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
                 }
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
