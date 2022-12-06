@@ -100,10 +100,10 @@ function New-TOPdeskChange {
     $uriRequester = $url + "/persons?email=$($changeObject.Requester)"
     $uriTemplates = $url + "/applicableChangeTemplates"
 
-    Write-Verbose -Verbose -Message "Creating request for change"
+    Write-Verbose -Verbose "Creating request for change"
     if ($changeObject.Requester) {
         if ($changeObject.Requester -ne "manager" -and $changeObject.Requester -ne "employee") {
-            Write-Verbose -Verbose -Message "Searching for requester $($changeObject.Requester)"
+            Write-Verbose -Verbose "Searching for requester $($changeObject.Requester)"
             try {
                 $requesterSearch = Invoke-RestMethod -Uri $uriRequester -Method GET -ContentType $contentType -Headers $headers -Verbose:$false
             }
@@ -127,7 +127,7 @@ function New-TOPdeskChange {
                     id = $requesterID.id
                 }
             }
-            Write-Verbose -Verbose -Message "Added requester $($requesterID.dynamicName) to request"
+            Write-Verbose -Verbose "Added requester $($requesterID.dynamicName) to request"
         } else {
             if ($changeObject.Requester -eq "employee") {
                 $requestObject += @{
@@ -142,7 +142,7 @@ function New-TOPdeskChange {
                     }
                 }
             }
-            Write-Verbose -Verbose -Message "Added requester $($changeObject.Requester) to request"
+            Write-Verbose -Verbose "Added requester $($changeObject.Requester) to request"
         }
     }
 
@@ -150,14 +150,14 @@ function New-TOPdeskChange {
         $requestObject += @{
             request = $changeObject.Request
         }
-        Write-Verbose -Verbose -Message "Added request $($changeObject.Request) to request"
+        Write-Verbose -Verbose "Added request $($changeObject.Request) to request"
     }
 
     if ($changeObject.Action) {
         $requestObject += @{
             action = $changeObject.Action
         }
-        Write-Verbose -Verbose -Message "Added action $($changeObject.Action) to request"
+        Write-Verbose -Verbose "Added action $($changeObject.Action) to request"
     }
 
     if ($changeObject.BriefDescription) {
@@ -169,11 +169,11 @@ function New-TOPdeskChange {
         $requestObject += @{
             briefDescription = $BriefDescription
         }
-        Write-Verbose -Verbose -Message "Added brief description $($changeObject.BriefDescription) to request"
+        Write-Verbose -Verbose "Added brief description $($changeObject.BriefDescription) to request"
     }
 
     if ($changeObject.Template) {
-        Write-Verbose -Verbose -Message "Getting template"
+        Write-Verbose -Verbose "Getting template"
         try {
             $responseTemplates = Invoke-RestMethod -Uri $uriTemplates -Method GET -ContentType $contentType -Headers $headers
             $templateAssign = $responseTemplates.results | Where-Object { ($_.briefDescription -eq $changeObject.Template -or $_.number -eq $changeObject.Template) }
@@ -189,7 +189,7 @@ function New-TOPdeskChange {
                         id = $templateAssign.id
                     }
                 }
-                Write-Verbose -Verbose -Message "Added template '$($templateAssign.briefDescription)' to request"
+                Write-Verbose -Verbose "Added template '$($templateAssign.briefDescription)' to request"
             }
         }
         catch {
@@ -204,21 +204,21 @@ function New-TOPdeskChange {
     }
 
      if ($changeObject.Category) {
-        Write-Verbose -Verbose -Message "Getting categories"
+        Write-Verbose -Verbose "Getting categories"
         # Removed code to retrieve the incident categories for changes as usually these aren't assigned to change templates added in text anyways
         $requestObject += @{
             category = $changeObject.Category
         }
-        Write-Verbose -Verbose -Message "Added category '$($changeObject.Category)' to request"
+        Write-Verbose -Verbose "Added category '$($changeObject.Category)' to request"
     }
 
     if ($changeObject.SubCategory -and $changeObject.Category) {
-        Write-Verbose -Verbose -Message "Getting subcategories"
+        Write-Verbose -Verbose "Getting subcategories"
         # Removed code to retrieve the incident subcategories for changes as usually these aren't assigned to change templates and they need to be added in text anyways
         $requestObject += @{
             subcategory = $changeObject.SubCategory
         }
-        Write-Verbose -Verbose -Message "Added subcategory '$($changeObject.SubCategory)' to request"
+        Write-Verbose -Verbose "Added subcategory '$($changeObject.SubCategory)' to request"
     }
 
     if ($changeObject.ChangeType) {
@@ -226,24 +226,24 @@ function New-TOPdeskChange {
             $requestObject += @{
                 changeType = $changeObject.ChangeType.ToLower()
             }
-            Write-Verbose -Verbose -Message "Added change type '$($changeObject.ChangeType)' to request"
+            Write-Verbose -Verbose "Added change type '$($changeObject.ChangeType)' to request"
         }
         else {
             if (!$changeObject.Template) {
-                Write-Verbose -Verbose -Message "Change type '$($changeObject.ChangeType)' is not valid and template is not provided. Using 'simple' as change type. Possible entries: 'simple' or 'extensive'"
+                Write-Verbose -Verbose "Change type '$($changeObject.ChangeType)' is not valid and template is not provided. Using 'simple' as change type. Possible entries: 'simple' or 'extensive'"
                 $requestObject += @{
                     changeType = "simple"
                 }
             }
             elseif ($changeObject.Template -and $templateAssign) {
-                Write-Verbose -Verbose -Message "Change type '$($changeObject.ChangeType)' is not valid, using the value from template '$changeObject.Template'"
+                Write-Verbose -Verbose "Change type '$($changeObject.ChangeType)' is not valid, using the value from template '$changeObject.Template'"
             }
             else {
-                Write-Verbose -Verbose -Message "Change type '$($changeObject.ChangeType)' is not valid and the specified template '$changeObject.Template' is provided but was not found. Using 'simple' as change type. Possible entries: 'simple' or 'extensive'"
+                Write-Verbose -Verbose "Change type '$($changeObject.ChangeType)' is not valid and the specified template '$changeObject.Template' is provided but was not found. Using 'simple' as change type. Possible entries: 'simple' or 'extensive'"
                 $requestObject += @{
                     changeType = "simple"
                 }
-                Write-Verbose -Verbose -Message "Added change type 'simple' to request"
+                Write-Verbose -Verbose "Added change type 'simple' to request"
             }
         }
     }
@@ -252,46 +252,46 @@ function New-TOPdeskChange {
         $requestObject += @{
             externalNumber = $changeObject.ExternalNumber
         }
-        Write-Verbose -Verbose -Message "Added external number '$($changeObject.ExternalNumber)' to request"
+        Write-Verbose -Verbose "Added external number '$($changeObject.ExternalNumber)' to request"
     }
 
     if ($changeObject.Impact) {
         $requestObject += @{
             impact = $changeObject.Impact
         }
-        Write-Verbose -Verbose -Message "Added impact '$($changeObject.Impact)' to request"
+        Write-Verbose -Verbose "Added impact '$($changeObject.Impact)' to request"
     }
 
     if ($changeObject.Benefit) {
         $requestObject += @{
             benefit = $changeObject.Benefit
         }
-        Write-Verbose -Verbose -Message "Added benefit '$($changeObject.Benefit)' to request"
+        Write-Verbose -Verbose "Added benefit '$($changeObject.Benefit)' to request"
     }
 
     if ($changeObject.Priority) {
         $requestObject += @{
             priority = $changeObject.Priority
         }
-        Write-Verbose -Verbose -Message "Added priority '$($changeObject.Priority)' to request"
+        Write-Verbose -Verbose "Added priority '$($changeObject.Priority)' to request"
     }
 
     $request = $requestObject | ConvertTo-Json -Depth 10
     try {
             # get person by ID
-            write-verbose -verbose -Message "Person lookup..."
+            Write-Verbose -Verbose "Person lookup..."
             $PersonUrl = $url + "/persons/id/${aRef}"
             $responsePersonJson = Invoke-WebRequest -uri $PersonUrl -Method Get -Headers $headers -UseBasicParsing
             $responsePerson = $responsePersonJson.Content | Out-String | ConvertFrom-Json
 
             if ($responsePerson.status -eq "personArchived") {
-                write-verbose -verbose -Message "Unarchiving account for '$($p.ExternalID)...'"
+                Write-Verbose -Verbose "Unarchiving account for '$($p.ExternalID)...'"
                 $unarchiveUrl = $PersonUrl + "/unarchive"
                 $null = Invoke-WebRequest -uri $unarchiveUrl -Method PATCH -Headers $headers -UseBasicParsing
-                write-verbose -verbose -Message "Account unarchived"
+                Write-Verbose -Verbose "Account unarchived"
             }
 
-        Write-Verbose -Verbose -Message "Starting to create TOPdesk change '$($changeObject.BriefDescription)'"
+        Write-Verbose -Verbose "Starting to create TOPdesk change '$($changeObject.BriefDescription)'"
         $response = Invoke-RestMethod -Uri $uriChanges -Method POST -ContentType $contentType -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($request)) -UseBasicParsing
     }
     catch {
@@ -302,11 +302,11 @@ function New-TOPdeskChange {
         } else {
             $message = "Could not create change $($_.ScriptStackTrace). Error message: '$($_)'"
         }
-        Write-Verbose -Verbose -Message $message
+        Write-Verbose -Verbose $message
         throw
     }
     $change = $response
-    Write-Verbose -Verbose -Message "Succesfully created TOPdesk change with id '$($change.id)' and number '$($change.number)', check the Progress Log for details"
+    Write-Verbose -Verbose "Succesfully created TOPdesk change with id '$($change.id)' and number '$($change.number)', check the Progress Log for details"
 
     if ($changeObject.Status) {
         $requestObject = @(
@@ -316,14 +316,14 @@ function New-TOPdeskChange {
                 value = $changeObject.Status
             }
         )
-        Write-Verbose -Verbose -Message "Added status '$($changeObject.Status)' to request"
+        Write-Verbose -Verbose "Added status '$($changeObject.Status)' to request"
 
         $requestBody = ConvertTo-Json $requestObject
         try {
             $response = Invoke-RestMethod -Uri ($uriChanges + "/" + $change.number) -Method PATCH -ContentType $contentType -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($requestBody)) -UseBasicParsing
         }
         catch {
-            Write-Verbose -Verbose -Message "Could not update change."
+            Write-Verbose -Verbose "Could not update change."
             $message = (($_.ErrorDetails.Message | convertFrom-Json).errors).errorCode | Out-String
             throw "Could not update change '$($change.number)', errorcode: '0x$('{0:X8}' -f $_.Exception.HResult)', message: $($_.Exception.Message) $message"
         }
@@ -337,8 +337,8 @@ $change = $entitlementSet.Grant
 
 if ([string]::IsNullOrEmpty($entitlementSet)) {
     # Entitlementset niet gevonden...
-    write-verbose -Verbose -Message ($entitlementSet | ConvertTo-Json)
-    Write-Verbose -Verbose -Message "could not find entitlement set"
+    Write-Verbose -Verbose ($entitlementSet | ConvertTo-Json)
+    Write-Verbose -Verbose "could not find entitlement set"
     $auditMessage = "Entitlement $($entitlementSet.displayname) not found. Please check the Change definition file at '$path'. If you made changes to the file, please check the file with a JSON validation tool."
     $success = $false
 } else {
