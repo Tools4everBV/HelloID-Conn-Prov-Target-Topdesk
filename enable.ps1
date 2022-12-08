@@ -436,7 +436,8 @@ function Get-TopdeskBudgetHolder {
 
             # Budgetholder is found in Topdesk, set in Topdesk
             $Account.budgetHolder.Remove('lookupValue')
-            $Account.PSObject.Properties.Remove('budgetHolder')
+            $Account.budgetHolder.Add('id', $budgetHolder.id)
+            # $Account.PSObject.Properties.Remove('budgetHolder')
         }
     }
 }
