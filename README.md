@@ -60,9 +60,9 @@ The following settings are required to connect to the API.
 | When manager reference is empty     | Stop prcessing and generate an error or clear manager field in TOPdesk            |             |
 
 ### Prerequisites
-  - When creating changes or incidents a helloID agent is required
+  - When creating changes or incidents a helloID agent on-prem is required
   - Archiving reason that is configured in TOPdesk
-  - Credentials with the rights as descripted in premisions
+  - Credentials with the rights as descripted in permissions
 
 ### Permissions
 
