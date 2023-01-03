@@ -28,6 +28,7 @@
 - [Setup the connector](#Setup-The-Connector)
   + [Disable department or budgetholder](#Disable-department-or-budgetholder)
   + [Extra fields](#Extra-fields)
+  + [Deploying connector with manager reference](#Deploying-connector-with-manager-reference)
 - [Remarks](#Remarks)
   + [Only require tickets](#Only-require-tickets)
   + [Error messages](#Error-messages)
@@ -157,6 +158,18 @@ $account = [PSCustomObject]@{
     mobileNumber        = $p.Contact.Business.Phone.Mobile
 }
 ```
+
+### Deploying connector with manager reference
+Deploying the connector with the manager reference active should probably result in a lot of errors because HelloID will probably not have created/correlated the highest person (probably the director) in the organization. The following steps are recommended when deploying the connector:
+- When using changes or incidents you probably want to enable: do not create topdesk changes or incidents.
+- Start enforcement with: when a manager reference is empty: stop processing and generate an error.
+- Wait until all Topdesk account entitlements are in error.
+- Set: when a manager reference is empty TO clear the manager field in topdesk
+- Manually retry the highest person in the organization.
+- When succeeded set when a manager reference is empty TO stop processing and generate an error
+- Start enforcement repeatedly until all errors with empty managers are gone.
+- When using changes or incidents you need to disable: do not create topdesk changes or incidents.
+
 
 ## Remarks
 
