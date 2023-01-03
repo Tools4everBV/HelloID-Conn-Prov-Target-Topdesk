@@ -25,18 +25,18 @@
   + [Connection settings](#Connection-settings)
   + [Prerequisites](#Prerequisites)
   + [Permissions](#Permissions)
-  + [Remarks](#Remarks)
-- [Setup the connector](@Setup-The-Connector)
+- [Setup the connector](#Setup-The-Connector)
+  + [Disable department or budgetholder](#Disable-department-or-budgetholder)
+  + [Extra fields](#Extra-fields)
+- [Remarks](#Remarks)
+  + [Only require tickets](#Only-require-tickets)
+  + [Error messages](#Error-messages)
 - [Getting help](#Getting-help)
 - [HelloID Docs](#HelloID-docs)
 
 ## Introduction
 
-_HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a set of REST API's that allow you to programmatically interact with it's data. The HelloID connector uses the API endpoints listed in the table below.
-
-| Endpoint     | Description |
-| ------------ | ----------- |
-|              |             |
+_HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a set of REST API's that allow you to programmatically interact with it's data. The HelloID connector uses API calls that are expained in the following url: https://developers.topdesk.com/
 
 ## Getting started
 
@@ -102,36 +102,84 @@ The following permissions are required to use this connector. This should be con
 
 (To create departments and budgetholders, you will need to allow the API account read and write access to the "Instellingen voor Ondersteunende bestanden".)
 
-### Remarks
-
 ## Setup the connector
 
 > _How to setup the connector in HelloID._ Are special settings required. Like the _primary manager_ settings for a source connector.
 
-## Only require tickets
+### Disable department or budgetholder
+
+The fields department and budgetholder are both non required lookup fields in topdesk. This means you first need to lookup the field and then use the returned GUID (ID) to set the topdesk person. 
+
+For example:
+
+
+```json
+"id": "90ee5493-027d-4cda-8b41-8325130040c3",
+"name": "EnYoi Holding B.V.",
+"externalLinks": []
+```
+
+If you don't need the mapping of deparment or budgetholder in Topdesk. It is nesceary to comment out both mapping and the call function in the script.
+
+Example for department:
+
+Mapping:
+
+```powershell
+# department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
+```
+
+Call function:
+
+```powershell
+# Resolve department id
+# $splatParamsDepartment = @{
+#     Account                   = [ref]$account
+#     AuditLogs                 = [ref]$auditLogs
+#     Headers                   = $authHeaders
+#     BaseUrl                   = $config.baseUrl
+#     LookupErrorHrDepartment   = $config.lookupErrorHrDepartment
+#     LookupErrorTopdesk        = $config.lookupErrorTopdesk
+# }
+# Get-TopdeskDepartment @splatParamsDepartment
+```
+
+### Extra fields
+You can add extra fields by adding them to the account mapping. For all possbile options please check the API documentation.
+
+Example for mobileNumber:
+
+```powershell
+# Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
+# https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
+$account = [PSCustomObject]@{
+    # other mapping fields are here
+    mobileNumber        = $p.Contact.Business.Phone.Mobile
+}
+```
+
+## Remarks
+
+### Only require tickets
 Instruction to only require tickets. (Requester is always fixed)
 Re-implementation required if persons need to be managed later
 (must edit this part)
 
 
-## Extra fields
-To add the extra fields, you can insert the following code here.... and there... etc(must edit this part)
 
 ## Error messages
-Branch
-> Requested to lookup branch, but branch.lookupValue is missing. This is a scripting issue.
-> The lookup value for Branch is empty but it's a required field.
-> Branch with name [<name>] isn't found in Topdesk but it's a required field.
-Department
-> Requested to lookup department, but department.lookupValue is not set. This is a scripting issue.
-> The lookup value for Department is empty and the connector is configured to stop when this happens.
-> Department [<name>] not found in Topdesk and the connector is configured to stop when this happens.
-Budgetholder
-> Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue.
-> The lookup value for Budgetholder is empty and the connector is configured to stop when this happens.
-> Budgetholder [<name>] not found in Topdesk and the connector is configured to stop when this happens.
-
-
+- Branch
+  + Requested to lookup branch, but branch.lookupValue is missing. This is a scripting issue.
+  + The lookup value for Branch is empty but it's a required field.
+  + Branch with name [< name >] isn't found in Topdesk but it's a required field.
+- Department
+  + Requested to lookup department, but department.lookupValue is not set. This is a scripting issue.
+  + The lookup value for Department is empty and the connector is configured to stop when this happens.
+  + Department [< name >] not found in Topdesk and the connector is configured to stop when this happens.
+- Budgetholder
+  + Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue.
+  + The lookup value for Budgetholder is empty and the connector is configured to stop when this happens.
+  + Budgetholder [< name >] not found in Topdesk and the connector is configured to stop when this happens.
 
 ## Getting help
 
