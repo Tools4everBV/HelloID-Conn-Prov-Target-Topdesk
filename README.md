@@ -219,7 +219,7 @@ The change json file has the following structure:
 | Id: | Unique identifier in the JSON for HelloID.
 | DisplayName: | The value is shown when selecting the entitlement in HelloID.
 | Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the exampleChanges.json to see how this works.
-| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the topdesk person or fill in "Requester" or "Employee" or "Manager". Please note that the requester must be a person that isn't archived. Use \n for "enter".
+| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the topdesk person or fill in 'Employee' or 'Manager'. Use \n for "enter". Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
 | Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. 
 | Action: | Commenly filled in the TOPdesk change template. If so use null.
 | BriefDescription: | Fill in the desired title of the change.
