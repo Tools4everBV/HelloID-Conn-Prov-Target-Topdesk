@@ -29,9 +29,10 @@
   + [Disable department or budgetholder](#Disable-department-or-budgetholder)
   + [Extra fields](#Extra-fields)
   + [Deploying connector with manager reference](#Deploying-connector-with-manager-reference)
+  + [Changes](#Changes)
+  + [Incidents](#Incidents)
 - [Remarks](#Remarks)
   + [Only require tickets](#Only-require-tickets)
-  + [Error messages](#Error-messages)
 - [Getting help](#Getting-help)
 - [HelloID Docs](#HelloID-docs)
 
@@ -171,28 +172,82 @@ Deploying the connector with the manager reference active should probably result
 - When using changes or incidents you need to disable: do not create topdesk changes or incidents.
 
 
+### Changes
+It is possible to create changes in TOPdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a json file. The local HelloID agent needs to read this file.
+
+Please use the exampleChanges.json as a template to build you're own.
+
+The change json file has the following structure:
+
+```json
+{
+		"Identification": {
+			"Id": "C001"
+		},
+		"DisplayName": "Aanvraag/Inname laptop",
+		"Grant": {
+			"Requester": "tester@test.com",
+			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"Action": null,
+			"BriefDescription": "Aanvraag Laptop ($($p.displayName))",
+			"Template": "Ws 006",
+			"Category": "Middelen",
+			"SubCategory": "Inventaris & apparatuur",
+			"ChangeType": "Simple",
+			"Impact": "Persoon",
+			"Benefit": null,
+			"Priority": "P1"
+		},
+		"Revoke": {
+			"Requester": "Employee",
+			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+			"Action": null,
+			"BriefDescription": "Inname Laptop ($($p.displayName))",
+			"Template": "Ws 015",
+			"Category": "Middelen",
+			"SubCategory": "Inventaris & apparatuur",
+			"ChangeType": "Simple",
+			"Impact": "Persoon",
+			"Benefit": null,
+			"Priority": "P1"
+		}
+	}
+```
+
+| Json field | Description
+| - | -
+| Id: | Unique identifier in the JSON for HelloID.
+| DisplayName: | The value is shown when selecting the entitlement in HelloID.
+| Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the exampleChanges.json to see how this works.
+| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the topdesk person or fill in "Employee" or "Manager". Please note that the requester must be a person that isn't archived. Use \n for "enter".
+| Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. 
+| Action: | Commenly filled in the TOPdesk change template. If so use null.
+| BriefDescription: | Fill in the desired title of the change.
+| Template: | Fill in the TOPdesk template code of the change. This is mandatory.
+| Category: | Commenly filled in the TOPdesk change template. If so use null.
+| SubCategory: | Commenly filled in the TOPdesk change template. If so use null.
+| ChanageType: | Fill in the change type Simple or Extensive.
+| Impact: | Commenly filled in the TOPdesk change template. If so use null.
+| Benefit: | Commenly filled in the TOPdesk change template. If so use null.
+| Priority: | Commenly filled in the TOPdesk change template. If so use null.
+
+
+### Incidents
+TODO
+
+```json
+TODO
+```
+| Json field | Description
+| - | -
+|TODO | TODO
+
 ## Remarks
 
 ### Only require tickets
 Instruction to only require tickets. (Requester is always fixed)
 Re-implementation required if persons need to be managed later
 (must edit this part)
-
-
-
-## Error messages
-- Branch
-  + Requested to lookup branch, but branch.lookupValue is missing. This is a scripting issue.
-  + The lookup value for Branch is empty but it's a required field.
-  + Branch with name [< name >] isn't found in Topdesk but it's a required field.
-- Department
-  + Requested to lookup department, but department.lookupValue is not set. This is a scripting issue.
-  + The lookup value for Department is empty and the connector is configured to stop when this happens.
-  + Department [< name >] not found in Topdesk and the connector is configured to stop when this happens.
-- Budgetholder
-  + Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue.
-  + The lookup value for Budgetholder is empty and the connector is configured to stop when this happens.
-  + Budgetholder [< name >] not found in Topdesk and the connector is configured to stop when this happens.
 
 ## Getting help
 
@@ -202,4 +257,4 @@ Re-implementation required if persons need to be managed later
 
 ## HelloID docs
 
-The official HelloID documentation can be found at: https://docs.helloid.com/
+> The official HelloID documentation can be found at: https://docs.helloid.com/
