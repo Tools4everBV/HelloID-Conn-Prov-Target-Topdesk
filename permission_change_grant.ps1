@@ -346,7 +346,7 @@ function Get-TopdeskRequesterByType {
                 IsError = $true
             })
         } else {
-            Write-Output $managerAccountReference
+            Write-Output $accountReference
         }
         return
     }
