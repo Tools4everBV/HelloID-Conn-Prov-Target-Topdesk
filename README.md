@@ -38,7 +38,7 @@
 
 ## Introduction
 
-_HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a set of REST API's that allow you to programmatically interact with it's data. The HelloID connector uses API calls that are expained in the following url: https://developers.topdesk.com/
+_HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a set of REST API's that allow you to programmatically interact with it's data. The [TOPdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commando's that are used.
 
 ## Getting started
 
@@ -46,20 +46,20 @@ _HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a s
 
 The following settings are required to connect to the API.
 
-| Setting                             | Description                                                                       | Mandatory   |
-| ------------                        | -----------                                                                       | ----------- |
-| BaseUrl                             | The URL to the API                                                                | Yes         |
-| UserName                            | The UserName to connect to the API                                                | Yes         |
-| Password                            | The Password to connect to the API                                                | Yes         |
-| Notification file path              | Location of the chance or incident .json                                          | No          |
-| Archiving reason                    | Fill in a archiving reason that is configured in TOPdesk                          | Yes         |
-| Fallback email                      | When a manager is set as the requester but the manager account reference is empty | No          |
-| Toggle debug logging                | Creates extra logging for debug purposes                                          |             |
-| Do not create changes or incidents  | If enabled no changes or incidents will be created in topdesk                     |             |
-| When no item found in TOPdesk       | Stop prcessing and generate an error or keep the current value and continue       |             |
-| When no deparment in source data    | Stop prcessing and generate an error or clear deparment field in TOPdesk          |             |
-| When no budgetholder in source data | Stop prcessing and generate an error or clear budgetholder field in TOPdesk       |             |
-| When manager reference is empty     | Stop prcessing and generate an error or clear manager field in TOPdesk            |             |
+| Setting |Description | Mandatory 
+| - | - | - 
+| BaseUrl | The URL to the API | Yes 
+| UserName| The UserName to connect to the API | Yes 
+| Password | The Password to connect to the API | Yes 
+| Notification file path | Location of the JSON file needed for changes or incidents | No 
+| Archiving reason | Fill in a archiving reason that is configured in TOPdesk | Yes 
+| Fallback email | When a manager is set as the requester (in the JSON file) but the manager account reference is empty | No 
+| Toggle debug logging | Creates extra logging for debug purposes |
+| Do not create changes or incidents | If enabled no changes or incidents will be created in topdesk |
+| When no item found in TOPdesk | Stop prcessing and generate an error or keep the current value and continue |
+| When no deparment in source data | Stop prcessing and generate an error or clear deparment field in TOPdesk |
+| When no budgetholder in source data | Stop prcessing and generate an error or clear budgetholder field in TOPdesk | 
+| When manager reference is empty | Stop prcessing and generate an error or clear manager field in TOPdesk |
 
 ### Prerequisites
   - When creating changes or incidents a helloID agent on-prem is required
@@ -147,7 +147,7 @@ Call function:
 ```
 
 ### Extra fields
-You can add extra fields by adding them to the account mapping. For all possbile options please check the API documentation.
+You can add extra fields by adding them to the account mapping. For all possbile options please check the [TOPdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/).
 
 Example for mobileNumber:
 
@@ -219,7 +219,7 @@ The change json file has the following structure:
 | Id: | Unique identifier in the JSON for HelloID.
 | DisplayName: | The value is shown when selecting the entitlement in HelloID.
 | Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the exampleChanges.json to see how this works.
-| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the topdesk person or fill in "Employee" or "Manager". Please note that the requester must be a person that isn't archived. Use \n for "enter".
+| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the topdesk person or fill in "Requester" or "Employee" or "Manager". Please note that the requester must be a person that isn't archived. Use \n for "enter".
 | Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. 
 | Action: | Commenly filled in the TOPdesk change template. If so use null.
 | BriefDescription: | Fill in the desired title of the change.
@@ -245,9 +245,8 @@ TODO
 ## Remarks
 
 ### Only require tickets
-Instruction to only require tickets. (Requester is always fixed)
-Re-implementation required if persons need to be managed later
-(must edit this part)
+When persons are created with the TOPdesk AD sync for example. Then it should be possible to create incidents or changes. There is a correlation needed including a manager's reference to make this work properly. 
+> TODO: make a separate create script to create the references (like AD/Azure prem.)
 
 ## Getting help
 
