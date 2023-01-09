@@ -5,7 +5,7 @@
 		},
 		"DisplayName": "Aanvraag/Inname laptop",
 		"Grant": {
-			"CallerEmail": "tester@test.com",
+			"Caller": "tester@test.com",
 			"RequestShort": "Aanvraag Laptop ($($p.displayName))",
 			"RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Branch": "Baarn",
@@ -17,7 +17,7 @@
 			"CloseTicket": true
 		},
 		"Revoke": {
-			"CallerEmail": "tester@test.com",
+			"Caller": "tester@test.com",
 			"RequestShort": "Inname Laptop ($($p.displayName))",
 			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Branch": "Baarn",
@@ -35,7 +35,7 @@
 		},
 		"DisplayName": "Aanvraag/Inname mobiele telefoon",
 		"Grant": {
-			"CallerEmail": "Employee",
+			"Caller": "Employee",
 			"RequestShort": "Aanvraag mobiele telefoon ($($p.displayName))",
 			"RequestDescription": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Branch": "Utrecht",
@@ -47,7 +47,7 @@
 			"CloseTicket": true
 		},
 		"Revoke": {
-			"CallerEmail": "Manager",
+			"Caller": "Manager",
 			"RequestShort": "Inname mobiele telefoon ($($p.displayName))",
 			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een mobiele telefoon, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Branch": "Utrecht",
@@ -65,7 +65,7 @@
 		},
 		"DisplayName": "Aanvraag Smartphone (Alleen grant)",
 		"Grant": {
-			"CallerEmail": "Manager",
+			"Caller": "Manager",
 			"RequestShort": "Aanvraag Smartphone ($($p.displayName))",
 			"RequestDescription": "Er is door een leidinggevende een smartphone + simkaart aangevraagd voor een nieuwe medewerker.\nGraag registreren op onderstaande medewerker:\nVoornaam medewerker, $($p.Name.GivenName),\nAchternaam medewerker $($p.Name.FamilyName),\nTelefoonnummer privé, $($p.Contact.Business.Phone.Mobile),\nAfdeling: $($p.PrimaryContract.Department.DisplayName),\nKostenplaats: $($p.PrimaryContract.CostCenter.Name),\nFunctie: $($p.PrimaryContract.Title.Name)\nManager: $($p.PrimaryManager.Displayname)",
 			"Branch": "Amsterdam",
@@ -85,7 +85,7 @@
 		"DisplayName": "Uitdiensttreding medewerker (Alleen revoke)",
 		"Grant": {},
 		"Revoke": {
-			"CallerEmail": "Manager",
+			"Caller": "Manager",
 			"RequestShort": "Uitdienst treding medewerker ($($p.displayName))",
 			"RequestDescription": "Beste Servicedesk,\nOnderstaande medewerker treed op $($p.PrimaryContract.Custom.formattedEndDate) uit dienst.\nGraag contact opnemen met medewerker om inlevering van IT-middelen af te stemmen.\nHet BART account zal automatisch worden gedeactiveerd.\nLet op: het deactiveren van een eventuele zakelijke SIM-kaart zal handmatig moeten worden uitgevoerd!\nAchternaam medewerker: $($p.Name.FamilyName)\nVoornaam medewerker: $($p.Name.GivenName)\nLocatie: $($p.PrimaryContract.Location.Name)\nDatum uit dienst: $($p.PrimaryContract.Custom.formattedEndDate)\nTelefoonnummer privé: $($p.Contact.Business.Phone.Mobile)\nTelefoonnummer werk: $($p.PrimaryContract.Contact.Business.Phone.Fixed)",
 			"Branch": "Amsterdam",
