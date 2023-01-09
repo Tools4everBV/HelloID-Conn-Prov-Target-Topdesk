@@ -442,8 +442,7 @@ function Get-TopdeskIdentifier {
         })
         return
     }
-    write-verbose "Class [$class]: Variable [$`Template.$classAttribute] has value [$($Template.$classAttribute)] and endpoint [$($classEndpoints.$classAttribute)]"
-    $classEndpoint
+    Write-Verbose "Class [$class]: Variable [$`Template.$classAttribute] has value [$($Template.$classAttribute)] and endpoint [$($classEndpoints.$classAttribute)]"
 
     # Lookup Value is filled in, lookup value in Topdesk
     $splatParams = @{
@@ -644,15 +643,15 @@ try {
         briefDescription = $requestShort
     }
 
-    # Resolve variables in the BriefDescription field
-    $splatParamsBriefDescription = @{
+    # Resolve variables in the RequestDescription field
+    $splatParamsRequestDescription = @{
         description       = $template.RequestDescription
     }
-    $briefDescription = Format-Description @splatParamsBriefDescription
+    $requestDescription = Format-Description @splatParamsRequestDescription
 
     # Add value to request object
     $requestObject += @{
-        request = $briefDescription
+        request = $requestDescription
     }
 
     if ($auditLogs.isError -contains $true) {
@@ -662,14 +661,14 @@ try {
 <#
     "CallerEmail": "tester@test.com", # renamed to caller // done
     "RequestShort": "Aanvraag Laptop ($($p.displayName))", // done
-    "RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)", // done
-    "Branch" // DONE
+    "RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)", // done 
+    "Branch" // done
     "OperatorGroup": "Servicedesk",  // done
     "Category": "Middelen", // done
     "SubCategory": "Inventaris & apparatuur", //done
     "CallType": "Aanvraag",
     "Impact": "Organisatie",
-    "CloseTicket": true
+    "CloseTicket": true // todo
 #>
 
 #    $auditLogs
