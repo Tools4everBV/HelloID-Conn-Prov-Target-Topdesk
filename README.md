@@ -12,24 +12,33 @@
   <img src="assets/logo.png">
 </p>
 
+## Versioning
+| Version | Description | Date |
+| - | - | - |
+| 2.0.0   | Release of v2 connector including performance and logging upgrades | fill in date  |
+| 1.0.0   | Initial release | 2020/06/24  |
+
 ## Table of contents
 
 - [Introduction](#Introduction)
 - [Getting started](#Getting-started)
   + [Connection settings](#Connection-settings)
   + [Prerequisites](#Prerequisites)
-  + [Remarks](#Remarks)
-- [Setup the connector](@Setup-The-Connector)
+  + [Permissions](#Permissions)
+- [Setup the connector](#Setup-The-Connector)
+  + [Disable department or budgetholder](#Disable-department-or-budgetholder)
+  + [Extra fields](#Extra-fields)
+  + [Deploying connector with manager reference](#Deploying-connector-with-manager-reference)
+  + [Changes](#Changes)
+  + [Incidents](#Incidents)
+- [Remarks](#Remarks)
+  + [Only require tickets](#Only-require-tickets)
 - [Getting help](#Getting-help)
 - [HelloID Docs](#HelloID-docs)
 
 ## Introduction
 
-_HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a set of REST API's that allow you to programmatically interact with it's data. The HelloID connector uses the API endpoints listed in the table below.
-
-| Endpoint     | Description |
-| ------------ | ----------- |
-|              |             |
+_HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a set of REST API's that allow you to programmatically interact with it's data. The [TOPdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commando's that are used.
 
 ## Getting started
 
@@ -37,44 +46,207 @@ _HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a s
 
 The following settings are required to connect to the API.
 
-| Setting      | Description                        | Mandatory   |
-| ------------ | -----------                        | ----------- |
-| UserName     | The UserName to connect to the API | Yes         |
-| Password     | The Password to connect to the API | Yes         |
-| BaseUrl      | The URL to the API                 | Yes         |
+| Setting |Description | Mandatory 
+| - | - | - 
+| BaseUrl | The URL to the API | Yes 
+| UserName| The UserName to connect to the API | Yes 
+| Password | The Password to connect to the API | Yes 
+| Notification file path | Location of the JSON file needed for changes or incidents | No 
+| Archiving reason | Fill in a archiving reason that is configured in TOPdesk | Yes 
+| Fallback email | When a manager is set as the requester (in the JSON file) but the manager account reference is empty | No 
+| Toggle debug logging | Creates extra logging for debug purposes |
+| Do not create changes or incidents | If enabled no changes or incidents will be created in topdesk |
+| When no item found in TOPdesk | Stop prcessing and generate an error or keep the current value and continue |
+| When no deparment in source data | Stop prcessing and generate an error or clear deparment field in TOPdesk |
+| When no budgetholder in source data | Stop prcessing and generate an error or clear budgetholder field in TOPdesk | 
+| When manager reference is empty | Stop prcessing and generate an error or clear manager field in TOPdesk |
 
 ### Prerequisites
+  - When creating changes or incidents a helloID agent on-prem is required
+  - Archiving reason that is configured in TOPdesk
+  - Credentials with the rights as descripted in permissions
 
-### Remarks
+### Permissions
+
+The following permissions are required to use this connector. This should be configured on a specific Permission Group for the Operator HelloID uses.
+<table>
+<tr><td>Permission</td><td>Read</td><td>Write</td><td>Create</td><td>Archive</td></tr>
+
+<tr><td><b>Call Management</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>First line calls</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
+<tr><td>Second line calls</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
+<tr><td>Escalate calls</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Link object to call</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Link room to call</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+
+<tr><td><b>Change Management</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Requests for Simple Change</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
+<tr><td>Requests for Extensive Change</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
+<tr><td>Simple Changes</td><td>x</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Extensive Changes</td><td>x</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+
+<tr><td><b>New Asset Management</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Templates</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+
+<tr><td><b>Supporting Files</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Persons</td><td>x</td><td>x</td><td>x</td><td>x</td></tr>
+<tr><td>Operators</td><td>x</td><td>x</td><td>x</td><td>x</td></tr>
+<tr><td>Operator groups</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Suppliers</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Rooms</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Login data</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+
+<tr><td><b>Reporting API</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>REST API</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>Use application passwords</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+
+</table>
+
+(To create departments and budgetholders, you will need to allow the API account read and write access to the "Instellingen voor Ondersteunende bestanden".)
 
 ## Setup the connector
 
 > _How to setup the connector in HelloID._ Are special settings required. Like the _primary manager_ settings for a source connector.
 
-## Only require tickets
-Instruction to only require tickets. (Requester is always fixed)
-Re-implementation required if persons need to be managed later
-(must edit this part)
+### Disable department or budgetholder
+
+The fields department and budgetholder are both non required lookup fields in topdesk. This means you first need to lookup the field and then use the returned GUID (ID) to set the topdesk person. 
+
+For example:
 
 
-## Extra fields
-To add the extra fields, you can insert the following code here.... and there... etc(must edit this part)
+```json
+"id": "90ee5493-027d-4cda-8b41-8325130040c3",
+"name": "EnYoi Holding B.V.",
+"externalLinks": []
+```
 
-## Error messages
-Branch
-> Requested to lookup branch, but branch.lookupValue is missing. This is a scripting issue.
-> The lookup value for Branch is empty but it's a required field.
-> Branch with name [<name>] isn't found in Topdesk but it's a required field.
-Department
-> Requested to lookup department, but department.lookupValue is not set. This is a scripting issue.
-> The lookup value for Department is empty and the connector is configured to stop when this happens.
-> Department [<name>] not found in Topdesk and the connector is configured to stop when this happens.
-Budgetholder
-> Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue.
-> The lookup value for Budgetholder is empty and the connector is configured to stop when this happens.
-> Budgetholder [<name>] not found in Topdesk and the connector is configured to stop when this happens.
+If you don't need the mapping of deparment or budgetholder in Topdesk. It is nesceary to comment out both mapping and the call function in the script.
+
+Example for department:
+
+Mapping:
+
+```powershell
+# department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
+```
+
+Call function:
+
+```powershell
+# Resolve department id
+# $splatParamsDepartment = @{
+#     Account                   = [ref]$account
+#     AuditLogs                 = [ref]$auditLogs
+#     Headers                   = $authHeaders
+#     BaseUrl                   = $config.baseUrl
+#     LookupErrorHrDepartment   = $config.lookupErrorHrDepartment
+#     LookupErrorTopdesk        = $config.lookupErrorTopdesk
+# }
+# Get-TopdeskDepartment @splatParamsDepartment
+```
+
+### Extra fields
+You can add extra fields by adding them to the account mapping. For all possbile options please check the [TOPdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/).
+
+Example for mobileNumber:
+
+```powershell
+# Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
+# https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
+$account = [PSCustomObject]@{
+    # other mapping fields are here
+    mobileNumber        = $p.Contact.Business.Phone.Mobile
+}
+```
+
+### Deploying connector with manager reference
+Deploying the connector with the manager reference active should probably result in a lot of errors because HelloID will probably not have created/correlated the highest person (probably the director) in the organization. The following steps are recommended when deploying the connector:
+- When using changes or incidents you probably want to enable: do not create topdesk changes or incidents.
+- Start enforcement with: when a manager reference is empty: stop processing and generate an error.
+- Wait until all Topdesk account entitlements are in error.
+- Set: when a manager reference is empty TO clear the manager field in topdesk
+- Manually retry the highest person in the organization.
+- When succeeded set when a manager reference is empty TO stop processing and generate an error
+- Start enforcement repeatedly until all errors with empty managers are gone.
+- When using changes or incidents you need to disable: do not create topdesk changes or incidents.
 
 
+### Changes
+It is possible to create changes in TOPdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a json file. The local HelloID agent needs to read this file.
+
+Please use the exampleChanges.json as a template to build you're own.
+
+The change json file has the following structure:
+
+```json
+{
+		"Identification": {
+			"Id": "C001"
+		},
+		"DisplayName": "Aanvraag/Inname laptop",
+		"Grant": {
+			"Requester": "tester@test.com",
+			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"Action": null,
+			"BriefDescription": "Aanvraag Laptop ($($p.displayName))",
+			"Template": "Ws 006",
+			"Category": "Middelen",
+			"SubCategory": "Inventaris & apparatuur",
+			"ChangeType": "Simple",
+			"Impact": "Persoon",
+			"Benefit": null,
+			"Priority": "P1"
+		},
+		"Revoke": {
+			"Requester": "Employee",
+			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+			"Action": null,
+			"BriefDescription": "Inname Laptop ($($p.displayName))",
+			"Template": "Ws 015",
+			"Category": "Middelen",
+			"SubCategory": "Inventaris & apparatuur",
+			"ChangeType": "Simple",
+			"Impact": "Persoon",
+			"Benefit": null,
+			"Priority": "P1"
+		}
+	}
+```
+
+| Json field | Description
+| - | -
+| Id: | Unique identifier in the JSON for HelloID.
+| DisplayName: | The value is shown when selecting the entitlement in HelloID.
+| Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the exampleChanges.json to see how this works.
+| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the topdesk person or fill in 'Employee' or 'Manager'. Use \n for "enter". Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
+| Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. 
+| Action: | Commenly filled in the TOPdesk change template. If so use null.
+| BriefDescription: | Fill in the desired title of the change.
+| Template: | Fill in the TOPdesk template code of the change. This is mandatory.
+| Category: | Commenly filled in the TOPdesk change template. If so use null.
+| SubCategory: | Commenly filled in the TOPdesk change template. If so use null.
+| ChanageType: | Fill in the change type Simple or Extensive.
+| Impact: | Commenly filled in the TOPdesk change template. If so use null.
+| Benefit: | Commenly filled in the TOPdesk change template. If so use null.
+| Priority: | Commenly filled in the TOPdesk change template. If so use null.
+
+
+### Incidents
+TODO
+
+```json
+TODO
+```
+| Json field | Description
+| - | -
+|TODO | TODO
+
+## Remarks
+
+### Only require tickets
+When persons are created with the TOPdesk AD sync for example. Then it should be possible to create incidents or changes. There is a correlation needed including a manager's reference to make this work properly. 
+> TODO: make a separate create script to create the references (like AD/Azure prem.)
 
 ## Getting help
 
@@ -84,4 +256,4 @@ Budgetholder
 
 ## HelloID docs
 
-The official HelloID documentation can be found at: https://docs.helloid.com/
+> The official HelloID documentation can be found at: https://docs.helloid.com/

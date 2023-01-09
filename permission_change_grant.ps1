@@ -346,7 +346,7 @@ function Get-TopdeskRequesterByType {
                 IsError = $true
             })
         } else {
-            Write-Output $managerAccountReference
+            Write-Output $accountReference
         }
         return
     }
@@ -443,6 +443,173 @@ function Get-TopdeskChangeType {
     return $ChangeType.ToLower()
 }
 
+function Get-TopdeskPersonById {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $BaseUrl,
+
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]
+        $Headers,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $PersonReference
+    )
+
+    # Lookup value is filled in, lookup person in Topdesk
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
+        Method  = 'GET'
+        Headers = $Headers
+    }
+    $responseGet = Invoke-TopdeskRestMethod @splatParams
+
+    # Output result if something was found. Result is empty when nothing is found
+    Write-Output $responseGet
+}
+
+function Get-TopdeskPerson {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $BaseUrl,
+
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]
+        $Headers,
+
+        [Parameter(Mandatory)]
+        [String]
+        $AccountReference,
+
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
+    )
+
+    # Check if the account reference is empty, if so, generate audit message
+    if ([string]::IsNullOrEmpty($AccountReference)) {
+
+        # Throw an error when account reference is empty
+        $errorMessage = "The account reference is empty. This is a scripting issue."
+        $AuditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
+        return
+    }
+
+    # AcountReference is available, query person
+    $splatParams = @{
+        Headers                   = $Headers
+        BaseUrl                   = $BaseUrl
+        PersonReference           = $AccountReference
+    }
+    $person = Get-TopdeskPersonById @splatParams
+
+    if ([string]::IsNullOrEmpty($person)) {
+        $errorMessage = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
+        $AuditLogs.Add([PSCustomObject]@{
+            Message = $errorMessage
+            IsError = $true
+        })
+    } else {
+        Write-Output $person
+    }
+}
+
+function Set-TopdeskPersonArchiveStatus {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $BaseUrl,
+
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]
+        $Headers,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [Object]
+        [Ref]$TopdeskPerson,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [Bool]
+        $Archive,
+
+        [Parameter()]
+        [String]
+        $ArchivingReason,
+
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
+    )
+
+    # Set ArchiveStatus variables based on archive parameter
+    if ($Archive -eq $true) {
+
+         #When the 'archiving reason' setting is not configured in the target connector configuration
+        if ([string]::IsNullOrEmpty($ArchivingReason)) {
+            $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
+            $AuditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+            Throw "Error(s) occured while looking up required values"
+        }
+
+        $splatParams = @{
+            Uri     = "$baseUrl/tas/api/archiving-reasons"
+            Method  = 'GET'
+            Headers = $Headers
+        }
+
+        $responseGet = Invoke-TopdeskRestMethod @splatParams
+        $archivingReasonObject = $responseGet | Where-object name -eq $ArchivingReason
+
+        #When the configured archiving reason is not found in Topdesk
+        if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
+            $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
+            $AuditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+            Throw "Error(s) occured while looking up required values"
+        } # else
+
+        $archiveStatus = 'personArchived'
+        $archiveUri = 'archive'
+        $body = @{ id = $archivingReasonObject.id }
+    } else {
+        $archiveStatus = 'person'
+        $archiveUri = 'unarchive'
+        $body = $null
+    }
+
+    # Check the current status of the Person and compare it with the status in archiveStatus
+    if ($archiveStatus -ne $TopdeskPerson.status) {
+
+        # Archive / unarchive person
+        Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+        $splatParams = @{
+            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+            Method  = 'PATCH'
+            Headers = $Headers
+            Body    = $body | ConvertTo-Json
+        }
+        $null = Invoke-TopdeskRestMethod @splatParams
+        $TopdeskPerson.status = $archiveStatus
+    }
+}
 
 function New-TopdeskChange {
     [CmdletBinding()]
@@ -650,6 +817,62 @@ try {
     if (-not($dryRun -eq $true)) {
         Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
 
+        $accountReferenceToCheck = $null
+
+        if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($managerAccountReference)))) {
+            Write-Verbose "Check if manager is archived"
+            # get person (manager)
+            $splatParamsPerson = @{
+                AccountReference          = $mRef
+                AuditLogs                 = [ref]$auditLogs
+                Headers                   = $authHeaders
+                BaseUrl                   = $config.baseUrl
+            }
+            $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
+
+            if ($TopdeskPerson.status -eq 'personArchived') {
+                Write-Verbose "Manager $($TopdeskPerson.id) will be unarchived"
+                # Unarchive person (manager)
+                $shouldArchive  = $true
+                $splatParamsPersonUnarchive = @{
+                    TopdeskPerson   = [ref]$TopdeskPerson
+                    Headers         = $authHeaders
+                    BaseUrl         = $config.baseUrl
+                    Archive         = $false
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
+                }
+                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+            }
+        }
+        
+        if ($template.Requester -eq 'employee') {
+            Write-Verbose "Check if employee is archived"
+            # get person (employee)
+            $splatParamsPerson = @{
+                AccountReference          = $aRef
+                AuditLogs                 = [ref]$auditLogs
+                Headers                   = $authHeaders
+                BaseUrl                   = $config.baseUrl
+            }
+            $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
+            
+            if ($TopdeskPerson.status -eq 'personArchived') {
+                Write-Verbose "Employee $($TopdeskPerson.id) will be unarchived"
+                # Unarchive person (employee)
+                $shouldArchive  = $true
+                $splatParamsPersonUnarchive = @{
+                    TopdeskPerson   = [ref]$TopdeskPerson
+                    Headers         = $authHeaders
+                    BaseUrl         = $config.baseUrl
+                    Archive         = $false
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
+                }
+                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+            }
+        }
+
         # Create change in Topdesk
         $splatParamsTopdeskChange = @{
             Headers                 = $authHeaders
@@ -659,48 +882,33 @@ try {
         }
         $TopdeskChange = New-TopdeskChange @splatParamsTopdeskChange
 
-    # Todo: stuff to requester (have to test if this is required)
-    # Something with the person. If the person is archived, unarchive the person (employee/manager) rearchive afterwards
-    # # Prepare manager record, if manager has to be set
-    # if (-Not([string]::IsNullOrEmpty($account.manager.id))) {
-    #     if ($TopdeskManager.isManager -eq $false) {
-    #         if ($TopdeskManager.status -eq 'personArchived') {
-
-    #             # Unarchive person
-    #             $shouldArchive  = $true
-    #             $splatParamsManagerUnarchive = @{
-    #                 TopdeskPerson   = [ref]$TopdeskManager
-    #                 Headers         = $authHeaders
-    #                 BaseUrl         = $config.baseUrl
-    #                 Archive         = $false
-    #             }
-    #             Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
-    #         }
-
-    #         # Set isManager to true
-    #         $splatParamsManagerIsManager = @{
-    #             TopdeskPerson   = [ref]$TopdeskManager
-    #             Headers         = $authHeaders
-    #             BaseUrl         = $config.baseUrl
-    #             IsManager       = $true
-    #         }
-    #         Set-TopdeskPersonIsManager @splatParamsManagerIsManager
-
-    #         # Archive manager if required
-    #         if ($shouldArchive -and $TopdeskManager.status -ne 'personArchived') {
-
-    #             # Archive manager
-    #             $splatParamsManagerArchive = @{
-    #                 TopdeskPerson   = [ref]$TopdeskManager
-    #                 Headers         = $authHeaders
-    #                 BaseUrl         = $config.baseUrl
-    #                 Archive         = $true
-    #             }
-    #             Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
-    #         }
-    #     }
-    # }
-
+        if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
+            if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($managerAccountReference)))) {
+                Write-Verbose "Manager $($TopdeskPerson.id) will be archived"
+                $splatParamsPersonArchive = @{
+                    TopdeskPerson   = [ref]$TopdeskPerson
+                    Headers         = $authHeaders
+                    BaseUrl         = $config.baseUrl
+                    Archive         = $true
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
+                }
+                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+            }
+            if ($template.Requester -eq 'employee') {
+                Write-Verbose "Employee $($TopdeskPerson.id) will be archived"
+                $splatParamsPersonArchive = @{
+                    TopdeskPerson   = [ref]$TopdeskPerson
+                    Headers         = $authHeaders
+                    BaseUrl         = $config.baseUrl
+                    Archive         = $true
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
+                }
+                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+            }
+        }
+        
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
             Message = "Grant TOPdesk entitlement: [$($pRef.id)] with number [$($TopdeskChange.number)] was successful."
