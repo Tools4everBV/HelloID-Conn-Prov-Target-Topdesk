@@ -14,6 +14,10 @@
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
+			"Priority": "P1",
+			"Operator": "JanA@enyoi.org",
+			"EntryType": "E-mail",
+			"Urgency": "Kan niet werken",
 			"CloseTicket": true
 		},
 		"Revoke": {
@@ -26,6 +30,10 @@
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
+			"Priority": "P1",
+			"Operator": "JanA@enyoi.org",
+			"EntryType": "E-mail",
+			"Urgency": "Kan niet werken",
 			"CloseTicket": true
 		}
 	},
@@ -44,6 +52,10 @@
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
+			"Priority": "P1",
+			"Operator": "JanA@enyoi.org",
+			"EntryType": "E-mail",
+			"Urgency": "Kan niet werken",			
 			"CloseTicket": true
 		},
 		"Revoke": {
@@ -56,6 +68,10 @@
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
+			"Priority": "P1",
+			"Operator": "JanA@enyoi.org",
+			"EntryType": "E-mail",
+			"Urgency": "Kan niet werken",
 			"CloseTicket": true
 		}
 	},
@@ -74,6 +90,10 @@
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
+			"Priority": "P1",
+			"Operator": "JanA@enyoi.org",
+			"EntryType": "E-mail",
+			"Urgency": "Kan niet werken",
 			"CloseTicket": true
 		},
 		"Revoke": {}
@@ -94,6 +114,10 @@
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
+			"Priority": "P1",
+			"Operator": "JanA@enyoi.org",
+			"EntryType": "E-mail",
+			"Urgency": "Kan niet werken",
 			"CloseTicket": true
 		}
 	}
