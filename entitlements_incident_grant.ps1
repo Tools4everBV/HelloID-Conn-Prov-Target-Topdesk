@@ -80,7 +80,6 @@ function Format-Description {
     try {
         $variablesFound = Get-VariablesFromString -String $Description
         Resolve-Variables -String ([ref]$Description) -VariablesToResolve $variablesFound
-
         Write-Output $Description
     } catch {
         $PSCmdlet.ThrowTerminatingError($_)
@@ -152,7 +151,6 @@ function Set-AuthorizationHeaders {
     $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
     $authHeaders.Add("Authorization", "BASIC $base64")
     $authHeaders.Add("Accept", 'application/json')
-
     Write-Output $authHeaders
 }
 
@@ -189,7 +187,7 @@ function Get-TopdeskRequesterByType {
                 IsError = $true
             })
         } else {
-            Write-Output $managerAccountReference
+            Write-Output $accountReference
         }
         return
     }
@@ -261,7 +259,9 @@ function New-TopdeskIncident {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [PsObject]
-        $TopdeskIncident
+        $TopdeskIncident,
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs
     )
     $splatParams = @{
         Uri     = "$BaseUrl/tas/api/incidents"
@@ -425,7 +425,10 @@ function Get-TopdeskIdentifier {
         SubCategory   = '/tas/api/incidents/subcategories'
         CallType      = '/tas/api/incidents/call_types'
         Impact        = '/tas/api/incidents/impacts'
-        priority      = '/tas/api/incidents/priorities'
+        Priority      = '/tas/api/incidents/priorities'
+        Operator      = '/tas/api/operators'
+        EntryType     = '/tas/api/incidents/entry_types'
+        Urgency       = '/tas/api/incidents/urgencies'
     }
 
     # use a single function to retrieve the class objects in Topdesk
@@ -452,7 +455,15 @@ function Get-TopdeskIdentifier {
     }
     $splatParams
     $responseGet = Invoke-TopdeskRestMethod @splatParams
-    $result = $responseGet | Where-object name -eq $classValue
+    if ($Class -eq 'OperatorGroup' ) {
+        $result = $responseGet | Where-object groupname -eq $classValue
+    }
+    elseif ($Class -eq 'Operator' ) {
+        $result = $responseGet | Where-object email -eq $classValue
+    }
+    else {
+        $result = $responseGet | Where-object name -eq $classValue    
+    }
 
     # When attribute $classAttribute with $classValue is not found in Topdesk
     if ([string]::IsNullOrEmpty($result.id)) {
@@ -460,7 +471,7 @@ function Get-TopdeskIdentifier {
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
-        })
+        }) 
     } else {
         # $id is found in Topdesk, set in Topdesk
         $Template.$classAttribute = $result.id
@@ -495,7 +506,7 @@ try {
         baseUrl         = $config.baseUrl
         class           = 'Branch'
     }
-    Get-TopdeskIdentifier @splatParamsBranch
+    $null = Get-TopdeskIdentifier @splatParamsBranch
 
     # Add branch to request object
     $requestObject += @{
@@ -503,7 +514,7 @@ try {
             id = $template.branch
         }
     }
-
+    
     # Resolve operatorgroup id
     $splatParamsOperatorGroup = @{
         Template        = $template
@@ -512,7 +523,7 @@ try {
         baseUrl         = $config.baseUrl
         class           = 'OperatorGroup'
     }
-    Get-TopdeskIdentifier @splatParamsOperatorGroup
+    $null = Get-TopdeskIdentifier @splatParamsOperatorGroup
 
     # Add operatorgroup to request object
     $requestObject += @{
@@ -529,7 +540,7 @@ try {
         baseUrl         = $config.baseUrl
         class           = 'Category'
     }
-    Get-TopdeskIdentifier @splatParamsCategory
+    $null = Get-TopdeskIdentifier @splatParamsCategory
 
     # Add category to request object
     $requestObject += @{
@@ -546,7 +557,7 @@ try {
         baseUrl         = $config.baseUrl
         class           = 'SubCategory'
     }
-    Get-TopdeskIdentifier @splatParamsCategory
+    $null = Get-TopdeskIdentifier @splatParamsCategory
 
     # Add subCategory to request object
     $requestObject += @{
@@ -563,7 +574,7 @@ try {
         baseUrl         = $config.baseUrl
         class           = 'CallType'
     }
-    Get-TopdeskIdentifier @splatParamsCategory
+    $null = Get-TopdeskIdentifier @splatParamsCategory
     # Add CallType to request object
     $requestObject += @{
         callType = @{
@@ -579,7 +590,7 @@ try {
         baseUrl         = $config.baseUrl
         class           = 'Impact'
     }
-    Get-TopdeskIdentifier @splatParamsCategory
+    $null = Get-TopdeskIdentifier @splatParamsCategory
     # Add Impact to request object
     $requestObject += @{
         impact = @{
@@ -593,13 +604,61 @@ try {
         AuditLogs       = [ref]$auditLogs
         Headers         = $authHeaders
         baseUrl         = $config.baseUrl
-        class           = 'priority'
+        class           = 'Priority'
     }
-    Get-TopdeskIdentifier @splatParamsPriority
+    $null = Get-TopdeskIdentifier @splatParamsPriority
     # Add Impact to request object
     $requestObject += @{
         priority = @{
             id = $template.Priority
+        }
+    }
+
+    # Resolve operator id 
+    # $splatParamsOperator = @{
+    #     Template         = $template
+    #     AuditLogs       = [ref]$auditLogs
+    #     Headers         = $authHeaders
+    #     baseUrl         = $config.baseUrl
+    #     class           = 'Operator'
+    # }
+    # $null = Get-TopdeskIdentifier @splatParamsOperator
+    # # Add Impact to request object
+    # $requestObject += @{
+    #     operator = @{
+    #         id = $template.Operator
+    #     }
+    # }
+
+     # Resolve entrytype id 
+     $splatParamsEntryType= @{
+        Template         = $template
+        AuditLogs       = [ref]$auditLogs
+        Headers         = $authHeaders
+        baseUrl         = $config.baseUrl
+        class           = 'EntryType'
+    }
+    $null = Get-TopdeskIdentifier @splatParamsEntryType
+    # Add Impact to request object
+    $requestObject += @{
+        entryType = @{
+            id = $template.EntryType
+        }
+    }
+
+        # Resolve urgency id 
+        $splatParamsUrgency= @{
+        Template         = $template
+        AuditLogs       = [ref]$auditLogs
+        Headers         = $authHeaders
+        baseUrl         = $config.baseUrl
+        class           = 'Urgency'
+    }
+    $null = Get-TopdeskIdentifier @splatParamsUrgency
+    # Add Impact to request object
+    $requestObject += @{
+        urgency = @{
+            id = $template.Urgency
         }
     }
 
@@ -636,7 +695,7 @@ try {
         AuditLogs        = [Ref]$auditLogs
         id               = $pref.id
     }
-    Confirm-Description @splatParamsValidateRequestShort
+    Confirm-Description @splatParamsValidateRequestShort    
 
     # Add value to request object
     $requestObject += @{
@@ -647,7 +706,7 @@ try {
     $splatParamsRequestDescription = @{
         description       = $template.RequestDescription
     }
-    $requestDescription = Format-Description @splatParamsRequestDescription
+    $requestDescription = Format-Description @splatParamsRequestDescription  
 
     # Add value to request object
     $requestObject += @{
@@ -674,11 +733,10 @@ try {
 #    $auditLogs
     # Add an auditMessage showing what will happen during enforcement
     if ($dryRun -eq $true) {
-
         $auditLogs.Add([PSCustomObject]@{
             Message = "Grant Topdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)], will be executed during enforcement"
         })
-        Write-Verbose ($requestObject | ConvertTo-Json)
+        Write-Verbose ($requestObject | ConvertTo-Json) 
     }
 
     if (-not($dryRun -eq $true)) {
@@ -688,7 +746,7 @@ try {
         $splatParamsTopdeskIncident = @{
             Headers                 = $authHeaders
             baseUrl                 = $config.baseUrl
-            TopdeskIncident           = $requestObject
+            TopdeskIncident          = $requestObject
             AuditLogs               = [Ref]$auditLogs
         }
         $TopdeskIncident = New-TopdeskIncident @splatParamsTopdeskIncident
@@ -696,13 +754,12 @@ try {
         # manager / employee unarchive / archive needs to be added
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Grant Topdesk entitlement: [$($pRef.id)] with number [$($TopdeskIncident.number)] was successful."
+            Message = "Grant Topdesk entitlement: [$($pRef.id)] with number [$($incident.number)] was successful."
             IsError = $false
         })
     }
 } catch {
     $success = $false
-
     $ex = $PSItem
 
     switch ($ex.Exception.Message) {
