@@ -397,84 +397,68 @@ function Resolve-HTTPError {
 function Get-TopdeskIdentifier {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [System.Collections.Generic.List[PSCustomObject]]
+        [ref]$AuditLogs,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
-        $Headers,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [Object]
-        $Template,
+        $Headers, 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Class,
-        [Parameter()]
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
-        # Add a required/optional parameter?
+        $Class,    
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [Object]
+        $Value,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [Object]
+        $Endpoint,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [Object]
+        $SearchAttribute
     )
-    # Configure endpoints for extra classes here (move to top of script?)
-    $classEndpoints =  [PSCustomObject]@{
-        Branch        = '/tas/api/branches'
-        OperatorGroup = '/tas/api/operatorgroups'
-        Category      = '/tas/api/incidents/categories'
-        SubCategory   = '/tas/api/incidents/subcategories'
-        CallType      = '/tas/api/incidents/call_types'
-        Impact        = '/tas/api/incidents/impacts'
-        Priority      = '/tas/api/incidents/priorities'
-        Operator      = '/tas/api/operators'
-        EntryType     = '/tas/api/incidents/entry_types'
-        Urgency       = '/tas/api/incidents/urgencies'
-    }
 
     # use a single function to retrieve the class objects in Topdesk
-    $classAttribute = $Class                    # required, can't be empty (sorted in the function?)
-    $classValue     = $($Template.$Class)       # required? can it be empty?
-    $classEndpoint  = $($classEndpoints.$Class) # required!
+    #$classAttribute = $Class                    # required, can't be empty (sorted in the function?)
 
     # Check if property exists in the template object set in the mapping
-    if (-not($Template.PSobject.Properties.Name -Contains $classAttribute)) {
-        $errorMessage = "Requested to lookup [$classAttribute], but the [$classAttribute] parameter is missing in the template file"
+    if (-not($Template.PSobject.Properties.Name -Contains $Class)) {
+        $errorMessage = "Requested to lookup [$Class], but the [$Value] parameter is missing in the template file"
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
         return
     }
-    Write-Verbose "Class [$class]: Variable [$`Template.$classAttribute] has value [$($Template.$classAttribute)] and endpoint [$($classEndpoints.$classAttribute)]"
+    Write-Verbose "Class [$class]: Variable [$`Value] has value [$($Value)] and endpoint [$($Endpoint)]"
 
     # Lookup Value is filled in, lookup value in Topdesk
     $splatParams = @{
-        Uri     = "$baseUrl$classEndpoint"
+        Uri     = "$baseUrl$Endpoint"
         Method  = 'GET'
         Headers = $Headers
     }
-    $splatParams
     $responseGet = Invoke-TopdeskRestMethod @splatParams
-    if ($Class -eq 'OperatorGroup' ) {
-        $result = $responseGet | Where-object groupname -eq $classValue
-    }
-    elseif ($Class -eq 'Operator' ) {
-        $result = $responseGet | Where-object email -eq $classValue
-    }
-    else {
-        $result = $responseGet | Where-object name -eq $classValue    
-    }
 
-    # When attribute $classAttribute with $classValue is not found in Topdesk
+    $result = $responseGet | Where-object $SearchAttribute -eq $Value
+
+    # When attribute $Class with $Value is not found in Topdesk
     if ([string]::IsNullOrEmpty($result.id)) {
-        $errorMessage = "Class [$classAttribute] with value [$classValue] isn't found in Topdesk"
+        $errorMessage = "Class [$Class] with value [$Value] isn't found in Topdesk"
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         }) 
     } else {
         # $id is found in Topdesk, set in Topdesk
-        $Template.$classAttribute = $result.id
+        Write-Output $result.id
     }
 }
 #endregion
@@ -500,165 +484,181 @@ try {
 
     # Resolve branch id
     $splatParamsBranch = @{
-        Template        = $template
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'Branch'
+        Class           = 'Branch'
+        Value           = $template.Branch
+        Endpoint        = '/tas/api/branches'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsBranch
 
     # Add branch to request object
     $requestObject += @{
         branch = @{
-            id = $template.branch
+            id = Get-TopdeskIdentifier @splatParamsBranch
         }
     }
     
     # Resolve operatorgroup id
     $splatParamsOperatorGroup = @{
-        Template        = $template
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'OperatorGroup'
+        Class           = 'OperatorGroup'
+        Value           = $template.OperatorGroup
+        Endpoint        = '/tas/api/operatorgroups'
+        SearchAttribute = 'groupname'
     }
-    $null = Get-TopdeskIdentifier @splatParamsOperatorGroup
 
     # Add operatorgroup to request object
     $requestObject += @{
         operatorGroup = @{
-            id = $template.operatorGroup
+            id = Get-TopdeskIdentifier @splatParamsOperatorGroup
         }
     }
-
+ 
     # Resolve category id
     $splatParamsCategory = @{
-        Template        = $template
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'Category'
+        Class           = 'Category'
+        Value           = $template.Category
+        Endpoint        = '/tas/api/incidents/categories'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsCategory
 
     # Add category to request object
     $requestObject += @{
         category = @{
-            id = $template.category
+            id = Get-TopdeskIdentifier @splatParamsCategory
         }
     }
 
     # Resolve subCategory id
     $splatParamsCategory = @{
-        Template         = $template
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'SubCategory'
+        Class           = 'SubCategory'
+        Value           = $template.SubCategory
+        Endpoint        = '/tas/api/incidents/subcategories'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsCategory
 
     # Add subCategory to request object
     $requestObject += @{
         subcategory = @{
-            id = $template.subCategory
+            id = Get-TopdeskIdentifier @splatParamsCategory
         }
     }
 
     # Resolve CallType id
     $splatParamsCategory = @{
-        Template         = $template
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'CallType'
+        Class           = 'CallType'
+        Value           = $template.CallType
+        Endpoint        = '/tas/api/incidents/call_types'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsCategory
+
     # Add CallType to request object
     $requestObject += @{
         callType = @{
-            id = $template.CallType
+            id = Get-TopdeskIdentifier @splatParamsCategory
         }
     }
 
     # Resolve Impact id 
     $splatParamsCategory = @{
-        Template         = $template
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'Impact'
+        Class           = 'Impact'
+        Value           = $template.Impact
+        Endpoint        = '/tas/api/incidents/impacts'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsCategory
+
     # Add Impact to request object
     $requestObject += @{
         impact = @{
-            id = $template.Impact
+            id = Get-TopdeskIdentifier @splatParamsCategory
         }
     }
 
     # Resolve priority id 
     $splatParamsPriority = @{
-        Template         = $template
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'Priority'
+        Class           = 'Priority'
+        Value           = $template.Priority
+        Endpoint        = '/tas/api/incidents/priorities'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsPriority
+
     # Add Impact to request object
     $requestObject += @{
         priority = @{
-            id = $template.Priority
+            id = Get-TopdeskIdentifier @splatParamsPriority
         }
     }
 
-    # Resolve operator id 
+    # # Resolve operator id 
     # $splatParamsOperator = @{
-    #     Template         = $template
     #     AuditLogs       = [ref]$auditLogs
+    #     BaseUrl         = $config.baseUrl
     #     Headers         = $authHeaders
-    #     baseUrl         = $config.baseUrl
-    #     class           = 'Operator'
+    #     Class           = 'Operator'
+    #     Value           = $template.Operator
+    #     Endpoint        = '/tas/api/operators'
+    #     SearchAttribute = 'email'
     # }
-    # $null = Get-TopdeskIdentifier @splatParamsOperator
+    
     # # Add Impact to request object
     # $requestObject += @{
     #     operator = @{
-    #         id = $template.Operator
+    #         id = Get-TopdeskIdentifier @splatParamsOperator
     #     }
     # }
 
-     # Resolve entrytype id 
-     $splatParamsEntryType= @{
-        Template         = $template
+    # Resolve entrytype id 
+    $splatParamsEntryType= @{
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'EntryType'
+        Class           = 'EntryType'
+        Value           = $template.EntryType
+        Endpoint        = '/tas/api/incidents/entry_types'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsEntryType
+    
     # Add Impact to request object
     $requestObject += @{
         entryType = @{
-            id = $template.EntryType
+            id = Get-TopdeskIdentifier @splatParamsEntryType
         }
     }
 
-        # Resolve urgency id 
-        $splatParamsUrgency= @{
-        Template         = $template
+    # Resolve urgency id 
+    $splatParamsUrgency= @{
         AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
         Headers         = $authHeaders
-        baseUrl         = $config.baseUrl
-        class           = 'Urgency'
+        Class           = 'Urgency'
+        Value           = $template.Urgency
+        Endpoint        = '/tas/api/incidents/urgencies'
+        SearchAttribute = 'name'
     }
-    $null = Get-TopdeskIdentifier @splatParamsUrgency
+    
     # Add Impact to request object
     $requestObject += @{
         urgency = @{
-            id = $template.Urgency
+            id = Get-TopdeskIdentifier @splatParamsUrgency
         }
     }
 
@@ -672,12 +672,11 @@ try {
         managerFallback         = $config.notificationRequesterFallback
         AuditLogs               = [Ref]$auditLogs
     }
-    $callerId = Get-TopdeskRequesterByType @splatParamsTopdeskCaller
 
     # Add value to request object
     $requestObject += @{
         callerLookup = @{
-            id = $callerId
+            id = Get-TopdeskRequesterByType @splatParamsTopdeskCaller
         }
     }
 
@@ -716,19 +715,6 @@ try {
     if ($auditLogs.isError -contains $true) {
         Throw "Error(s) occured while looking up required values"
     }
-
-<#
-    "CallerEmail": "tester@test.com", # renamed to caller // done
-    "RequestShort": "Aanvraag Laptop ($($p.displayName))", // done
-    "RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)", // done 
-    "Branch" // done
-    "OperatorGroup": "Servicedesk",  // done
-    "Category": "Middelen", // done
-    "SubCategory": "Inventaris & apparatuur", //done
-    "CallType": "Aanvraag",
-    "Impact": "Organisatie",
-    "CloseTicket": true // todo
-#>
 
 #    $auditLogs
     # Add an auditMessage showing what will happen during enforcement
