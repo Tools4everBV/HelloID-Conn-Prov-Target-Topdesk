@@ -69,38 +69,32 @@ The following settings are required to connect to the API.
 ### Permissions
 
 The following permissions are required to use this connector. This should be configured on a specific Permission Group for the Operator HelloID uses.
-<table>
-<tr><td>Permission</td><td>Read</td><td>Write</td><td>Create</td><td>Archive</td></tr>
 
-<tr><td><b>Call Management</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>First line calls</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
-<tr><td>Second line calls</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
-<tr><td>Escalate calls</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Link object to call</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Link room to call</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-
-<tr><td><b>Change Management</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Requests for Simple Change</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
-<tr><td>Requests for Extensive Change</td><td>x</td><td>x</td><td>x</td><td>&nbsp;</td></tr>
-<tr><td>Simple Changes</td><td>x</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Extensive Changes</td><td>x</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-
-<tr><td><b>New Asset Management</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Templates</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-
-<tr><td><b>Supporting Files</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Persons</td><td>x</td><td>x</td><td>x</td><td>x</td></tr>
-<tr><td>Operators</td><td>x</td><td>x</td><td>x</td><td>x</td></tr>
-<tr><td>Operator groups</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Suppliers</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Rooms</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Login data</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-
-<tr><td><b>Reporting API</b></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>REST API</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-<tr><td>Use application passwords</td><td>&nbsp;</td><td>x</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-
-</table>
+| Permission | Read | Write | Create | Archive
+| - | - | - | - | -
+| <b>Call Management</b>
+| First line calls | x | x | x | 
+| Second line calls | x | x | x |
+| Escalate calls | | x | |
+| Link object to call | | x | |
+| Link room to call | | x | |
+| <b>Change Management</b>
+| Requests for Simple Change | x | x | x | 
+| Requests for Extensive Change | x | x | x |
+| Simple Changes| x | x | |
+| Extensive Changes | x | x | |
+| <b>New Asset Management</b>
+| Templates | x |  | |
+| <b>Supporting Files</b>
+| Persons | x | x | x | x
+| Operators | x | x | x | x
+| Operator groups | x |  |  | 
+| Suppliers | x |  |  | 
+| Rooms | x |  |  | 
+| Login data |  | x |  | 
+| <b>Reporting API</b>
+| REST API | x |  |  | 
+| Use application passwords |  | x |  | 
 
 (To create departments and budgetholders, you will need to allow the API account read and write access to the "Instellingen voor Ondersteunende bestanden".)
 
@@ -240,7 +234,23 @@ TODO
 ```
 | Json field | Description
 | - | -
-|TODO | TODO
+| Id: | Unique identifier in the JSON for HelloID.
+| DisplayName: | The value is shown when selecting the entitlement in HelloID.
+| Grant / Revoke: | It is possible to create a incident when granting and revoking an entitlement. It is also possible to create a incident when only granting or revoking an entitlement. Please look at the exampleIncident.json to see how this works.
+| Caller: |
+| RequestShort: |
+| RequestDescription: |
+| Branch: | 
+| OperatorGroup: | 
+| Operator: | 
+| Category: |
+| SubCategory: |
+| CallType: |
+| Impact: |
+| Priority: |
+| EntryType: |
+| Urgency: |
+| CloseTicket: |
 
 ## Remarks
 
