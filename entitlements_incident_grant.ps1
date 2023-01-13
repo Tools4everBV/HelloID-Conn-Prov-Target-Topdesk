@@ -182,7 +182,7 @@ function Get-TopdeskRequesterByType {
     # Validate employee entry
     if ($type -eq 'employee') {
         if ([string]::IsNullOrEmpty($aRef)) {
-            $errorMessage = "Could not set requester: The account reference is empty." # add Could not grant TOPdesk entitlement: [$($pRef.id)]
+            $errorMessage = "Could not set requester: The account reference is empty."
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
@@ -201,7 +201,7 @@ function Get-TopdeskRequesterByType {
             write-verbose "Type: Manager - managerAccountReference leeg"
             if ([string]::IsNullOrEmpty($managerFallback)) {
                 write-verbose "Type: Manager - managerAccountReference - leeg - fallback leeg"
-                $errorMessage = "Could not set requester: The manager account reference is empty and no fallback email is configured." # Could not grant TOPdesk entitlement: [$($pRef.id)]
+                $errorMessage = "Could not set requester: The manager account reference is empty and no fallback email is configured."
                 $auditLogs.Add([PSCustomObject]@{
                     Message = $errorMessage
                     IsError = $true
@@ -225,7 +225,7 @@ function Get-TopdeskRequesterByType {
         Method  = 'GET'
         Headers = $Headers
     }
-    $responseGet = Invoke-TopdeskRestMethod @splatParams        #todo: have to find out what the response looks like
+    $responseGet = Invoke-TopdeskRestMethod @splatParams
 
     # Check if only one result is returned
     if ([string]::IsNullOrEmpty($responseGet.id)) {
@@ -366,34 +366,6 @@ function Confirm-Description {
             Message = $errorMessage
             IsError = $true
         })
-    } #else { 
-        #Write-Verbose "The length for string [$Description] is [$($Description.Length)] which is shorter than the allowed length [$allowedLength]"
-    #}
-}
-
-function Resolve-HTTPError {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory,
-            ValueFromPipeline
-        )]
-        [object]$ErrorObject
-    )
-    process {
-        $httpErrorObj = [PSCustomObject]@{
-            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId
-            MyCommand             = $ErrorObject.InvocationInfo.MyCommand
-            RequestUri            = $ErrorObject.TargetObject.RequestUri
-            ScriptStackTrace      = $ErrorObject.ScriptStackTrace
-            ErrorMessage          = ''
-        }
-        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.WebRequestPSCmdlet') {
-            $httpErrorObj.ErrorMessage = $ErrorObject.ErrorDetails.Message
-        }
-        elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
-            $httpErrorObj.ErrorMessage = [System.IO.StreamReader]::new($ErrorObject.Exception.Response.GetResponseStream()).ReadToEnd()
-        }
-        Write-Output $httpErrorObj
     }
 }
 
@@ -649,11 +621,62 @@ try {
 
     # If template is not empty (both by design or due to an error), process to lookup the information in the template
     if ([string]::IsNullOrEmpty($template)) {
-        Throw "HelloID template with not found"
+        Throw "HelloID template not found"
     }
 
     # Setup authentication headers
     $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apiKey
+
+    # Resolve caller
+    $splatParamsTopdeskCaller = @{
+        Headers                 = $authHeaders
+        baseUrl                 = $config.baseUrl
+        Type                    = $template.Caller
+        accountReference        = $aRef
+        managerAccountReference = $mRef
+        managerFallback         = $config.notificationRequesterFallback
+        AuditLogs               = [Ref]$auditLogs
+    }
+
+    # Add value to request object
+    $requestObject += @{
+        callerLookup = @{
+            id = Get-TopdeskRequesterByType @splatParamsTopdeskCaller
+        }
+    }
+
+    # Resolve variables in the RequestShort field
+    $splatParamsRequestShort = @{
+        description       = $template.RequestShort
+    }
+    $requestShort = Format-Description @splatParamsRequestShort
+
+    #Validate length of RequestShort
+    $splatParamsValidateRequestShort = @{
+        Description      = $requestShort
+        AllowedLength    = 80
+        AttributeName    = 'requestShort'
+        AuditLogs        = [Ref]$auditLogs
+        id               = $pref.id
+    }
+
+    Confirm-Description @splatParamsValidateRequestShort
+    
+    # Add value to request object
+    $requestObject += @{
+        briefDescription = $requestShort
+    }
+
+    # Resolve variables in the RequestDescription field
+    $splatParamsRequestDescription = @{
+        description       = $template.RequestDescription
+    }
+    $requestDescription = Format-Description @splatParamsRequestDescription  
+
+    # Add value to request object
+    $requestObject += @{
+        request = $requestDescription
+    }
 
     # Resolve branch id
     $splatParamsBranch = @{
@@ -691,7 +714,7 @@ try {
         }
     }
 
-    # Resolve operator id 
+     # Resolve operator id 
     $splatParamsOperator = @{
         AuditLogs       = [ref]$auditLogs
         BaseUrl         = $config.baseUrl
@@ -702,7 +725,7 @@ try {
         SearchAttribute = 'email'
     }
     
-    #Add Impact to request object
+     #Add Impact to request object
     $requestObject += @{
         operator = @{
             id = Get-TopdeskIdentifier @splatParamsOperator
@@ -835,64 +858,34 @@ try {
         }
     }
 
-    # Resolve caller
-    $splatParamsTopdeskCaller = @{
-        Headers                 = $authHeaders
-        baseUrl                 = $config.baseUrl
-        Type                    = $template.caller
-        accountReference        = $aRef
-        managerAccountReference = $mRef
-        managerFallback         = $config.notificationRequesterFallback
-        AuditLogs               = [Ref]$auditLogs
+    # Resolve ProcessingStatus id 
+    $splatParamsProcessingStatus= @{
+        AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
+        Headers         = $authHeaders
+        Class           = 'ProcessingStatus'
+        Value           = $template.ProcessingStatus
+        Endpoint        = '/tas/api/incidents/statuses'
+        SearchAttribute = 'name'
     }
-
-    # Add value to request object
+    
+    # Add Impact to request object
     $requestObject += @{
-        callerLookup = @{
-            id = Get-TopdeskRequesterByType @splatParamsTopdeskCaller
+        processingStatus = @{
+            id = Get-TopdeskIdentifier @splatParamsProcessingStatus
         }
     }
 
-    # Resolve variables in the RequestShort field
-    $splatParamsRequestShort = @{
-        description       = $template.RequestShort
-    }
-    $requestShort = Format-Description @splatParamsRequestShort
-
-    #Validate length of RequestShort
-    $splatParamsValidateRequestShort = @{
-        Description      = $requestShort
-        AllowedLength    = 80
-        AttributeName    = 'requestShort'
-        AuditLogs        = [Ref]$auditLogs
-        id               = $pref.id
-    }
-
-    Confirm-Description @splatParamsValidateRequestShort
-    
-    # Add value to request object
-    $requestObject += @{
-        briefDescription = $requestShort
-    }
-
-    # Resolve variables in the RequestDescription field
-    $splatParamsRequestDescription = @{
-        description       = $template.RequestDescription
-    }
-    $requestDescription = Format-Description @splatParamsRequestDescription  
-
-    # Add value to request object
-    $requestObject += @{
-        request = $requestDescription
-    }
-
     # Add CloseTicket value to request object
-
-    #TODO
-
-    # $requestObject += @{
-    #     closed = $template.CloseTicket
-    # }   
+    # Is this still needed? Also possible to add a status that closes the ticket (couldn't test this)
+    # if ($template.CloseTicket = "true")
+    # {
+    #     $requestObject += @{
+    #         closed = $true
+    #         closedDate = "2023-01-13T10:01:35.588Z"
+    #     }
+    # }
+       
 
     if ($auditLogs.isError -contains $true) {
         Throw "Error(s) occured while looking up required values"
