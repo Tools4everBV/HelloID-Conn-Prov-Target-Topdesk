@@ -18,7 +18,7 @@
 			"Priority": "P1",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"CloseTicket": true
+			"ProcessingStatus": "Afgemeld"
 		},
 		"Revoke": {
 			"Caller": "tester@test.com",
@@ -34,7 +34,7 @@
 			"Priority": "P1",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"CloseTicket": true
+			"ProcessingStatus": "Afgemeld"
 		}
 	},
 	{
@@ -56,7 +56,7 @@
 			"Priority": "P1",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",			
-			"CloseTicket": true
+			"ProcessingStatus": "Afgemeld"
 		},
 		"Revoke": {
 			"Caller": "Manager",
@@ -72,7 +72,7 @@
 			"Priority": "P1",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"CloseTicket": true
+			"ProcessingStatus": "Afgemeld"
 		}
 	},
 	{
@@ -94,7 +94,7 @@
 			"Priority": "P1",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"CloseTicket": true
+			"ProcessingStatus": "Afgemeld"
 		},
 		"Revoke": {}
 	},
@@ -118,7 +118,7 @@
 			"Priority": "P1",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"CloseTicket": true
+			"ProcessingStatus": "Afgemeld"
 		}
 	}
 ]
