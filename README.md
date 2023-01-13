@@ -1,12 +1,12 @@
 # HelloID-Conn-Prov-Target-TOPdesk
 
 | :warning: Warning |
-|:---------------------------|
-| Note that this connector is **not ready** to use in your production environment.       |
+|:-|
+| Note that this connector is **not ready** to use in your production environment. |
 
 | :information_source: Information |
-|:---------------------------|
-| This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.       |
+|:-|
+| This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements. |
 
 <p align="center">
   <img src="assets/logo.png">
@@ -109,7 +109,7 @@ The fields department and budgetholder are both non required lookup fields in to
 For example:
 
 
-```json
+```JSON
 "id": "90ee5493-027d-4cda-8b41-8325130040c3",
 "name": "EnYoi Holding B.V.",
 "externalLinks": []
@@ -167,13 +167,13 @@ Deploying the connector with the manager reference active should probably result
 
 
 ### Changes
-It is possible to create changes in TOPdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a json file. The local HelloID agent needs to read this file.
+It is possible to create changes in TOPdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a JSON file. The local HelloID agent needs to read this file.
 
 Please use the exampleChanges.json as a template to build you're own.
 
-The change json file has the following structure:
+The change JSON file has the following structure:
 
-```json
+```JSON
 {
 		"Identification": {
 			"Id": "C001"
@@ -208,11 +208,11 @@ The change json file has the following structure:
 	}
 ```
 
-| Json field | Description
+| JSON field | Description
 | - | -
 | Id: | Unique identifier in the JSON for HelloID.
 | DisplayName: | The value is shown when selecting the entitlement in HelloID.
-| Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the exampleChanges.json to see how this works.
+| Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the exampleChanges.JSON to see how this works.
 | Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the topdesk person or fill in 'Employee' or 'Manager'. Use \n for "enter". Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
 | Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. 
 | Action: | Commenly filled in the TOPdesk change template. If so use null.
@@ -227,30 +227,116 @@ The change json file has the following structure:
 
 
 ### Incidents
-TODO
+It is possible to create incidents in TOPdesk when granting or revoking an entitlement in HelloID. The content of the incidents is managed in a JSON file. The local HelloID agent needs to read this file.
 
-```json
-TODO
+Please use the exampleIncidents.json as a template to build you're own.
+
+| :information_source: Information |
+|:-|
+| If a lookup field in the incident isn't used, disable the function like in the example below. If you disable the resolve operator for example the incident will be created for the operatorgroup that is assigned in the JSON. |
+
+```powershell
+     # Resolve operator id 
+    # $splatParamsOperator = @{
+    #     AuditLogs       = [ref]$auditLogs
+    #     BaseUrl         = $config.baseUrl
+    #     Headers         = $authHeaders
+    #     Class           = 'Operator'
+    #     Value           = $template.Operator
+    #     Endpoint        = '/tas/api/operators'
+    #     SearchAttribute = 'email'
+    # }
+    
+     #Add Impact to request object
+    # $requestObject += @{
+    #     operator = @{
+    #         id = Get-TopdeskIdentifier @splatParamsOperator
+    #     }
+    # }
 ```
-| Json field | Description
+| :information_source: Information |
+|:-|
+| If you want to look up for example operator with 'employeeNumber'. Then you should change the SearchAttribute field like in the example below. Make sure you name the SearchAttribute the same as Topdesk uses. You can verifier this in the [TOPdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/Operators/retrieveOperators) |
+```powershell
+     # Resolve operator id 
+    $splatParamsOperator = @{
+        AuditLogs       = [ref]$auditLogs
+        BaseUrl         = $config.baseUrl
+        Headers         = $authHeaders
+        Class           = 'Operator'
+        Value           = $template.Operator
+        Endpoint        = '/tas/api/operators'
+        SearchAttribute = 'employeeNumber' #SearchAttribute chaged from 'email' -> 'employeeNumber'
+    }
+    
+     #Add Impact to request object
+    $requestObject += @{
+        operator = @{
+            id = Get-TopdeskIdentifier @splatParamsOperator
+        }
+    }
+```
+
+The incident JSON file has the following structure:
+
+```JSON
+	{
+		"Identification": {
+			"Id": "I001"
+		},
+		"DisplayName": "Aanvraag/Inname laptop Incident",
+		"Grant": {
+			"Caller": "tester@test.com",
+			"RequestShort": "Aanvraag Laptop ($($p.displayName))",
+			"RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"Branch": "Baarn",
+			"OperatorGroup": "Applicatiebeheerders",
+			"Operator": "operator@enyoi.org",
+			"Category": "Middelen",
+			"SubCategory": "Inventaris & apparatuur",
+			"CallType": "Aanvraag",
+			"Impact": "Organisatie",
+			"Priority": "P1",
+			"EntryType": "Telefonisch",
+			"Urgency": "Kan niet werken",
+			"ProcessingStatus": "Afgemeld"
+		},
+		"Revoke": {
+			"Caller": "tester@test.com",
+			"RequestShort": "Inname Laptop ($($p.displayName))",
+			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+			"Branch": "Baarn",
+			"OperatorGroup": "Applicatiebeheerders",
+			"Operator": "operator@enyoi.org",
+			"Category": "Middelen",
+			"SubCategory": "Inventaris & apparatuur",
+			"CallType": "Aanvraag",
+			"Impact": "Organisatie",
+			"Priority": "P1",
+			"EntryType": "Telefonisch",
+			"Urgency": "Kan niet werken",
+			"ProcessingStatus": "Afgemeld"
+		}
+```
+| JSON field | Description
 | - | -
 | Id: | Unique identifier in the JSON for HelloID.
 | DisplayName: | The value is shown when selecting the entitlement in HelloID.
-| Grant / Revoke: | It is possible to create a incident when granting and revoking an entitlement. It is also possible to create a incident when only granting or revoking an entitlement. Please look at the exampleIncident.json to see how this works.
-| Caller: |
-| RequestShort: |
-| RequestDescription: |
-| Branch: | 
-| OperatorGroup: | 
-| Operator: | 
-| Category: |
-| SubCategory: |
-| CallType: |
-| Impact: |
-| Priority: |
-| EntryType: |
-| Urgency: |
-| CloseTicket: |
+| Grant / Revoke: | It is possible to create an incident when granting and revoking an entitlement. It is also possible to create an incident when only granting or revoking an entitlement. Please look at the exampleIncident.JSON to see how this works.
+| Caller: | It is possible to edit who is the caller of the change. You can fill in the E-mail of the topdesk person or fill in 'Employee' or 'Manager'. Use \n for "enter". Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
+| RequestShort: | Fill in the desired title of the incident.
+| RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.
+| Branch: | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.
+| OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| Category: | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| SubCategory: | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| CallType: | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| Impact: | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| Priority: | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
+| ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory. With the correct processing status, it is possible to create a closed incident. Is this still needed? Also possible to add a status that closes the ticket (couldn't test this)
 
 ## Remarks
 
