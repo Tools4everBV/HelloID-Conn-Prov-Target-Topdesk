@@ -233,7 +233,7 @@ Please use the exampleIncidents.json as a template to build you're own.
 
 | :information_source: Information |
 |:-|
-| If a lookup field in the incident isn't used, disable the function like in the example below. If you disable the resolve operator for example the incident will be created for the operatorgroup that is assigned in the JSON. |
+| If a lookup field in the incident isn't used, disable the function like in the example below. If you disable the resolve operator for example the incident will be created for the operatorgroup that is assigned in the JSON. This changes need to be made in the Grant action script and the Revoke action script. |
 
 ```powershell
      # Resolve operator id 
