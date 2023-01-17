@@ -131,23 +131,5 @@
         }
       ]
     }
-  },
-  {
-    "key": "lookupErrorNoManagerReference",
-    "type": "radio",
-    "defaultValue": "true",
-    "templateOptions": {
-      "label": "When a manager reference is emtpy",
-      "options": [
-        {
-          "value": "true",
-          "label": "Stop processing and generate an error"
-        },
-        {
-          "value": "false",
-          "label": "Clear the manager field in TOPdesk"
-        }
-      ]
-    }
   }
 ]
