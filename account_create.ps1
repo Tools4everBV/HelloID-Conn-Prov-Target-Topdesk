@@ -26,7 +26,7 @@ switch ($($config.IsDebug)) {
 #  P  "<partner name prefix> <partner name>"
 #  BP "<birth name prefix> <birth name> - <partner name prefix> <partner name>"
 #  PB "<partner name prefix> <partner name> - <birth name prefix> <birth name>"
-function New-TopdeskSurname {
+function New-TopdeskName {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -34,6 +34,12 @@ function New-TopdeskSurname {
         [object]
         $person
     )
+
+    if([string]::IsNullOrEmpty($person.Name.Initials)) {
+        $initials = $person.Name.Initials
+    } else {
+        $initials = $person.Name.Initials[0..9] -join ""        # Max 10 chars
+    }
 
     if([string]::IsNullOrEmpty($person.Name.FamilyNamePrefix)) {
         $prefix = ""
@@ -66,6 +72,7 @@ function New-TopdeskSurname {
     $output = [PSCustomObject]@{
         prefixes    = $TopdeskPrefix
         surname     = $TopdeskSurname
+        initials    = $Initials
     }
     Write-Output $output
 }
@@ -96,10 +103,10 @@ function Get-RandomCharacters($length, $characters) {
 # Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
 # https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
 $account = [PSCustomObject]@{
-    surName             = (New-TopdeskSurname -Person $p).surname       # Generate surname according to the naming convention code.
-    prefixes            = (New-TopdeskSurname -Person $p).prefixes
+    surName             = (New-TopdeskName -Person $p).surname      # Generate surname according to the naming convention code.
+    prefixes            = (New-TopdeskName -Person $p).prefixes
     firstName           = $p.Name.NickName
-    firstInitials       = $p.Name.Initials[0..9] -join "" # Max 10 chars
+    firstInitials       = (New-TopdeskName -Person $p).initials     # Generate initials max 10 char
     gender              = New-TopdeskGender -Person $p
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
@@ -119,6 +126,8 @@ Write-Verbose ($account | ConvertTo-Json) # Debug output
 
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
+
+#Write-Verbose -Verbose "CorrelationAttribute1: [$(account.$correlationAttribute)]"
 
 #endregion mapping
 
@@ -461,19 +470,26 @@ function Get-TopdeskPersonByCorrelationAttribute {
         [String]
         $CorrelationAttribute,
 
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $PersonType,
+
         [System.Collections.Generic.List[PSCustomObject]]
         [ref]$AuditLogs
     )
 
     # Check if the correlation attribute exists in the account object set in the mapping
     if (-not([bool]$account.PSObject.Properties[$CorrelationAttribute])) {
-        $errorMessage = "The correlation attribute [$CorrelationAttribute] is  missing in the account mapping. This is a scripting issue."
+        $errorMessage = "The correlation attribute [$CorrelationAttribute] is missing in the account mapping. This is a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
         })
         return
     }
+
+    #Write-Verbose -Verbose "CorrelationAttribute2: [$(account.$CorrelationAttribute)]"
 
     # Check if the correlationAttribute is not empty
     if ([string]::IsNullOrEmpty($account.$CorrelationAttribute)) {
@@ -495,17 +511,14 @@ function Get-TopdeskPersonByCorrelationAttribute {
 
     # Check if only one result is returned
     if ([string]::IsNullOrEmpty($responseGet.id)) {
-
         # no results found
         Write-Output $null
     } elseif ($responseGet.Count -eq 1) {
-
         # one record found, correlate, return user
         write-output $responseGet
     } else {
-
         # Multiple records found, correlation
-        $errorMessage = "Multiple [$($responseGet.Count)] persons found with [$CorrelationAttribute] [$($account.$CorrelationAttribute)]. Login names: [$($responseGet.tasLoginName)]"
+        $errorMessage = "Multiple [$($responseGet.Count)] $($PersonType)s found with [$CorrelationAttribute] [$($account.$CorrelationAttribute)]. Login names: [$($responseGet.tasLoginName -join ', ')]"
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -581,24 +594,12 @@ function Get-TopdeskPersonManager {
 
     # Check if the manager reference is empty, if so, generate audit message or clear the manager attribute
     if ([string]::IsNullOrEmpty($Account.manager.id)) {
-
-        # Check settings if it should clear the manager or generate an error
-        if ([System.Convert]::ToBoolean($lookupErrorNoManagerReference)) {
-
-            # True, no manager id = throw error
-            $errorMessage = "The manager reference is empty and the connector is configured to stop when this happens."
-            $AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
-        } else {
-            # False, as manager.Id is already empty, nothing needs to be done here
-            Write-Verbose "Clearing manager. (lookupErrorNoManagerReference = False)"
-        }
+            #As manager.Id is empty, nothing needs to be done here
+            Write-Verbose "Manager Id is empty, clearing manager."
         return
     }
 
-    # mRef is available, query manager
+    # manager.Id is available, query manager
     $splatParams = @{
         Headers                   = $Headers
         BaseUrl                   = $BaseUrl
@@ -886,8 +887,27 @@ try {
         CorrelationAttribute      = $correlationAttribute
         Headers                   = $authHeaders
         BaseUrl                   = $config.baseUrl
+        PersonType                = 'person'
     }
     $TopdeskPerson = Get-TopdeskPersonByCorrelationAttribute @splatParamsPerson
+
+    # if mref is empty and person has a manager try to correlate manager in topdesk
+    if (([string]::IsNullOrEmpty($account.manager.id)) -and (-not ([string]::IsNullOrEmpty($p.PrimaryManager.ExternalId)))) {
+        $personCorrelationAttribute = $account.$CorrelationAttribute
+        $account.$CorrelationAttribute =  $p.PrimaryManager.ExternalId
+        
+        $splatParamsManager = @{
+            Account                   = $account
+            AuditLogs                 = [ref]$auditLogs
+            CorrelationAttribute      = $correlationAttribute
+            Headers                   = $authHeaders
+            BaseUrl                   = $config.baseUrl
+            PersonType                = 'manager'
+        }
+        $managerResponse = Get-TopdeskPersonByCorrelationAttribute @splatParamsManager
+        $account.manager.id = $managerResponse.id
+        $account.$CorrelationAttribute = $personCorrelationAttribute
+    }
 
     # get manager
     $splatParamsManager = @{
@@ -953,8 +973,10 @@ try {
     # Verify if a user must be created or correlated
     if ([string]::IsNullOrEmpty($TopdeskPerson)) {
         $action = 'Create'
+        $actionType = 'created'
     } else {
         $action = 'Correlate'
+        $actionType = 'correlated'
         # example to only set certain attributes when creating a person, but skip them when updating
         # $Account.PSObject.Properties.Remove('showDepartment')
         $account.PSObject.Properties.Remove('isManager')
@@ -1010,7 +1032,7 @@ try {
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Account with id [$($TopdeskPerson.id)] successfully created"
+            Message = "Account with id [$($TopdeskPerson.id)] successfully $($actionType)"
             IsError = $false
         })
     }
