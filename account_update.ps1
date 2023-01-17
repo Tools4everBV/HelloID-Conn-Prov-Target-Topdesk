@@ -27,7 +27,7 @@ switch ($($config.IsDebug)) {
 #  P  "<partner name prefix> <partner name>"
 #  BP "<birth name prefix> <birth name> - <partner name prefix> <partner name>"
 #  PB "<partner name prefix> <partner name> - <birth name prefix> <birth name>"
-function New-TopdeskSurname {
+function New-TopdeskName {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -35,6 +35,12 @@ function New-TopdeskSurname {
         [object]
         $Person
     )
+
+    if([string]::IsNullOrEmpty($person.Name.Initials)) {
+        $initials = $person.Name.Initials
+    } else {
+        $initials = $person.Name.Initials[0..9] -join ""        # Max 10 chars
+    }
 
     if([string]::IsNullOrEmpty($Person.Name.FamilyNamePrefix)) {
         $prefix = ""
@@ -67,6 +73,7 @@ function New-TopdeskSurname {
     $output = [PSCustomObject]@{
         prefixes    = $TopdeskPrefix
         surname     = $TopdeskSurname
+        initials    = $Initials
     }
     Write-Output $output
 }
@@ -99,15 +106,15 @@ function Get-RandomCharacters($length, $characters) {
 # Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
 # https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
 $account = [PSCustomObject]@{
-    surName             = (New-TopdeskSurname -Person $p).surname       # Generate surname according to the naming convention code.
-    prefixes            = (New-TopdeskSurname -Person $p).prefixes
+    surName             = (New-TopdeskName -Person $p).surname # Generate surname according to the naming convention code.
+    prefixes            = (New-TopdeskName -Person $p).prefixes
     firstName           = $p.Name.NickName
-    firstInitials       = $p.Name.Initials[0..9] -join "" # Max 10 chars
+    firstInitials       = (New-TopdeskName -Person $p).initials # Generate initials max 10 char
     gender              = New-TopdeskGender -Person $p
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName    # When setting a username, a (dummy) password will need to be set.
+    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName # When setting a username, a (dummy) password will need to be set.
     password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.Location.Name }
@@ -561,25 +568,12 @@ function Get-TopdeskPersonManager {
 
     # Check if the manager reference is empty, if so, generate audit message or clear the manager attribute
     if ([string]::IsNullOrEmpty($Account.manager.id)) {
-
-        # Check settings if it should clear the manager or generate an error
-        if ([System.Convert]::ToBoolean($lookupErrorNoManagerReference)) {
-
-            # True, no manager id = throw error
-            $errorMessage = "The manager reference is empty and the connector is configured to stop when this happens."
-            $auditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
-        } else {
-
-            # False, as manager.Id is already empty, nothing needs to be done here
-            Write-Verbose "Clearing manager. (lookupErrorNoManagerReference = False)"
-        }
+            #As manager.Id is empty, nothing needs to be done here
+            Write-Verbose "Manager Id is empty, clearing manager."
         return
     }
 
-    # mRef is available, query manager
+    # manager.Id is available, query manager
     $splatParams = @{
         Headers                   = $Headers
         BaseUrl                   = $BaseUrl
