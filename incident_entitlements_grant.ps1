@@ -1,5 +1,5 @@
 #####################################################
-# HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Revoke-Incident
+# HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Grant-Incident
 #
 # Version: 2.0
 #####################################################
@@ -319,7 +319,7 @@ function Get-HelloIdTopdeskTemplateById {
 
     # Check if entitlement with id and specific type exists
     if (-not($entitlementSet.PSObject.Properties.Name -Contains $type)) {
-        $errorMessage = "Could not find entitlement for entitlementSet '$($id)'. This is likely an issue with the json file."
+        $errorMessage = "Could not find grant entitlement for entitlementSet '$($id)'. This is likely an issue with the json file."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -361,7 +361,7 @@ function Confirm-Description {
         [ref]$AuditLogs
     )
     if ($Description.Length -gt $AllowedLength) {
-        $errorMessage = "Could not revoke Topdesk entitlement [$id]: The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
+        $errorMessage = "Could not grant Topdesk entitlement [$id]: The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -614,7 +614,7 @@ try {
     $splatParamsHelloIdTopdeskTemplate = @{
         JsonPath        = $config.notificationJsonPath
         Id              = $pRef.id
-        Type            = "Revoke"
+        Type            = "Grant"
         AuditLogs       = [Ref]$auditLogs
     }
     $template = Get-HelloIdTopdeskTemplateById @splatParamsHelloIdTopdeskTemplate
@@ -896,7 +896,7 @@ try {
             }
         }
     }
-    
+
     if ($auditLogs.isError -contains $true) {
         Throw "Error(s) occured while looking up required values"
     }
@@ -905,13 +905,13 @@ try {
     # Add an auditMessage showing what will happen during enforcement
     if ($dryRun -eq $true) {
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Revoke Topdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)], will be executed during enforcement"
+            Message = "Grant Topdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)], will be executed during enforcement"
         })
         Write-Verbose ($requestObject | ConvertTo-Json) 
     }
 
     if (-not($dryRun -eq $true)) {
-        Write-Verbose "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
+        Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
 
         if (($template.caller -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
             Write-Verbose "Check if manager is archived"
@@ -1005,7 +1005,7 @@ try {
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Revoke Topdesk entitlement: [$($pRef.id)] with number [$($TopdeskIncident.number)] was successful."
+            Message = "Grant Topdesk entitlement: [$($pRef.id)] with number [$($TopdeskIncident.number)] was successful."
             IsError = $false
         })
     }
@@ -1037,9 +1037,9 @@ try {
             #Write-Verbose ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                $errorMessage ="Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
+                $errorMessage ="Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
             } else {
-                $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+                $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
             }
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
