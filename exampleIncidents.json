@@ -10,15 +10,15 @@
 			"RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
-			"Operator": "operator@enyoi.org",
+			"Operator": null,
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
-			"Impact": "Organisatie",
-			"Priority": "P1",
-			"EntryType": "Telefonisch",
-			"Urgency": "Kan niet werken",
-			"ProcessingStatus": "Geregistreerd"
+			"Impact": null,
+			"Priority": null,
+			"EntryType": null,
+			"Urgency": null,
+			"ProcessingStatus": null
 		},
 		"Revoke": {
 			"Caller": "tester@test.com",
@@ -26,15 +26,15 @@
 			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
-			"Operator": "operator@enyoi.org",
+			"Operator": null,
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
-			"Impact": "Organisatie",
-			"Priority": "P1",
-			"EntryType": "Telefonisch",
-			"Urgency": "Kan niet werken",
-			"ProcessingStatus": "Geregistreerd"
+			"Impact": null,
+			"Priority": null,
+			"EntryType": null,
+			"Urgency": null,
+			"ProcessingStatus": null
 		}
 	},
 	{
@@ -48,15 +48,15 @@
 			"RequestDescription": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
-			"Operator": "operator@enyoi.org",
+			"Operator": null,
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
-			"Impact": "Organisatie",
-			"Priority": "P1",
-			"EntryType": "Telefonisch",
-			"Urgency": "Kan niet werken",			
-			"ProcessingStatus": "Geregistreerd"
+			"Impact": null,
+			"Priority": null,
+			"EntryType": null,
+			"Urgency": null,
+			"ProcessingStatus": null
 		},
 		"Revoke": {
 			"Caller": "Manager",
