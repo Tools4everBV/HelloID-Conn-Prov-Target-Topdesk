@@ -225,35 +225,11 @@ The change JSON file has the following structure:
 | Benefit: | Commenly filled in the TOPdesk change template. If so use null.
 | Priority: | Commenly filled in the TOPdesk change template. If so use null.
 
-
 ### Incidents
 It is possible to create incidents in TOPdesk when granting or revoking an entitlement in HelloID. The content of the incidents is managed in a JSON file. The local HelloID agent needs to read this file.
 
 Please use the exampleIncidents.json as a template to build you're own.
 
-| :information_source: Information |
-|:-|
-| If a lookup field in the incident isn't used, disable the function like in the example below. If you disable the resolve operator for example the incident will be created for the operatorgroup that is assigned in the JSON. This changes need to be made in the Grant action script and the Revoke action script. |
-
-```powershell
-     # Resolve operator id 
-    # $splatParamsOperator = @{
-    #     AuditLogs       = [ref]$auditLogs
-    #     BaseUrl         = $config.baseUrl
-    #     Headers         = $authHeaders
-    #     Class           = 'Operator'
-    #     Value           = $template.Operator
-    #     Endpoint        = '/tas/api/operators'
-    #     SearchAttribute = 'email'
-    # }
-    
-     #Add Impact to request object
-    # $requestObject += @{
-    #     operator = @{
-    #         id = Get-TopdeskIdentifier @splatParamsOperator
-    #     }
-    # }
-```
 | :information_source: Information |
 |:-|
 | If you want to look up for example operator with 'employeeNumber'. Then you should change the SearchAttribute field like in the example below. Make sure you name the SearchAttribute the same as Topdesk uses. You can verifier this in the [TOPdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/Operators/retrieveOperators) |
@@ -284,22 +260,22 @@ The incident JSON file has the following structure:
 		"Identification": {
 			"Id": "I001"
 		},
-		"DisplayName": "Aanvraag/Inname laptop Incident",
+		"DisplayName": "Aanvraag/Inname laptop",
 		"Grant": {
 			"Caller": "tester@test.com",
 			"RequestShort": "Aanvraag Laptop ($($p.displayName))",
 			"RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
-			"Operator": "operator@enyoi.org",
+			"Operator": null,
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
-			"Impact": "Organisatie",
-			"Priority": "P1",
-			"EntryType": "Telefonisch",
-			"Urgency": "Kan niet werken",
-			"ProcessingStatus": "Afgemeld"
+			"Impact": null,
+			"Priority": null,
+			"EntryType": null,
+			"Urgency": null,
+			"ProcessingStatus": null
 		},
 		"Revoke": {
 			"Caller": "tester@test.com",
@@ -307,16 +283,17 @@ The incident JSON file has the following structure:
 			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
-			"Operator": "operator@enyoi.org",
+			"Operator": null,
 			"Category": "Middelen",
 			"SubCategory": "Inventaris & apparatuur",
 			"CallType": "Aanvraag",
-			"Impact": "Organisatie",
-			"Priority": "P1",
-			"EntryType": "Telefonisch",
-			"Urgency": "Kan niet werken",
-			"ProcessingStatus": "Afgemeld"
+			"Impact": null,
+			"Priority": null,
+			"EntryType": null,
+			"Urgency": null,
+			"ProcessingStatus": null
 		}
+	}
 ```
 | JSON field | Description
 | - | -
@@ -327,16 +304,16 @@ The incident JSON file has the following structure:
 | RequestShort: | Fill in the desired title of the incident.
 | RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.
 | Branch: | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.
-| OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| Category: | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| SubCategory: | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| CallType: | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| Impact: | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| Priority: | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory.
-| ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field in PowerShell if not marked as Mandatory. With the correct processing status, it is possible to create a closed incident. Is this still needed? Also possible to add a status that closes the ticket (couldn't test this)
+| OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Category: | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| SubCategory: | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| CallType: | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Impact: | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Priority: | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
 
 ## Remarks
 
