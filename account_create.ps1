@@ -127,8 +127,6 @@ Write-Verbose ($account | ConvertTo-Json) # Debug output
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
 
-#Write-Verbose -Verbose "CorrelationAttribute1: [$(account.$correlationAttribute)]"
-
 #endregion mapping
 
 #region helperfunctions
@@ -488,8 +486,6 @@ function Get-TopdeskPersonByCorrelationAttribute {
         })
         return
     }
-
-    #Write-Verbose -Verbose "CorrelationAttribute2: [$(account.$CorrelationAttribute)]"
 
     # Check if the correlationAttribute is not empty
     if ([string]::IsNullOrEmpty($account.$CorrelationAttribute)) {
