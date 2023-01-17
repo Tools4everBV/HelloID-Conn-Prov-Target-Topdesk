@@ -697,196 +697,206 @@ try {
     }
     
     # Resolve operatorgroup id
-    $splatParamsOperatorGroup = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'OperatorGroup'
-        Value           = $template.OperatorGroup
-        Endpoint        = '/tas/api/operatorgroups'
-        SearchAttribute = 'groupName'
-    }
+    if (-not [string]::IsNullOrEmpty($template.OperatorGroup)) {
+        $splatParamsOperatorGroup = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'OperatorGroup'
+            Value           = $template.OperatorGroup
+            Endpoint        = '/tas/api/operatorgroups'
+            SearchAttribute = 'groupName'
+        }
 
-    # Add operatorgroup to request object
-    $requestObject += @{
-        operatorGroup = @{
-            id = Get-TopdeskIdentifier @splatParamsOperatorGroup
+        # Add operatorgroup to request object
+        $requestObject += @{
+            operatorGroup = @{
+                id = Get-TopdeskIdentifier @splatParamsOperatorGroup
+            }
         }
     }
 
      # Resolve operator id 
-    $splatParamsOperator = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'Operator'
-        Value           = $template.Operator
-        Endpoint        = '/tas/api/operators'
-        SearchAttribute = 'email'
-    }
+    if (-not [string]::IsNullOrEmpty($template.Operator)) {
+        $splatParamsOperator = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'Operator'
+            Value           = $template.Operator
+            Endpoint        = '/tas/api/operators'
+            SearchAttribute = 'email'
+        }
     
-     #Add Impact to request object
-    $requestObject += @{
-        operator = @{
-            id = Get-TopdeskIdentifier @splatParamsOperator
+        #Add Impact to request object
+        $requestObject += @{
+            operator = @{
+                id = Get-TopdeskIdentifier @splatParamsOperator
+            }
         }
     }
- 
-    # Resolve category id
-    $splatParamsCategory = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'Category'
-        Value           = $template.Category
-        Endpoint        = '/tas/api/incidents/categories'
-        SearchAttribute = 'name'
-    }
 
-    # Add category to request object
-    $requestObject += @{
-        category = @{
-            id = Get-TopdeskIdentifier @splatParamsCategory
+    # Resolve category id
+    if (-not [string]::IsNullOrEmpty($template.Category)) {    
+        $splatParamsCategory = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'Category'
+            Value           = $template.Category
+            Endpoint        = '/tas/api/incidents/categories'
+            SearchAttribute = 'name'
+        }
+
+        # Add category to request object
+        $requestObject += @{
+            category = @{
+                id = Get-TopdeskIdentifier @splatParamsCategory
+            }
         }
     }
 
     # Resolve subCategory id
-    $splatParamsCategory = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'SubCategory'
-        Value           = $template.SubCategory
-        Endpoint        = '/tas/api/incidents/subcategories'
-        SearchAttribute = 'name'
-    }
+    if (-not [string]::IsNullOrEmpty($template.SubCategory)) {   
+        $splatParamsCategory = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'SubCategory'
+            Value           = $template.SubCategory
+            Endpoint        = '/tas/api/incidents/subcategories'
+            SearchAttribute = 'name'
+        }
 
-    # Add subCategory to request object
-    $requestObject += @{
-        subcategory = @{
-            id = Get-TopdeskIdentifier @splatParamsCategory
+        # Add subCategory to request object
+        $requestObject += @{
+            subcategory = @{
+                id = Get-TopdeskIdentifier @splatParamsCategory
+            }
         }
     }
 
     # Resolve CallType id
-    $splatParamsCategory = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'CallType'
-        Value           = $template.CallType
-        Endpoint        = '/tas/api/incidents/call_types'
-        SearchAttribute = 'name'
-    }
+    if (-not [string]::IsNullOrEmpty($template.CallType)) {
+        $splatParamsCategory = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'CallType'
+            Value           = $template.CallType
+            Endpoint        = '/tas/api/incidents/call_types'
+            SearchAttribute = 'name'
+        }
 
-    # Add CallType to request object
-    $requestObject += @{
-        callType = @{
-            id = Get-TopdeskIdentifier @splatParamsCategory
+        # Add CallType to request object
+        $requestObject += @{
+            callType = @{
+                id = Get-TopdeskIdentifier @splatParamsCategory
+            }
         }
     }
 
     # Resolve Impact id 
-    $splatParamsCategory = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'Impact'
-        Value           = $template.Impact
-        Endpoint        = '/tas/api/incidents/impacts'
-        SearchAttribute = 'name'
-    }
+    if (-not [string]::IsNullOrEmpty($template.Impact)) {
+        $splatParamsCategory = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'Impact'
+            Value           = $template.Impact
+            Endpoint        = '/tas/api/incidents/impacts'
+            SearchAttribute = 'name'
+        }
 
-    # Add Impact to request object
-    $requestObject += @{
-        impact = @{
-            id = Get-TopdeskIdentifier @splatParamsCategory
+        # Add Impact to request object
+        $requestObject += @{
+            impact = @{
+                id = Get-TopdeskIdentifier @splatParamsCategory
+            }
         }
     }
 
-    # Resolve priority id 
-    $splatParamsPriority = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'Priority'
-        Value           = $template.Priority
-        Endpoint        = '/tas/api/incidents/priorities'
-        SearchAttribute = 'name'
-    }
+    if (-not [string]::IsNullOrEmpty($template.Priority)) {
+        # Resolve priority id 
+        $splatParamsPriority = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'Priority'
+            Value           = $template.Priority
+            Endpoint        = '/tas/api/incidents/priorities'
+            SearchAttribute = 'name'
+        }
+        
 
-    # Add Impact to request object
-    $requestObject += @{
-        priority = @{
-            id = Get-TopdeskIdentifier @splatParamsPriority
+        # Add Impact to request object
+        $requestObject += @{
+            priority = @{
+                id = Get-TopdeskIdentifier @splatParamsPriority
+            }
         }
     }
 
     # Resolve entrytype id 
-    $splatParamsEntryType= @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'EntryType'
-        Value           = $template.EntryType
-        Endpoint        = '/tas/api/incidents/entry_types'
-        SearchAttribute = 'name'
-    }
-    
-    # Add Impact to request object
-    $requestObject += @{
-        entryType = @{
-            id = Get-TopdeskIdentifier @splatParamsEntryType
+    if (-not [string]::IsNullOrEmpty($template.EntryType)) {
+        $splatParamsEntryType= @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'EntryType'
+            Value           = $template.EntryType
+            Endpoint        = '/tas/api/incidents/entry_types'
+            SearchAttribute = 'name'
+        }
+        
+        # Add Impact to request object
+        $requestObject += @{
+            entryType = @{
+                id = Get-TopdeskIdentifier @splatParamsEntryType
+            }
         }
     }
 
     # Resolve urgency id 
-    $splatParamsUrgency= @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'Urgency'
-        Value           = $template.Urgency
-        Endpoint        = '/tas/api/incidents/urgencies'
-        SearchAttribute = 'name'
-    }
-    
-    # Add Impact to request object
-    $requestObject += @{
-        urgency = @{
-            id = Get-TopdeskIdentifier @splatParamsUrgency
+    if (-not [string]::IsNullOrEmpty($template.Urgency)) {
+        $splatParamsUrgency= @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'Urgency'
+            Value           = $template.Urgency
+            Endpoint        = '/tas/api/incidents/urgencies'
+            SearchAttribute = 'name'
+        }
+        
+        # Add Impact to request object
+        $requestObject += @{
+            urgency = @{
+                id = Get-TopdeskIdentifier @splatParamsUrgency
+            }
         }
     }
 
-    # Resolve ProcessingStatus id 
-    $splatParamsProcessingStatus= @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'ProcessingStatus'
-        Value           = $template.ProcessingStatus
-        Endpoint        = '/tas/api/incidents/statuses'
-        SearchAttribute = 'name'
-    }
-    
-    # Add Impact to request object
-    $requestObject += @{
-        processingStatus = @{
-            id = Get-TopdeskIdentifier @splatParamsProcessingStatus
+        # Resolve ProcessingStatus id 
+    if (-not [string]::IsNullOrEmpty($template.ProcessingStatus)) {
+        $splatParamsProcessingStatus= @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'ProcessingStatus'
+            Value           = $template.ProcessingStatus
+            Endpoint        = '/tas/api/incidents/statuses'
+            SearchAttribute = 'name'
+        }
+        
+        # Add Impact to request object
+        $requestObject += @{
+            processingStatus = @{
+                id = Get-TopdeskIdentifier @splatParamsProcessingStatus
+            }
         }
     }
-
-    # Add CloseTicket value to request object
-    # Is this still needed? Also possible to add a status that closes the ticket (couldn't test this)
-    # if ($template.CloseTicket = "true")
-    # {
-    #     $requestObject += @{
-    #         closed = $true
-    #         closedDate = "2023-01-13T10:01:35.588Z"
-    #     }
-    # }
-       
-
+    
     if ($auditLogs.isError -contains $true) {
         Throw "Error(s) occured while looking up required values"
     }
