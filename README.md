@@ -31,6 +31,7 @@
   + [Changes](#Changes)
   + [Incidents](#Incidents)
 - [Remarks](#Remarks)
+  + [Filters](#Filters)
   + [Only require tickets](#Only-require-tickets)
 - [Getting help](#Getting-help)
 - [HelloID Docs](#HelloID-docs)
@@ -302,11 +303,11 @@ The incident JSON file has the following structure:
 | Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
 
-## Remarks
+### Filters
+It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk.
 
 ### Only require tickets
-When persons are created with the TOPdesk AD sync for example. Then it should be possible to create incidents or changes. There is a correlation needed including a manager's reference to make this work properly. 
-> TODO: make a separate create script to create the references (like AD/Azure prem.)
+When persons are created with the TOPdesk AD sync. Then it should be possible to create incidents or changes. Use the account_create_correlate.ps1 script in this case.
 
 ## Getting help
 
