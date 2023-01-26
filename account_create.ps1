@@ -566,11 +566,6 @@ function Get-TopdeskPersonManager {
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [String]
-        $LookupErrorNoManagerReference,
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [Object]
         [Ref]$Account,
 
@@ -910,7 +905,6 @@ try {
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
-        LookupErrorNoManagerReference = $config.lookupErrorNoManagerReference
         BaseUrl                   = $config.baseUrl
     }
 
