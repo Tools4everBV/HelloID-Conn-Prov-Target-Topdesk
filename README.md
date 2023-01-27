@@ -63,8 +63,8 @@ The following settings are required to connect to the API.
 
 ### Prerequisites
   - When creating changes or incidents a helloID agent on-prem is required
-  - Archiving reason that is configured in TOPdesk
-  - Credentials with the rights as descripted in permissions
+  - Archiving reason that is configured in Topdesk
+  - Credentials with the rights as described in permissions
 
 ### Permissions
 
