@@ -229,7 +229,6 @@ function Resolve-Variables {
         [ref]
         $String,
 
-        [Parameter(Mandatory)]
         $VariablesToResolve
     )
     foreach ($var in $VariablesToResolve | Select-Object -Unique) {
