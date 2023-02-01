@@ -653,7 +653,6 @@ try {
     if ($config.disableNotifications -eq 'true') {
         Throw "Notifications are disabled"
     }
-    $action = 'Process'
 
     # Lookup template from json file (C00X)
     $splatParamsHelloIdTopdeskTemplate = @{
@@ -816,8 +815,6 @@ try {
 
     if (-not($dryRun -eq $true)) {
         Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
-
-        $accountReferenceToCheck = $null
 
         if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($managerAccountReference)))) {
             Write-Verbose "Check if manager is archived"
