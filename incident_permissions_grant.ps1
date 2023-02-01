@@ -121,7 +121,6 @@ function Invoke-TopdeskRestMethod {
             }
 
             if ($Body) {
-                Write-Verbose 'Adding body to request'
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
             Invoke-RestMethod @splatParams -Verbose:$false
