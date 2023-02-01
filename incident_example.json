@@ -7,7 +7,8 @@
 		"Grant": {
 			"Caller": "tester@test.com",
 			"RequestShort": "Aanvraag Laptop ($($p.displayName))",
-			"RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"RequestDescription": "<b>Graag een laptop gereed maken voor onderstaande medewerker.</b><br><br><em>Naam: $($p.Name.NickName)</em><br><strong>Achternaam: $($p.Name.FamilyName)</strong><br><u>Personeelsnummer: $($p.ExternalId)</u><br><br>Functie: $($p.PrimaryContract.Title.Name)<br><i>Afdeling: $($p.PrimaryContract.Department.DisplayName)</i><br><br><a href='https://www.tools4ever.nl/'>Visit Tools4ever.nl!</a>",
+			"Action": "<b>Medewerker ($($p.displayName)) heeft een laptop nodig</b><br><br>Graag gereed maken voor $($p.PrimaryContract.StartDate).",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": null,
@@ -23,7 +24,8 @@
 		"Revoke": {
 			"Caller": "tester@test.com",
 			"RequestShort": "Inname Laptop ($($p.displayName))",
-			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)",
+			"Action": "<b>Medewerker ($($p.displayName)) is in het bezit van een laptop</b>.",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": null,
@@ -45,7 +47,8 @@
 		"Grant": {
 			"Caller": "Employee",
 			"RequestShort": "Aanvraag mobiele telefoon ($($p.displayName))",
-			"RequestDescription": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"RequestDescription": "Graag een mobiele telefoon gereed maken voor onderstaande medewerker.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"Action": null,
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": null,
@@ -61,7 +64,8 @@
 		"Revoke": {
 			"Caller": "Manager",
 			"RequestShort": "Inname mobiele telefoon ($($p.displayName))",
-			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een mobiele telefoon, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een mobiele telefoon, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)",
+			"Action": null,
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": "operator@enyoi.org",
@@ -83,7 +87,8 @@
 		"Grant": {
 			"Caller": "Manager",
 			"RequestShort": "Aanvraag Smartphone ($($p.displayName))",
-			"RequestDescription": "Er is door een leidinggevende een smartphone + simkaart aangevraagd voor een nieuwe medewerker.\nGraag registreren op onderstaande medewerker:\nVoornaam medewerker, $($p.Name.GivenName),\nAchternaam medewerker $($p.Name.FamilyName),\nTelefoonnummer privé, $($p.Contact.Business.Phone.Mobile),\nAfdeling: $($p.PrimaryContract.Department.DisplayName),\nKostenplaats: $($p.PrimaryContract.CostCenter.Name),\nFunctie: $($p.PrimaryContract.Title.Name)\nManager: $($p.PrimaryManager.Displayname)",
+			"RequestDescription": "Er is door een leidinggevende een smartphone + simkaart aangevraagd voor een nieuwe medewerker.<br>Graag registreren op onderstaande medewerker:<br>Voornaam medewerker, $($p.Name.GivenName),<br>Achternaam medewerker $($p.Name.FamilyName),<br>Telefoonnummer privé, $($p.Contact.Business.Phone.Mobile),<br>Afdeling: $($p.PrimaryContract.Department.DisplayName),<br>Kostenplaats: $($p.PrimaryContract.CostCenter.Name),<br>Functie: $($p.PrimaryContract.Title.Name)<br>Manager: $($p.PrimaryManager.Displayname)",
+			"Action": null,
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": "operator@enyoi.org",
@@ -107,7 +112,8 @@
 		"Revoke": {
 			"Caller": "Manager",
 			"RequestShort": "Uitdienst treding medewerker ($($p.displayName))",
-			"RequestDescription": "Beste Servicedesk,\nOnderstaande medewerker treed op $($p.PrimaryContract.Custom.formattedEndDate) uit dienst.\nGraag contact opnemen met medewerker om inlevering van IT-middelen af te stemmen.\nHet BART account zal automatisch worden gedeactiveerd.\nLet op: het deactiveren van een eventuele zakelijke SIM-kaart zal handmatig moeten worden uitgevoerd!\nAchternaam medewerker: $($p.Name.FamilyName)\nVoornaam medewerker: $($p.Name.GivenName)\nLocatie: $($p.PrimaryContract.Location.Name)\nDatum uit dienst: $($p.PrimaryContract.Custom.formattedEndDate)\nTelefoonnummer privé: $($p.Contact.Business.Phone.Mobile)\nTelefoonnummer werk: $($p.PrimaryContract.Contact.Business.Phone.Fixed)",
+			"RequestDescription": "Beste Servicedesk,<br>Onderstaande medewerker treed op $($p.PrimaryContract.Custom.formattedEndDate) uit dienst.<br>Graag contact opnemen met medewerker om inlevering van IT-middelen af te stemmen.<br>Het BART account zal automatisch worden gedeactiveerd.<br>Let op: het deactiveren van een eventuele zakelijke SIM-kaart zal handmatig moeten worden uitgevoerd!<br>Achternaam medewerker: $($p.Name.FamilyName)<br>Voornaam medewerker: $($p.Name.GivenName)<br>Locatie: $($p.PrimaryContract.Location.Name)<br>Datum uit dienst: $($p.PrimaryContract.Custom.formattedEndDate)<br>Telefoonnummer privé: $($p.Contact.Business.Phone.Mobile)<br>Telefoonnummer werk: $($p.PrimaryContract.Contact.Business.Phone.Fixed)",
+			"Action": "Dit is een actie",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": "operator@enyoi.org",

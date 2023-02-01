@@ -47,7 +47,6 @@ function Resolve-Variables {
         [ref]
         $String,
 
-        [Parameter(Mandatory)]
         $VariablesToResolve
     )
     foreach ($var in $VariablesToResolve | Select-Object -Unique) {
@@ -270,9 +269,8 @@ function New-TopdeskIncident {
         Headers = $Headers
         Body    = $TopdeskIncident | ConvertTo-Json
     }
-    Write-Verbose ($TopdeskIncident | ConvertTo-Json)
+    #Write-Verbose ($TopdeskIncident | ConvertTo-Json)
     $incident = Invoke-TopdeskRestMethod @splatParams
-    Write-Verbose "Created incident with number [$($incident.number)]"
     Write-Output $incident
 }
 function Get-HelloIdTopdeskTemplateById {
@@ -677,6 +675,19 @@ try {
         request = $requestDescription
     }
 
+    # Resolve variables in the Action field
+    if (-not [string]::IsNullOrEmpty($template.Action)) {
+        $splatParamsAction = @{
+            description       = $template.Action
+        }
+        $requestAction = Format-Description @splatParamsAction
+
+        # Add value to request object
+        $requestObject += @{
+            action = $requestAction
+        }
+    }
+
     # Resolve branch id
     $splatParamsBranch = @{
         AuditLogs       = [ref]$auditLogs
@@ -913,7 +924,6 @@ try {
         Write-Verbose "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
 
         if (($template.caller -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
-            Write-Verbose "Check if manager is archived"
             # get person (manager)
             $splatParamsPerson = @{
                 AccountReference          = $mRef
@@ -924,7 +934,6 @@ try {
             $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
             if ($TopdeskPerson.status -eq 'personArchived') {
-                Write-Verbose "Manager $($TopdeskPerson.id) will be unarchived"
                 # Unarchive person (manager)
                 $shouldArchive  = $true
                 $splatParamsPersonUnarchive = @{
@@ -940,7 +949,6 @@ try {
         }
         
         if ($template.caller -eq 'employee') {
-            Write-Verbose "Check if employee is archived"
             # get person (employee)
             $splatParamsPerson = @{
                 AccountReference          = $aRef
@@ -951,7 +959,6 @@ try {
             $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
             
             if ($TopdeskPerson.status -eq 'personArchived') {
-                Write-Verbose "Employee $($TopdeskPerson.id) will be unarchived"
                 # Unarchive person (employee)
                 $shouldArchive  = $true
                 $splatParamsPersonUnarchive = @{
@@ -977,7 +984,6 @@ try {
 
         if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
             if (($template.caller -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
-                Write-Verbose "Manager $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
@@ -989,7 +995,6 @@ try {
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
             if ($template.caller -eq 'employee') {
-                Write-Verbose "Employee $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
@@ -1004,7 +1009,7 @@ try {
 
         $success = $true
         $auditLogs.Add([PSCustomObject]@{
-            Message = "Revoke Topdesk entitlement: [$($pRef.id)] with number [$($TopdeskIncident.number)] was successful."
+            Message = "Revoke Topdesk entitlement: [$($pRef.id)]. Created incident with number [$($TopdeskIncident.number)]."
             IsError = $false
         })
     }

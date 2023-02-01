@@ -205,8 +205,8 @@ The change JSON file has the following structure:
 | Id: | Unique identifier in the JSON for HelloID. This cannot change!
 | DisplayName: | The value is shown when selecting the entitlement in HelloID.
 | Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the change_example.JSON to see how this works.
-| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Use \n for "enter". Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
-| Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. 
+| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
+| Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use \n for "enter".
 | Action: | Commenly filled in the Topdesk change template. If so use null.
 | BriefDescription: | Fill in the desired title of the change.
 | Template: | Fill in the Topdesk template code of the change. This is mandatory.
@@ -256,7 +256,8 @@ The incident JSON file has the following structure:
 		"Grant": {
 			"Caller": "tester@test.com",
 			"RequestShort": "Aanvraag Laptop ($($p.displayName))",
-			"RequestDescription": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"RequestDescription": "<b>Graag een laptop gereed maken voor onderstaande medewerker.</b><br><br><em>Naam: $($p.Name.NickName)</em><br><strong>Achternaam: $($p.Name.FamilyName)</strong><br><u>Personeelsnummer: $($p.ExternalId)</u><br><br>Functie: $($p.PrimaryContract.Title.Name)<br><i>Afdeling: $($p.PrimaryContract.Department.DisplayName)</i><br><br><a href='https://www.tools4ever.nl/'>Visit Tools4ever.nl!</a>",
+			"Action": "<b>Medewerker ($($p.displayName)) heeft een laptop nodig</b><br><br>Graag gereed maken voor $($p.PrimaryContract.StartDate).",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": null,
@@ -272,7 +273,8 @@ The incident JSON file has the following structure:
 		"Revoke": {
 			"Caller": "tester@test.com",
 			"RequestShort": "Inname Laptop ($($p.displayName))",
-			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)",
+			"Action": "<b>Medewerker ($($p.displayName)) is in het bezit van een laptop</b>.",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
 			"Operator": null,
@@ -292,9 +294,10 @@ The incident JSON file has the following structure:
 | Id: | Unique identifier in the JSON for HelloID.
 | DisplayName: | The value is shown when selecting the entitlement in HelloID.
 | Grant / Revoke: | It is possible to create an incident when granting and revoking an entitlement. It is also possible to create an incident when only granting or revoking an entitlement. Please look at the incident_example.json to see how this works.
-| Caller: | It is possible to edit who is the caller of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Use \n for "enter". Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
-| RequestShort: | Fill in the desired title of the incident.
-| RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.
+| Caller: | It is possible to edit who is the caller of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
+| RequestShort: | Fill in the desired title of the incident. Size range: maximum 80 characters
+| RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
+| Action: | Fill in action if needed. If not used fill in null. Use <'br'> to enter. For more HTML tags:[Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
 | Branch: | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.
 | OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
