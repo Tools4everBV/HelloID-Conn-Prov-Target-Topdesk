@@ -22,8 +22,8 @@
 
 - [Introduction](#Introduction)
 - [Getting started](#Getting-started)
-  + [Connection settings](#Connection-settings)
   + [Prerequisites](#Prerequisites)
+  + [Connection settings](#Connection-settings)
   + [Permissions](#Permissions)
 - [Setup the connector](#Setup-The-Connector)
   + [Disable department or budgetholder](#Disable-department-or-budgetholder)
@@ -42,6 +42,15 @@ _HelloID-Conn-Prov-Target-TOPdesk_ is a _target_ connector. TOPdesk provides a s
 
 ## Getting started
 
+### Prerequisites
+
+| :warning: Warning |
+|:-|
+| <b> When changes or incidents are in scope, a helloID agent on-premise is required. </b> |
+
+  - Archiving reason that is configured in Topdesk
+  - Credentials with the rights as described in permissions
+
 ### Connection settings
 
 The following settings are required to connect to the API.
@@ -59,12 +68,6 @@ The following settings are required to connect to the API.
 | When no item found in TOPdesk | Stop prcessing and generate an error or keep the current value and continue |
 | When no deparment in source data | Stop prcessing and generate an error or clear deparment field in TOPdesk |
 | When no budgetholder in source data | Stop prcessing and generate an error or clear budgetholder field in TOPdesk | 
-| When manager reference is empty | Stop prcessing and generate an error or clear manager field in TOPdesk |
-
-### Prerequisites
-  - When creating changes or incidents a helloID agent on-prem is required
-  - Archiving reason that is configured in Topdesk
-  - Credentials with the rights as described in permissions
 
 ### Permissions
 
