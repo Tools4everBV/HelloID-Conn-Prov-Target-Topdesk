@@ -63,12 +63,12 @@ The following settings are required to connect to the API.
 | Notification file path | Location of the JSON file needed for changes or incidents | No 
 | Archiving reason | Fill in a archiving reason that is configured in Topdesk | Yes 
 | Fallback email | When a manager is set as the requester (in the JSON file) but the manager account reference is empty | No 
-| Toggle debug logging | Creates extra logging for debug purposes |
-| Do not create changes or incidents | If enabled no changes or incidents will be created in Topdesk |
-| When no item found in Topdesk | Stop prcessing and generate an error or keep the current value and continue |
-| When no deparment in source data | Stop prcessing and generate an error or clear deparment field in Topdesk |
-| When no budgetholder in source data | Stop prcessing and generate an error or clear budgetholder field in Topdesk | 
-| When manager reference is empty | Stop prcessing and generate an error or clear manager field in Topdesk |
+| Toggle debug logging | Creates extra logging for debug purposes | Yes
+| Do not create changes or incidents | If enabled no changes or incidents will be created in Topdesk | Yes
+| When no item found in Topdesk | Stop prcessing and generate an error or keep the current value and continue | Yes
+| When no deparment in source data | Stop prcessing and generate an error or clear deparment field in Topdesk | Yes
+| When no budgetholder in source data | Stop prcessing and generate an error or clear budgetholder field in Topdesk |  Yes
+| When manager reference is empty | Stop prcessing and generate an error or clear manager field in Topdesk | Yes
 
 ### Permissions
 
@@ -295,9 +295,9 @@ The incident JSON file has the following structure:
 | DisplayName: | The value is shown when selecting the entitlement in HelloID.
 | Grant / Revoke: | It is possible to create an incident when granting and revoking an entitlement. It is also possible to create an incident when only granting or revoking an entitlement. Please look at the incident_example.json to see how this works.
 | Caller: | It is possible to edit who is the caller of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
-| RequestShort: | Fill in the desired title of the incident. Size range: maximum 80 characters
+| RequestShort: | Fill in the desired title of the incident. Size range: maximum 80 characters. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.
 | RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
-| Action: | Fill in action if needed. If not used fill in null. Use <'br'> to enter. For more HTML tags:[Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
+| Action: | Fill in action if needed. If not used fill in null. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags:[Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
 | Branch: | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.
 | OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
