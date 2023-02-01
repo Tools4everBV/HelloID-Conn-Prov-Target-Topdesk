@@ -268,8 +268,6 @@ try {
         ExportData = [PSCustomObject]@{
             Id                  = $TopdeskPerson.id
             employeeNumber      = $account.employeeNumber
-            networkLoginName    = $account.networkLoginName
-            tasLoginName        = $account.tasLoginName
         }
     }
     Write-Output $result | ConvertTo-Json -Depth 10
