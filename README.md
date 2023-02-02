@@ -2,7 +2,7 @@
 
 | :warning: Warning |
 |:-|
-| This connector has been updated to a new version (V2). This version is not backward compatible, but a Tools4ever consultant can upgrade the connector with minor effort. If you have question please ask them on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk). |
+| This connector has been updated to a new version (V2). This version is not backward compatible, but a Tools4ever consultant or a partner can upgrade the connector with minor effort. If you have questions please ask them on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk). |
 
 | :information_source: Information |
 |:-|
@@ -20,7 +20,7 @@
   + [Connection settings](#Connection-settings)
   + [Permissions](#Permissions)
 - [Setup the connector](#Setup-The-Connector)
-  + [Remove attributes when correlating person](#Remove-attributes-when-correlating-person)
+  + [Remove attributes when correlating a Topdesk person](#Remove-attributes-when-correlating-a-Topdesk-person)
   + [Disable department or budgetholder](#Disable-department-or-budgetholder)
   + [Extra fields](#Extra-fields)
   + [Changes](#Changes)
@@ -33,7 +33,7 @@
 
 ## Introduction
 
-_HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a set of REST API's that allow you to programmatically interact with it's data. The [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commando's that are used.
+_HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a set of REST APIs that allow you to programmatically interact with its data. The [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commands that are used.
 
 ## Getting started
 ### Prerequisites
@@ -55,14 +55,14 @@ The following settings are required to connect to the API.
 | UserName| The UserName to connect to the API | Yes 
 | Password | The Password to connect to the API | Yes 
 | Notification file path | Location of the JSON file needed for changes or incidents | No 
-| Archiving reason | Fill in a archiving reason that is configured in Topdesk | Yes 
+| Archiving reason | Fill in an archiving reason that is configured in Topdesk | Yes 
 | Fallback email | When a manager is set as the requester (in the JSON file) but the manager account reference is empty | No 
 | Toggle debug logging | Creates extra logging for debug purposes | Yes
 | Do not create changes or incidents | If enabled no changes or incidents will be created in Topdesk | Yes
-| When no item found in Topdesk | Stop processing and generate an error or keep the current value and continue | Yes
-| When no deparment in source data | Stop processing and generate an error or clear deparment field in Topdesk | Yes
-| When no budgetholder in source data | Stop processing and generate an error or clear budgetholder field in Topdesk |  Yes
-| When manager reference is empty | Stop processing and generate an error or clear manager field in Topdesk | Yes
+| When no item is found in Topdesk | Stop processing and generate an error or keep the current value and continue | Yes
+| When no department in source data | Stop processing and generate an error or clear the department field in Topdesk | Yes
+| When no budgetholder in source data | Stop processing and generate an error or clear the budgetholder field in Topdesk |  Yes
+| When the manager reference is empty | Stop processing and generate an error or clear the manager field in Topdesk | Yes
 
 ### Permissions
 
@@ -102,7 +102,7 @@ It is possible to set filters in Topdesk. If you don't get a result from Topdesk
 
 ## Setup the connector
 
-### Remove attributes when correlating person
+### Remove attributes when correlating a Topdesk person
 There is an example of only set certain attributes when creating a person, but skipping them when updating the script. For example, if you don't use SSO then we could change the existing person's password. 
 
 ```powershell
@@ -119,7 +119,7 @@ $account.PSObject.Properties.Remove('isManager')
 
 ### Disable department or budgetholder
 
-The fields department and budgetholder are both non required lookup fields in Topdesk. This means you first need to lookup the field and then use the returned GUID (ID) to set the Topdesk person. 
+The fields department and budgetholder are both non-required lookup fields in Topdesk. This means you first need to look up the field and then use the returned GUID (ID) to set the Topdesk person. 
 
 For example:
 
@@ -130,9 +130,9 @@ For example:
 "externalLinks": []
 ```
 
-If you don't need the mapping of deparment or budgetholder in Topdesk. It is nesceary to comment out both mapping and the call function in the script.
+If you don't need the mapping of the department field or the budgetholder field in Topdesk, it's necessary to comment out both mapping and the call function in the script.
 
-Example for department:
+Example for the department field:
 
 Mapping:
 
@@ -156,7 +156,7 @@ Call function:
 ```
 
 ### Extra fields
-You can add extra fields by adding them to the account mapping. For all possbile options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/).
+You can add extra fields by adding them to the account mapping. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/).
 
 Example for mobileNumber:
 
@@ -218,15 +218,15 @@ The change JSON file has the following structure:
 | Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the change_example.JSON to see how this works.
 | Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
 | Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use \n for "enter".
-| Action: | Commenly filled in the Topdesk change template. If so use null.
+| Action: | Commonly filled in the Topdesk change template. If so use null.
 | BriefDescription: | Fill in the desired title of the change.
 | Template: | Fill in the Topdesk template code of the change. This is mandatory.
-| Category: | Commenly filled in the Topdesk change template. If so use null.
-| SubCategory: | Commenly filled in the Topdesk change template. If so use null.
+| Category: | Commonly filled in the Topdesk change template. If so use null.
+| SubCategory: | Commonly filled in the Topdesk change template. If so use null.
 | ChanageType: | Fill in the change type Simple or Extensive.
-| Impact: | Commenly filled in the Topdesk change template. If so use null.
-| Benefit: | Commenly filled in the Topdesk change template. If so use null.
-| Priority: | Commenly filled in the Topdesk change template. If so use null.
+| Impact: | Commonly filled in the Topdesk change template. If so use null.
+| Benefit: | Commonly filled in the Topdesk change template. If so use null.
+| Priority: | Commonly filled in the Topdesk change template. If so use null.
 
 ### Incidents
 It is possible to create incidents in Topdesk when granting or revoking an entitlement in HelloID. The content of the incidents is managed in a JSON file. The local HelloID agent needs to read this file.
@@ -245,7 +245,7 @@ Please use the incident_example.json as a template to build you're own.
         Class           = 'Operator'
         Value           = $template.Operator
         Endpoint        = '/tas/api/operators'
-        SearchAttribute = 'employeeNumber' #SearchAttribute chaged from 'email' -> 'employeeNumber'
+        SearchAttribute = 'employeeNumber' #SearchAttribute changed from 'email' -> 'employeeNumber'
     }
     
      #Add Impact to request object
@@ -308,18 +308,18 @@ The incident JSON file has the following structure:
 | Caller: | It is possible to edit who is the caller of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
 | RequestShort: | Fill in the desired title of the incident. Size range: maximum 80 characters. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.
 | RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
-| Action: | Fill in action if needed. If not used fill in null. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
+| Action: | Fill in the action field if needed. If not used fill in null. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
 | Branch: | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.
-| OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Category: | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| SubCategory: | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| CallType: | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Impact: | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Priority: | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
+| OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Category: | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| SubCategory: | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| CallType: | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Impact: | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Priority: | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
 
 ## Remarks
 ### Only require tickets
