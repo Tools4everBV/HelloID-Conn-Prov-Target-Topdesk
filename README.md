@@ -36,7 +36,6 @@
 _HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a set of REST API's that allow you to programmatically interact with it's data. The [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commando's that are used.
 
 ## Getting started
-
 ### Prerequisites
 
 | :warning: Warning |
