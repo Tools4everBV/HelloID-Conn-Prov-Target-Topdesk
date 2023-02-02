@@ -967,8 +967,15 @@ try {
     } else {
         $action = 'Correlate'
         $actionType = 'correlated'
-        # example to only set certain attributes when creating a person, but skip them when updating
-        # $Account.PSObject.Properties.Remove('showDepartment')
+        
+        # Example to only set certain attributes when creating a person, but skip them when updating
+        
+        # $account.PSObject.Properties.Remove('showDepartment')
+
+        # If SSO is not used. You need to remove tasLoginName and password from the update. Else the local password will be reset.
+        # $account.PSObject.Properties.Remove('tasLoginName')
+        # $account.PSObject.Properties.Remove('password')
+        
         $account.PSObject.Properties.Remove('isManager')
     }
 

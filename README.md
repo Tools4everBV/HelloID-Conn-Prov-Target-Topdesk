@@ -2,7 +2,7 @@
 
 | :warning: Warning |
 |:-|
-| Note that this connector is **not ready** to use in your production environment. |
+| This connector has been updated to a new version (V2). This version is not backward compatible, but a Tools4ever consultant can upgrade the connector with minor effort. If you have question please ask them on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk). |
 
 | :information_source: Information |
 |:-|
@@ -12,12 +12,6 @@
   <img src="assets/logo.png">
 </p>
 
-## Versioning
-| Version | Description | Date |
-| - | - | - |
-| 2.0.0   | Release of v2 connector including performance and logging upgrades | fill in date  |
-| 1.0.0   | Initial release | 2020/06/24  |
-
 ## Table of contents
 
 - [Introduction](#Introduction)
@@ -26,6 +20,7 @@
   + [Connection settings](#Connection-settings)
   + [Permissions](#Permissions)
 - [Setup the connector](#Setup-The-Connector)
+  + [Remove attributes when correlating person](#Remove-attributes-when-correlating-person)
   + [Disable department or budgetholder](#Disable-department-or-budgetholder)
   + [Extra fields](#Extra-fields)
   + [Changes](#Changes)
@@ -65,10 +60,10 @@ The following settings are required to connect to the API.
 | Fallback email | When a manager is set as the requester (in the JSON file) but the manager account reference is empty | No 
 | Toggle debug logging | Creates extra logging for debug purposes | Yes
 | Do not create changes or incidents | If enabled no changes or incidents will be created in Topdesk | Yes
-| When no item found in Topdesk | Stop prcessing and generate an error or keep the current value and continue | Yes
-| When no deparment in source data | Stop prcessing and generate an error or clear deparment field in Topdesk | Yes
-| When no budgetholder in source data | Stop prcessing and generate an error or clear budgetholder field in Topdesk |  Yes
-| When manager reference is empty | Stop prcessing and generate an error or clear manager field in Topdesk | Yes
+| When no item found in Topdesk | Stop processing and generate an error or keep the current value and continue | Yes
+| When no deparment in source data | Stop processing and generate an error or clear deparment field in Topdesk | Yes
+| When no budgetholder in source data | Stop processing and generate an error or clear budgetholder field in Topdesk |  Yes
+| When manager reference is empty | Stop processing and generate an error or clear manager field in Topdesk | Yes
 
 ### Permissions
 
@@ -96,15 +91,32 @@ The following permissions are required to use this connector. This should be con
 | Suppliers | x |  |  | 
 | Rooms | x |  |  | 
 | Login data |  | x |  | 
+| Supporting Files Settings | x | x |  |  |
 | <b>Reporting API</b>
 | REST API | x |  |  | 
 | Use application passwords |  | x |  | 
 
-(To create departments and budgetholders, you will need to allow the API account read and write access to the "Instellingen voor Ondersteunende bestanden".)
+#### Filters
+| :information_source: Information |
+|:-|
+It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk. |
 
 ## Setup the connector
 
-> _How to setup the connector in HelloID._ Are special settings required. Like the _primary manager_ settings for a source connector.
+### Remove attributes when correlating person
+There is an example of only set certain attributes when creating a person, but skipping them when updating the script. For example, if you don't use SSO then we could change the existing person's password. 
+
+```powershell
+# Example to only set certain attributes when creating a person, but skip them when updating
+
+# $account.PSObject.Properties.Remove('showDepartment')
+
+# If SSO is not used. You need to remove tasLoginName and password from the update. Else the local password will be reset.
+# $account.PSObject.Properties.Remove('tasLoginName')
+# $account.PSObject.Properties.Remove('password')
+
+$account.PSObject.Properties.Remove('isManager')
+```
 
 ### Disable department or budgetholder
 
@@ -297,7 +309,7 @@ The incident JSON file has the following structure:
 | Caller: | It is possible to edit who is the caller of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
 | RequestShort: | Fill in the desired title of the incident. Size range: maximum 80 characters. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.
 | RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
-| Action: | Fill in action if needed. If not used fill in null. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags:[Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
+| Action: | Fill in action if needed. If not used fill in null. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
 | Branch: | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.
 | OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident.
@@ -311,9 +323,6 @@ The incident JSON file has the following structure:
 | ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the vallue null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
 
 ## Remarks
-### Filters
-It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk.
-
 ### Only require tickets
 When persons are created with the Topdesk AD sync. Then it should be possible to create incidents or changes. Use the account_create_correlate.ps1 script in this case.
 
@@ -321,7 +330,7 @@ When persons are created with the Topdesk AD sync. Then it should be possible to
 
 > _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-Configure-a-custom-PowerShell-target-system) pages_
 
-> _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com)_
+> _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk)_
 
 ## HelloID docs
 
