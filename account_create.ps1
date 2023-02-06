@@ -383,8 +383,8 @@ function Get-TopdeskBudgetHolder {
     )
 
     # Check if budgetholder.lookupValue property exists in the account object set in the mapping
-    if (-not($Account.budgetholder.Keys -Contains 'lookupValue')) {
-        $errorMessage = "Requested to lookup Budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue."
+    if (-not($Account.budgetHolder.Keys -Contains 'lookupValue')) {
+        $errorMessage = "Requested to lookup budgetholder, but budgetholder.lookupValue is missing. This is a scripting issue."
         $auditLogs.Add([PSCustomObject]@{
             Message = $errorMessage
             IsError = $true
@@ -393,11 +393,11 @@ function Get-TopdeskBudgetHolder {
     }
 
     # When budgetholder.lookupValue is null or empty (it is empty in the source or it's a mapping error)
-    if ([string]::IsNullOrEmpty($Account.budgetholder.lookupValue)) {
+    if ([string]::IsNullOrEmpty($Account.budgetHolder.lookupValue)) {
         if ([System.Convert]::ToBoolean($lookupErrorHrBudgetHolder)) {
 
             # True, no budgetholder in lookup value = throw error
-            $errorMessage = "The lookup value for Budgetholder is empty and the connector is configured to stop when this happens."
+            $errorMessage = "The lookup value for budgetholder is empty and the connector is configured to stop when this happens."
             $auditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
@@ -434,14 +434,13 @@ function Get-TopdeskBudgetHolder {
                 # False, no budgetholder found = remove budgetholder field (leave empty on creation or keep current value on update)
                 $Account.budgetHolder.Remove('lookupValue')
                 $Account.PSObject.Properties.Remove('budgetHolder')
-                Write-Verbose "Not overwriting or setting Budgetholder as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
+                Write-Verbose "Not overwriting or setting budgetholder as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
             }
         } else {
 
             # Budgetholder is found in Topdesk, set in Topdesk
             $Account.budgetHolder.Remove('lookupValue')
             $Account.budgetHolder.Add('id', $budgetHolder.id)
-            # $Account.PSObject.Properties.Remove('budgetHolder')
         }
     }
 }
@@ -861,15 +860,15 @@ try {
     Get-TopdeskDepartment @splatParamsDepartment
 
     # # Resolve budgetholder id
-    $splatParamsBudgetholder = @{
+    $splatParamsBudgetHolder = @{
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs
         Headers                   = $authHeaders
         BaseUrl                   = $config.baseUrl
-        lookupErrorHrBudgetholder = $config.lookupErrorHrBudgetholder
+        lookupErrorHrBudgetHolder = $config.lookupErrorHrBudgetHolder
         lookupErrorTopdesk        = $config.lookupErrorTopdesk
     }
-    Get-TopdeskBudgetholder @splatParamsBudgetholder
+    Get-TopdeskBudgetholder @splatParamsBudgetHolder
 
     # get person
     $splatParamsPerson = @{
