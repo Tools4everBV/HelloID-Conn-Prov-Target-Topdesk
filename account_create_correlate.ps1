@@ -24,10 +24,6 @@ switch ($($config.IsDebug)) {
 # https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
 $account = [PSCustomObject]@{
     employeeNumber      = $p.ExternalId
-
-    # Optionally return data for use in other systems (only used in $result)
-    networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
 }
 Write-Verbose ($account | ConvertTo-Json) # Debug output
 
