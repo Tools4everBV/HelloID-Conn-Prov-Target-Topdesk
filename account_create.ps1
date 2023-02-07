@@ -122,7 +122,9 @@ $account = [PSCustomObject]@{
     #showDepartment      = $true
     showAllBranches     = $true
 }
-Write-Verbose ($account | ConvertTo-Json) # Debug output
+$accountDebug = $account.PsObject.Copy()
+$accountDebug.password = '**********'
+Write-Verbose ($accountDebug | ConvertTo-Json) # Debug output
 
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
