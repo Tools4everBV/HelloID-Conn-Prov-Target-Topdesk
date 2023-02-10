@@ -114,7 +114,7 @@ $account = [PSCustomObject]@{
     tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName    # When setting a username, a (dummy) password will need to be set.
     password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
     jobTitle            = $p.PrimaryContract.Title.Name
-    branch              = @{ lookupValue = $p.Location.Name }
+    branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
     budgetHolder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
     isManager           = $false
@@ -126,7 +126,7 @@ $accountDebug = $account.PsObject.Copy()
 $accountDebug.password = '**********'
 Write-Verbose ($accountDebug | ConvertTo-Json) # Debug output
 
-#correlation attribute. Is used to lookup the user in the Get-TopdeskPerson function. Not migrated to settings because it's only used in the user create script.
+#correlation attribute. Is used to lookup the user in the Get-TopdeskPersonByCorrelationAttribute function. Not migrated to settings because it's only used in the user create script.
 $correlationAttribute = 'employeeNumber'
 
 #endregion mapping
@@ -669,7 +669,7 @@ function Set-TopdeskPersonArchiveStatus {
                 IsError = $true
             })
             Throw "Error(s) occured while looking up required values"
-        } # else
+        }
 
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
