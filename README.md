@@ -59,7 +59,7 @@ The following settings are required to connect to the API.
 | Fallback email | When a manager is set as the requester (in the JSON file) but the manager account reference is empty | No 
 | Toggle debug logging | Creates extra logging for debug purposes | Yes
 | Do not create changes or incidents | If enabled no changes or incidents will be created in Topdesk | Yes
-| When no item is found in Topdesk | Stop processing and generate an error or keep the current value and continue | Yes
+| When no item is found in Topdesk | Stop processing and generate an error or keep the current value and continue. For example, when no budgetholder or department is found in Topdesk. | Yes
 | When no department in source data | Stop processing and generate an error or clear the department field in Topdesk | Yes
 | When no budgetholder in source data | Stop processing and generate an error or clear the budgetholder field in Topdesk |  Yes
 | When the manager reference is empty | Stop processing and generate an error or clear the manager field in Topdesk | Yes

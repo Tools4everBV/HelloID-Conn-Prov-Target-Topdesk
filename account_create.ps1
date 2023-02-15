@@ -111,8 +111,8 @@ $account = [PSCustomObject]@{
     email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
     networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName    # When setting a username, a (dummy) password will need to be set.
-    password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
+    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName    # When setting a username, a (dummy) password could be mandatory
+    #password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
@@ -123,7 +123,9 @@ $account = [PSCustomObject]@{
     showAllBranches     = $true
 }
 $accountDebug = $account.PsObject.Copy()
-$accountDebug.password = '**********'
+if([bool]($Account.PSobject.Properties.name -match 'password')) {
+    $accountDebug.password = '**********'
+}
 Write-Verbose ($accountDebug | ConvertTo-Json) # Debug output
 
 #correlation attribute. Is used to lookup the user in the Get-TopdeskPersonByCorrelationAttribute function. Not migrated to settings because it's only used in the user create script.

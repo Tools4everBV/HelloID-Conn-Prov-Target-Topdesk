@@ -111,11 +111,11 @@ $account = [PSCustomObject]@{
     firstName           = $p.Name.NickName
     firstInitials       = (New-TopdeskName -Person $p).initials # Generate initials max 10 char
     gender              = New-TopdeskGender -Person $p
-    email               = $p.Accounts.MicrosoftActiveDirectory.mail
+    #email               = $p.Accounts.MicrosoftActiveDirectory.mail
     employeeNumber      = $p.ExternalId
-    networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
-    tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName # When setting a username, a (dummy) password will need to be set.
-    password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
+    #networkLoginName    = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName
+    #tasLoginName        = $p.Accounts.MicrosoftActiveDirectory.UserPrincipalName # When setting a username, a (dummy) password will need to be set.
+    #password            = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ1234567890')
     jobTitle            = $p.PrimaryContract.Title.Name
     branch              = @{ lookupValue = $p.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
