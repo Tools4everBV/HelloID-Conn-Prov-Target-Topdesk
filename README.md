@@ -19,6 +19,7 @@
   + [Prerequisites](#Prerequisites)
   + [Connection settings](#Connection-settings)
   + [Permissions](#Permissions)
+  + [Filters](#Filters)
 - [Setup the connector](#Setup-The-Connector)
   + [Remove attributes when correlating a Topdesk person](#Remove-attributes-when-correlating-a-Topdesk-person)
   + [Disable department or budgetholder](#Disable-department-or-budgetholder)
@@ -26,7 +27,6 @@
   + [Changes](#Changes)
   + [Incidents](#Incidents)
 - [Remarks](#Remarks)
-  + [Filters](#Filters)
   + [Only require tickets](#Only-require-tickets)
 - [Getting help](#Getting-help)
 - [HelloID Docs](#HelloID-docs)
@@ -62,7 +62,6 @@ The following settings are required to connect to the API.
 | When no item is found in Topdesk | Stop processing and generate an error or keep the current value and continue. For example, when no budgetholder or department is found in Topdesk. | Yes
 | When no department in source data | Stop processing and generate an error or clear the department field in Topdesk | Yes
 | When no budgetholder in source data | Stop processing and generate an error or clear the budgetholder field in Topdesk |  Yes
-| When the manager reference is empty | Stop processing and generate an error or clear the manager field in Topdesk | Yes
 
 ### Permissions
 
