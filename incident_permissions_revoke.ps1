@@ -579,7 +579,7 @@ function Get-TopdeskIdentifier {
 
     # Lookup Value is filled in, lookup value in Topdesk
     $splatParams = @{
-        Uri     = $baseUrl + $Endpoint + "?query=" + $SearchAttribute + "==" + $Value
+        Uri     = $baseUrl + $Endpoint + "?query=" + $SearchAttribute + "==" + "'$Value'"
         Method  = 'GET'
         Headers = $Headers
     }
