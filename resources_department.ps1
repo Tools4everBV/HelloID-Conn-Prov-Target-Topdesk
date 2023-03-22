@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Resource-Departments
 #
-# Version: 1.0.1
+# Version: 2.0.0
 #####################################################
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
