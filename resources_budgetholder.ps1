@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Resource-BudgetHolders
 #
-# Version: 2.0.0
+# Version: 2.0
 #####################################################
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
