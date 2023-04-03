@@ -222,7 +222,7 @@ The change JSON file has the following structure:
 | Template: | Fill in the Topdesk template code of the change. This is mandatory.
 | Category: | Commonly filled in the Topdesk change template. If so use null.
 | SubCategory: | Commonly filled in the Topdesk change template. If so use null.
-| ChanageType: | Fill in the change type Simple or Extensive.
+| ChangeType: | Fill in the change type Simple or Extensive.
 | Impact: | Commonly filled in the Topdesk change template. If so use null.
 | Benefit: | Commonly filled in the Topdesk change template. If so use null.
 | Priority: | Commonly filled in the Topdesk change template. If so use null.
