@@ -863,7 +863,7 @@ try {
     }
     Get-TopdeskDepartment @splatParamsDepartment
 
-    # # Resolve budgetholder id
+    # Resolve budgetholder id
     $splatParamsBudgetHolder = @{
         Account                   = [ref]$account
         AuditLogs                 = [ref]$auditLogs

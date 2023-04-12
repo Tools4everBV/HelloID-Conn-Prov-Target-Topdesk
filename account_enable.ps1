@@ -286,7 +286,7 @@ try {
     } else {
         Write-Verbose "Activating TOPdesk person"
 
-        # Always archive person in the disable process
+        # Always activate person in the enable process
         if ($TopdeskPerson.status -eq 'personArchived') {
 
             # Activate person

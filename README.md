@@ -171,43 +171,53 @@ $account = [PSCustomObject]@{
 ### Changes
 It is possible to create changes in Topdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a JSON file. The local HelloID agent needs to read this file.
 
+Please map the correct account mapping in change_permissions_grant.ps1 and change_permissions_revoke.ps1. If used in the JSON file.
+
+```Powershell
+# Map the account variables used in the JSON
+$account = @{
+    userPrincipalName = $($p.accounts.MicrosoftActiveDirectory.userPrincipalName)
+    sAMAccountName = $($p.accounts.MicrosoftActiveDirectory.sAMAccountName)
+}
+```
+
 Please use the change_example.json as a template to build you're own.
 
 The change JSON file has the following structure:
 
 ```JSON
 {
-		"Identification": {
-			"Id": "C001"
-		},
-		"DisplayName": "Aanvraag/Inname laptop",
-		"Grant": {
-			"Requester": "tester@test.com",
-			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
-			"Action": null,
-			"BriefDescription": "Aanvraag Laptop ($($p.displayName))",
-			"Template": "Ws 006",
-			"Category": "Middelen",
-			"SubCategory": "Inventaris & apparatuur",
-			"ChangeType": "Simple",
-			"Impact": "Persoon",
-			"Benefit": null,
-			"Priority": "P1"
-		},
-		"Revoke": {
-			"Requester": "Employee",
-			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
-			"Action": null,
-			"BriefDescription": "Inname Laptop ($($p.displayName))",
-			"Template": "Ws 015",
-			"Category": "Middelen",
-			"SubCategory": "Inventaris & apparatuur",
-			"ChangeType": "Simple",
-			"Impact": "Persoon",
-			"Benefit": null,
-			"Priority": "P1"
-		}
+	"Identification": {
+		"Id": "C001"
+	},
+	"DisplayName": "Aanvraag/Inname laptop",
+	"Grant": {
+		"Requester": "tester@test.com",
+		"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nuserPrincipalName: $($account.userPrincipalName)\nsAMAccountName: $($account.sAMAccountName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+		"Action": null,
+		"BriefDescription": "Aanvraag Laptop ($($p.displayName))",
+		"Template": "Ws 006",
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"ChangeType": "Simple",
+		"Impact": "Persoon",
+		"Benefit": null,
+		"Priority": "P1"
+	},
+	"Revoke": {
+		"Requester": "Employee",
+		"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+		"Action": null,
+		"BriefDescription": "Inname Laptop ($($p.displayName))",
+		"Template": "Ws 015",
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"ChangeType": "Simple",
+		"Impact": "Persoon",
+		"Benefit": null,
+		"Priority": "P1"
 	}
+}
 ```
 
 | JSON field | Description
@@ -229,6 +239,16 @@ The change JSON file has the following structure:
 
 ### Incidents
 It is possible to create incidents in Topdesk when granting or revoking an entitlement in HelloID. The content of the incidents is managed in a JSON file. The local HelloID agent needs to read this file.
+
+Please map the correct account mapping in incident_permissions_grant.ps1 and incident_permissions_revoke.ps1. If used in the JSON file.
+
+```Powershell
+# Map the account variables used in the JSON
+$account = @{
+    userPrincipalName = $($p.accounts.MicrosoftActiveDirectory.userPrincipalName)
+    sAMAccountName = $($p.accounts.MicrosoftActiveDirectory.sAMAccountName)
+}
+```
 
 Please use the incident_example.json as a template to build you're own.
 
@@ -258,46 +278,46 @@ Please use the incident_example.json as a template to build you're own.
 The incident JSON file has the following structure:
 
 ```JSON
-	{
-		"Identification": {
-			"Id": "I001"
-		},
-		"DisplayName": "Aanvraag/Inname laptop",
-		"Grant": {
-			"Caller": "tester@test.com",
-			"RequestShort": "Aanvraag Laptop ($($p.displayName))",
-			"RequestDescription": "<b>Graag een laptop gereed maken voor onderstaande medewerker.</b><br><br><em>Naam: $($p.Name.NickName)</em><br><strong>Achternaam: $($p.Name.FamilyName)</strong><br><u>Personeelsnummer: $($p.ExternalId)</u><br><br>Functie: $($p.PrimaryContract.Title.Name)<br><i>Afdeling: $($p.PrimaryContract.Department.DisplayName)</i><br><br><a href='https://www.tools4ever.nl/'>Visit Tools4ever.nl!</a>",
-			"Action": "<b>Medewerker ($($p.displayName)) heeft een laptop nodig</b><br><br>Graag gereed maken voor $($p.PrimaryContract.StartDate).",
-			"Branch": "Baarn",
-			"OperatorGroup": "Applicatiebeheerders",
-			"Operator": null,
-			"Category": "Middelen",
-			"SubCategory": "Inventaris & apparatuur",
-			"CallType": "Aanvraag",
-			"Impact": null,
-			"Priority": null,
-			"EntryType": null,
-			"Urgency": null,
-			"ProcessingStatus": null
-		},
-		"Revoke": {
-			"Caller": "tester@test.com",
-			"RequestShort": "Inname Laptop ($($p.displayName))",
-			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)",
-			"Action": "<b>Medewerker ($($p.displayName)) is in het bezit van een laptop</b>.",
-			"Branch": "Baarn",
-			"OperatorGroup": "Applicatiebeheerders",
-			"Operator": null,
-			"Category": "Middelen",
-			"SubCategory": "Inventaris & apparatuur",
-			"CallType": "Aanvraag",
-			"Impact": null,
-			"Priority": null,
-			"EntryType": null,
-			"Urgency": null,
-			"ProcessingStatus": null
-		}
+{
+	"Identification": {
+		"Id": "I001"
+	},
+	"DisplayName": "Aanvraag/Inname laptop",
+	"Grant": {
+		"Caller": "tester@test.com",
+		"RequestShort": "Aanvraag Laptop ($($p.displayName))",
+		"RequestDescription": "<b>Graag een laptop gereed maken voor onderstaande medewerker.</b><br><br><em>Naam: $($p.Name.NickName)</em><br><strong>Achternaam: $($p.Name.FamilyName)</strong><br>userPrincipalName: $($account.userPrincipalName)<br>sAMAccountName: $($account.sAMAccountName)<br><u>Personeelsnummer: $($p.ExternalId)</u><br><br>Functie: $($p.PrimaryContract.Title.Name)<br><i>Afdeling: $($p.PrimaryContract.Department.DisplayName)</i><br><br><a href='https://www.tools4ever.nl/'>Visit Tools4ever.nl!</a>",
+		"Action": "<b>Medewerker ($($p.displayName)) heeft een laptop nodig</b><br><br>Graag gereed maken voor $($p.PrimaryContract.StartDate).",
+		"Branch": "Baarn",
+		"OperatorGroup": "Applicatiebeheerders",
+		"Operator": null,
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"CallType": "Aanvraag",
+		"Impact": null,
+		"Priority": null,
+		"EntryType": null,
+		"Urgency": null,
+		"ProcessingStatus": null
+	},
+	"Revoke": {
+		"Caller": "tester@test.com",
+		"RequestShort": "Inname Laptop ($($p.displayName))",
+		"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)",
+		"Action": "<b>Medewerker ($($p.displayName)) is in het bezit van een laptop</b>.",
+		"Branch": "Baarn",
+		"OperatorGroup": "Applicatiebeheerders",
+		"Operator": null,
+		"Category": "Middelen",
+		"SubCategory": "Inventaris & apparatuur",
+		"CallType": "Aanvraag",
+		"Impact": null,
+		"Priority": null,
+		"EntryType": null,
+		"Urgency": null,
+		"ProcessingStatus": null
 	}
+}
 ```
 | JSON field | Description
 | - | -

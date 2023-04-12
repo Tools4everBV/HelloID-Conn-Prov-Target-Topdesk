@@ -6,7 +6,7 @@
 		"DisplayName": "Aanvraag/Inname laptop",
 		"Grant": {
 			"Requester": "tester@test.com",
-			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nuserPrincipalName: $($account.userPrincipalName)\nsAMAccountName: $($account.sAMAccountName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
 			"Action": null,
 			"BriefDescription": "Aanvraag Laptop ($($p.displayName))",
 			"Template": "Ws 006",

@@ -13,6 +13,12 @@ $mRef = $managerAccountReference | ConvertFrom-Json
 $success = $false
 $auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
 
+# Map the account variables used in the JSON
+$account = @{
+    userPrincipalName = $($p.accounts.MicrosoftActiveDirectory.userPrincipalName)
+    sAMAccountName = $($p.accounts.MicrosoftActiveDirectory.sAMAccountName)
+}
+
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
