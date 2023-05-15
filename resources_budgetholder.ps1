@@ -1,5 +1,5 @@
 #####################################################
-# HelloID-Conn-Prov-Target-TOPdesk-Resource-BudgetHolders
+# HelloID-Conn-Prov-Target-Topdesk-Resource-BudgetHolders
 #
 # Version: 2.0
 #####################################################
@@ -44,7 +44,7 @@ function Set-AuthorizationHeaders {
     Write-Output $authHeaders
 }
 
-function Invoke-TOPdeskRestMethod {
+function Invoke-TopdeskRestMethod {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -82,7 +82,7 @@ function Invoke-TOPdeskRestMethod {
     }
 }
 
-function Get-TOPdeskBudgetHolders {
+function Get-TopdeskBudgetHolders {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -99,12 +99,12 @@ function Get-TOPdeskBudgetHolders {
         Method  = 'GET'
         Headers = $Headers
     }
-    $responseGet = Invoke-TOPdeskRestMethod @splatParams
-    Write-Verbose "Retrieved $($responseGet.count) budgetholders from TOPdesk"
+    $responseGet = Invoke-TopdeskRestMethod @splatParams
+    Write-Verbose "Retrieved $($responseGet.count) budgetholders from Topdesk"
     Write-Output $responseGet
 }
 
-function New-TOPdeskBudgetHolder {
+function New-TopdeskBudgetHolder {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -128,8 +128,8 @@ function New-TOPdeskBudgetHolder {
         Headers = $Headers
         body    = @{name=$Name} | ConvertTo-Json
     }
-    $responseCreate = Invoke-TOPdeskRestMethod @splatParams
-    Write-Verbose "Created budgetholder with name [$($name)] and id [$($responseCreate.id)] in TOPdesk"
+    $responseCreate = Invoke-TopdeskRestMethod @splatParams
+    Write-Verbose "Created budgetholder with name [$($name)] and id [$($responseCreate.id)] in Topdesk"
     Write-Output $responseCreate
 }
 
@@ -164,7 +164,7 @@ function Resolve-HTTPError {
 #Begin
 try {
     $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apikey
-    $TopdeskBudgetHolders = Get-TOPdeskBudgetHolders -Headers $authHeaders -BaseUrl $Config.baseUrl
+    $TopdeskBudgetHolders = Get-TopdeskBudgetHolders -Headers $authHeaders -BaseUrl $Config.baseUrl
 
     # Remove items with no name
     $TopdeskDepartments = $TopdeskBudgetHolders.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
@@ -177,10 +177,10 @@ try {
             # Create budgetholder
             if (-not ($dryRun -eq $true)) {
                 try {
-                    Write-Verbose "Creating TOPdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in TOPdesk..."
-                    $newBudgetHolder = New-TOPdeskBudgetHolder -Name $HelloIdBudgetHolder.name -BaseUrl $Config.baseUrl -Headers $authHeaders
+                    Write-Verbose "Creating Topdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in Topdesk..."
+                    $newBudgetHolder = New-TopdeskBudgetHolder -Name $HelloIdBudgetHolder.name -BaseUrl $Config.baseUrl -Headers $authHeaders
                     $auditLogs.Add([PSCustomObject]@{
-                        Message = "Created TOPdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
+                        Message = "Created Topdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
                         IsError = $false
                     })
                 } catch {
@@ -200,10 +200,10 @@ try {
                     })
                 }
             } else {
-                Write-Verbose "Preview: Would create topdesk budgetholder $($HelloIdBudgetHolder.name)"
+                Write-Verbose "Preview: Would create Topdesk budgetholder $($HelloIdBudgetHolder.name)"
             }
         } else {
-            Write-Verbose "Not creating budgetholder [$($HelloIdBudgetHolder.name)] as it already exists in TOPdesk"
+            Write-Verbose "Not creating budgetholder [$($HelloIdBudgetHolder.name)] as it already exists in Topdesk"
         }
     }
 } catch {
