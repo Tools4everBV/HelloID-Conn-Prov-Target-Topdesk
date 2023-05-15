@@ -3,6 +3,7 @@
 #
 # Version: 2.0
 #####################################################
+
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $rRef = $resourceContext | ConvertFrom-Json
@@ -33,7 +34,7 @@ function Set-AuthorizationHeaders {
         $ApiKey
     )
     # Create basic authentication string
-    $bytes = [System.Text.Encoding]::ASCII.GetBytes("$UserName):$ApiKey)")
+    $bytes = [System.Text.Encoding]::ASCII.GetBytes("${Username}:${Apikey}")
     $base64 = [System.Convert]::ToBase64String($bytes)
 
     # Set authentication headers
@@ -93,12 +94,12 @@ function Get-TOPdeskBudgetHolders {
         $Headers
     )
 
-    $splatGoupParams = @{
+    $splatParams = @{
         Uri     = "$baseUrl/tas/api/budgetholders"
         Method  = 'GET'
         Headers = $Headers
     }
-    $responseGet = Invoke-TOPdeskRestMethod @splatGoupParams
+    $responseGet = Invoke-TOPdeskRestMethod @splatParams
     Write-Verbose "Retrieved $($responseGet.count) budgetholders from TOPdesk"
     Write-Output $responseGet
 }
@@ -110,17 +111,19 @@ function New-TOPdeskBudgetHolder {
         [ValidateNotNullOrEmpty()]
         [string]
         $Name,
+
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $baseUrl,
+        $BaseUrl,
+
         [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers
     )
 
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/budgetholders"
+        Uri     = "$BaseUrl/tas/api/budgetholders"
         Method  = 'POST'
         Headers = $Headers
         body    = @{name=$Name} | ConvertTo-Json
@@ -129,16 +132,43 @@ function New-TOPdeskBudgetHolder {
     Write-Verbose "Created budgetholder with name [$($name)] and id [$($responseCreate.id)] in TOPdesk"
     Write-Output $responseCreate
 }
+
+
+function Resolve-HTTPError {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory,
+            ValueFromPipeline
+        )]
+        [object]$ErrorObject
+    )
+    process {
+        $httpErrorObj = [PSCustomObject]@{
+            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId
+            MyCommand             = $ErrorObject.InvocationInfo.MyCommand
+            RequestUri            = $ErrorObject.TargetObject.RequestUri
+            ScriptStackTrace      = $ErrorObject.ScriptStackTrace
+            ErrorMessage          = ''
+        }
+        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') {
+            $httpErrorObj.ErrorMessage = $ErrorObject.ErrorDetails.Message
+        }
+        elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
+            $httpErrorObj.ErrorMessage = [System.IO.StreamReader]::new($ErrorObject.Exception.Response.GetResponseStream()).ReadToEnd()
+        }
+        Write-Output $httpErrorObj
+    }
+}
 #endregion
 
 #Begin
 try {
-    $authHeaders = Set-AuthorizationHeaders -UserName $Config.connection.userName -ApiKey $Config.connection.apiKey
-    $TopdeskBudgetHolders = Get-TOPdeskBudgetHolders -Headers $Config.connection.authHeaders -baseUrl $Config.connection.baseUrl
+    $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apikey
+    $TopdeskBudgetHolders = Get-TOPdeskBudgetHolders -Headers $authHeaders -BaseUrl $Config.baseUrl
 
     # Remove items with no name
-    [Void]$TopdeskBudgetHolders.Where({ $_.Name-ne "" })
-    [Void]$rRef.sourceData.Where({ $_.Name -ne "" })
+    $TopdeskDepartments = $TopdeskBudgetHolders.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
+    $rRefSourceData = $rRef.sourceData.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
 
     # Process
     $success = $true
@@ -148,7 +178,7 @@ try {
             if (-not ($dryRun -eq $true)) {
                 try {
                     Write-Verbose "Creating TOPdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in TOPdesk..."
-                    $newBudgetHolder = New-TOPdeskBudgetHolder -Name $HelloIdBudgetHolder.name -baseUrl $Config.connection.baseUrl -Headers $authHeaders
+                    $newBudgetHolder = New-TOPdeskBudgetHolder -Name $HelloIdBudgetHolder.name -BaseUrl $Config.baseUrl -Headers $authHeaders
                     $auditLogs.Add([PSCustomObject]@{
                         Message = "Created TOPdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
                         IsError = $false
@@ -156,6 +186,7 @@ try {
                 } catch {
                     $success = $false
                     $ex = $PSItem
+                    
                     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
                         $errorMessage = "Could not create budgetholder. Error: $($ex.ErrorDetails.Message)"
@@ -178,9 +209,11 @@ try {
 } catch {
     $success = $false
     $ex = $PSItem
+    
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not create budgetholders. Error: $($ex.ErrorDetails.Message)"
+        $errorObj = Resolve-HTTPError -ErrorObject $ex
+        $errorMessage = "Could not create budgetholders. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     } else {
         $errorMessage = "Could not create budgetholders. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
