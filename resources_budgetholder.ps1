@@ -167,12 +167,12 @@ try {
     $TopdeskBudgetHolders = Get-TopdeskBudgetHolders -Headers $authHeaders -BaseUrl $Config.baseUrl
 
     # Remove items with no name
-    $TopdeskDepartments = $TopdeskBudgetHolders.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
+    $TopdeskBudgetHolders = $TopdeskBudgetHolders.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
     $rRefSourceData = $rRef.sourceData.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
 
     # Process
     $success = $true
-    foreach ($HelloIdBudgetHolder in $rRef.sourceData) {
+    foreach ($HelloIdBudgetHolder in $rRefSourceData) {
         if (-not($TopdeskBudgetHolders.Name -eq $HelloIdBudgetHolder.name)) {
             # Create budgetholder
             if (-not ($dryRun -eq $true)) {
