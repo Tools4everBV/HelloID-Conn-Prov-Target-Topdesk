@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Create
 #
-# Version: 2.0
+# Version: 2.0.1
 #####################################################
 
 # Initialize default values
@@ -117,7 +117,7 @@ $account = [PSCustomObject]@{
     branch              = @{ lookupValue = $p.PrimaryContract.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
     budgetHolder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
-    isManager           = $false
+    isManager           = $false # When the HelloID source provides an isManager boolean: $p.Custom.isManager
     manager             = @{ id = $mRef }
     #showDepartment      = $true
     showAllBranches     = $true
@@ -925,7 +925,7 @@ try {
             if ($TopdeskManager.status -eq 'personArchived') {
 
                 # Unarchive manager
-                $shouldArchive  = $true
+                $managerShouldArchive  = $true
                 $splatParamsManagerUnarchive = @{
                     TopdeskPerson   = [ref]$TopdeskManager
                     Headers         = $authHeaders
@@ -947,7 +947,7 @@ try {
             Set-TopdeskPersonIsManager @splatParamsManagerIsManager
 
             # Archive manager if required
-            if ($shouldArchive -and $TopdeskManager.status -ne 'personArchived') {
+            if ($managerShouldArchive -and $TopdeskManager.status -ne 'personArchived') {
 
                 # Archive manager
                 $splatParamsManagerArchive = @{

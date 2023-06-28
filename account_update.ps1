@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Update
 #
-# Version: 2.0
+# Version: 2.0.1
 #####################################################
 
 # Initialize default values
@@ -119,7 +119,7 @@ $account = [PSCustomObject]@{
     branch              = @{ lookupValue = $p.Location.Name }
     department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
     budgetHolder        = @{ lookupValue = $p.PrimaryContract.CostCenter.Name }
-    #isManager           = $false
+    #isManager           = $false # When the HelloID source provides an isManager boolean: $p.Custom.isManager
     manager             = @{ id = $mRef }
     #showDepartment      = $true
 }
@@ -818,7 +818,7 @@ try {
         if ($TopdeskManager.status -eq 'personArchived') {
 
             # Unarchive manager
-            $shouldArchive  = $true
+            $managerShouldArchive  = $true
             $splatParamsManagerUnarchive = @{
                 TopdeskPerson   = [ref]$TopdeskManager
                 Headers         = $authHeaders
@@ -840,7 +840,7 @@ try {
         Set-TopdeskPersonIsManager @splatParamsManagerIsManager
 
         # Archive manager if required
-        if ($shouldArchive -and $TopdeskManager.status -ne 'personArchived') {
+        if ($managerShouldArchive -and $TopdeskManager.status -ne 'personArchived') {
 
             # Archive manager
             $splatParamsManagerArchive = @{
@@ -870,7 +870,7 @@ try {
         if ($TopdeskPerson.status -eq 'personArchived') {
 
             # Unarchive person
-            $shouldArchive  = $true
+            $personShouldArchive  = $true
             $splatParamsPersonUnarchive = @{
                 TopdeskPerson   = [ref]$TopdeskPerson
                 Headers         = $authHeaders
@@ -893,7 +893,7 @@ try {
         Set-TopdeskPerson @splatParamsPersonUpdate
 
         # As the update process could be started for an inactive HelloID person, the user return should be archived state
-        if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
+        if ($personShouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
 
             # Archive person
             $splatParamsPersonArchive = @{
