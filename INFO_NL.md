@@ -13,14 +13,6 @@ Wanneer een nieuwe medewerker in dienst komt, wordt door HelloID automatisch een
 
 Dankzij de directe koppeling tussen TOPdesk en HelloID kan je veelvoorkomende tickets en wijzigingen automatiseren, zoals resource management (uitgeven bedrijfsmiddelen), password management (password reset) of access management (toekennen van autorisaties). Bij wijzigingen gebeurt dit op basis van een TOPdesk-sjabloon. Doordat HelloID met diverse bronnen en systemen koppelt, kan HelloID in TOPdesk incidenten automatisch aanmaken, wijzigingen verwerken in het netwerk en vervolgens de tickets sluiten. Al deze acties worden bovendien gelogd voor rapportage en auditing. Ook is het mogelijk om optionele activiteiten aan wijzigingen te koppelen en in de planner zichtbaar te maken.
 
-**Aanvragen en uitlezen van bedrijfsmiddelen**
-
-Wat betreft resource management biedt deze koppeling diverse mogelijkheden die je werk eenvoudiger zullen maken:
-*	Autorisaties en aanvragen direct in TOPdesk: Bij indiensttreding van een nieuwe medewerker zijn gebruikersaccounts en toegangsrechten alleen niet voldoende. Vaak hebben nieuwe medewerkers ook een laptop nodig om op te werken en een badge om toegang tot het kantoor te krijgen. Deze aanvragen kunnen op basis van een autorisatiematrix geautomatiseerd of door de betrokken van de medewerker worden aanvraagd. Deze aanvraag komt direct in TOPdesk terecht, zodat de servicedesk de bedrijfsmiddelen kan bestellen en configureren.
-*	Uitlezen bedrijfsmiddelen bij uitdiensttreding: Wanneer een medewerker de organisatie verlaat, kan HelloID uit TOPdesk lezen welke bedrijfsmiddelen (token, pasjes, telefoon, laptop, bedrijfskleding, etc.) hij in bezit heeft. De vertrekkende medewerker krijgt dan automatisch een notificatie met een lijst van items die ingeleverd moeten worden.
-*	Automatische notificatie manager bij uitdiensttreding: Managers ontvangen een automatisch gegenereerde e-mailnotificatie over de bedrijfsmiddelen die de vertrekkende medewerker in bezit heeft en dient in te leveren.
-De uitwisseling van gegevens tussen HelloID en TOPdesk gebeurt via de TOPdesk API. De gegevensuitwisseling kan worden aangepast aan de specifieke behoeften van een organisatie om een optimale samenwerking tussen de twee systemen te waarborgen.
-
 ## HelloID voor TOPdesk helpt je met
 * **Tijd- en kostenefficiëntie:** Een skilled servicedeskmedewerker hoeft niet langer handmatig gegevens up-to-date te houden en kan zich bezighouden met projecten waar zijn expertise daadwerkelijk toegevoegde waarde levert.
 *	**Inzicht in de 'footprint' van applicaties:** HelloID geeft je inzicht in het daadwerkelijke gebruik van software binnen je organisatie. Zo hebben managers zicht op de IT-kosten van hun afdeling of team.
