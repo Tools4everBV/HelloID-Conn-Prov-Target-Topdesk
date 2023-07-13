@@ -830,57 +830,49 @@ try {
     # region write
     $action = 'Update'
 
-    # Prepare manager record, if manager has to be set
-    if (-Not([string]::IsNullOrEmpty($account.manager.id))) {
-        if ($TopdeskManager.status -eq 'personArchived') {
-
-            # Unarchive manager
-            $managerShouldArchive = $true
-            $splatParamsManagerUnarchive = @{
-                TopdeskPerson   = [ref]$TopdeskManager
-                Headers         = $authHeaders
-                BaseUrl         = $config.baseUrl
-                Archive         = $false
-                ArchivingReason = $config.personArchivingReason
-                AuditLogs       = [ref]$auditLogs
-            }
-            Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
-        }
-
-        # Set isManager to true
-        $splatParamsManagerIsManager = @{
-            TopdeskPerson = [ref]$TopdeskManager
-            Headers       = $authHeaders
-            BaseUrl       = $config.baseUrl
-            IsManager     = $true
-        }
-        Set-TopdeskPersonIsManager @splatParamsManagerIsManager
-
-        # Archive manager if required
-        if ($managerShouldArchive -and $TopdeskManager.status -ne 'personArchived') {
-
-            # Archive manager
-            $splatParamsManagerArchive = @{
-                TopdeskPerson   = [ref]$TopdeskManager
-                Headers         = $authHeaders
-                BaseUrl         = $config.baseUrl
-                Archive         = $true
-                ArchivingReason = $config.personArchivingReason
-                AuditLogs       = [ref]$auditLogs
-            }
-            Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
-        }
-    }
-
-    # Add an auditMessage showing what will happen during enforcement
-    if ($dryRun -eq $true) {
-        $auditLogs.Add([PSCustomObject]@{
-                Message = "$action Topdesk account for: [$($p.DisplayName)], will be executed during enforcement"
-            })
-    }
-
-    # Process
     if (-not($dryRun -eq $true)) {
+        # Prepare manager record, if manager has to be set
+        if (-Not([string]::IsNullOrEmpty($account.manager.id))) {
+            if ($TopdeskManager.status -eq 'personArchived') {
+
+                # Unarchive manager
+                $managerShouldArchive = $true
+                $splatParamsManagerUnarchive = @{
+                    TopdeskPerson   = [ref]$TopdeskManager
+                    Headers         = $authHeaders
+                    BaseUrl         = $config.baseUrl
+                    Archive         = $false
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
+                }
+                Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
+            }
+
+            # Set isManager to true
+            $splatParamsManagerIsManager = @{
+                TopdeskPerson = [ref]$TopdeskManager
+                Headers       = $authHeaders
+                BaseUrl       = $config.baseUrl
+                IsManager     = $true
+            }
+            Set-TopdeskPersonIsManager @splatParamsManagerIsManager
+
+            # Archive manager if required
+            if ($managerShouldArchive -and $TopdeskManager.status -ne 'personArchived') {
+
+                # Archive manager
+                $splatParamsManagerArchive = @{
+                    TopdeskPerson   = [ref]$TopdeskManager
+                    Headers         = $authHeaders
+                    BaseUrl         = $config.baseUrl
+                    Archive         = $true
+                    ArchivingReason = $config.personArchivingReason
+                    AuditLogs       = [ref]$auditLogs
+                }
+                Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
+            }
+        }
+
         Write-Verbose "Updating Topdesk person for: [$($p.DisplayName)]"
 
         # Unarchive person if required
@@ -930,6 +922,13 @@ try {
                 IsError = $false
             })
     }
+    else {
+        # Add an auditMessage showing what will happen during enforcement
+        Write-Warning "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+        $auditLogs.Add([PSCustomObject]@{
+                Message = "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+            })
+    }   
 }
 catch {
     $success = $false
