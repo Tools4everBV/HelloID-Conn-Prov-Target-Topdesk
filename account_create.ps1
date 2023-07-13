@@ -731,7 +731,7 @@ function Set-TopdeskPersonIsManager {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$TopdeskPerson,
+        $TopdeskPerson,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -754,7 +754,6 @@ function Set-TopdeskPersonIsManager {
             Body    = $body | ConvertTo-Json
         }
         $null = Invoke-TopdeskRestMethod @splatParams
-        $TopdeskPerson.status = $isManager
     }
 }
 
@@ -957,7 +956,7 @@ try {
 
             # Set isManager to true
             $splatParamsManagerIsManager = @{
-                TopdeskPerson = [ref]$TopdeskManager
+                TopdeskPerson = $TopdeskManager
                 Headers       = $authHeaders
                 BaseUrl       = $config.baseUrl
                 IsManager     = $true
