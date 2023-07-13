@@ -902,33 +902,36 @@ try {
     }
     $TopdeskPerson = Get-TopdeskPersonByCorrelationAttribute @splatParamsPerson
 
-    # if mref is empty and person has a manager try to correlate manager in topdesk
-    if (([string]::IsNullOrEmpty($account.manager.id)) -and (-not ([string]::IsNullOrEmpty($p.PrimaryManager.ExternalId)))) {
-        $personCorrelationAttribute = $account.$CorrelationAttribute
-        $account.$CorrelationAttribute = $p.PrimaryManager.ExternalId
+    # if mref is empty and person has a manager try to correlate manager in topdesk with externalID of manager
+    If (([string]::IsNullOrEmpty($account.manager.id)) -and (-not ([string]::IsNullOrEmpty($p.PrimaryManager.ExternalId)))) {
         
+        $accountManager = [PSCustomObject]@{
+            employeeNumber = $p.PrimaryManager.ExternalId
+        }
+
         $splatParamsManager = @{
-            Account              = $account
+            Account              = $accountManager
             AuditLogs            = [ref]$auditLogs
-            CorrelationAttribute = $correlationAttribute
+            CorrelationAttribute = 'employeeNumber'
             Headers              = $authHeaders
             BaseUrl              = $config.baseUrl
             PersonType           = 'manager'
         }
-        $managerResponse = Get-TopdeskPersonByCorrelationAttribute @splatParamsManager
-        $account.manager.id = $managerResponse.id
-        $account.$CorrelationAttribute = $personCorrelationAttribute
-    }
+        $TopdeskManager = Get-TopdeskPersonByCorrelationAttribute @splatParamsManager
 
-    # get manager
-    $splatParamsManager = @{
-        Account   = [ref]$account
-        AuditLogs = [ref]$auditLogs
-        Headers   = $authHeaders
-        BaseUrl   = $config.baseUrl
+        # add mref id to manager
+        $account.manager.id = $TopdeskManager.id
     }
-
-    $TopdeskManager = Get-TopdeskPersonManager @splatParamsManager
+    else {
+        # get manager
+        $splatParamsManager = @{
+            Account   = [ref]$account
+            AuditLogs = [ref]$auditLogs
+            Headers   = $authHeaders
+            BaseUrl   = $config.baseUrl
+        }
+        $TopdeskManager = Get-TopdeskPersonManager @splatParamsManager
+    }
 
     if ($auditLogs.isError -contains - $true) {
         Throw "Error(s) occured while looking up required values"
