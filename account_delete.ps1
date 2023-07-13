@@ -13,7 +13,7 @@ $aRef = $AccountReference | ConvertFrom-Json
 
 # Set debug logging
 switch ($($config.IsDebug)) {
-    $true  { $VerbosePreference = 'Continue' }
+    $true { $VerbosePreference = 'Continue' }
     $false { $VerbosePreference = 'SilentlyContinue' }
 }
 
@@ -23,9 +23,9 @@ switch ($($config.IsDebug)) {
 #region mapping
 # Clear email, networkLoginName & tasLoginName, if you need to clear other values, add these here
 $account = [PSCustomObject]@{
-    email               = $null
-    networkLoginName    = $null
-    tasLoginName        = ''
+    email            = $null
+    networkLoginName = $null
+    tasLoginName     = ''
 }
 #endregion mapping
 
@@ -92,7 +92,8 @@ function Invoke-TopdeskRestMethod {
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
             Invoke-RestMethod @splatParams -Verbose:$false
-        } catch {
+        }
+        catch {
             $PSCmdlet.ThrowTerminatingError($_)
         }
     }
@@ -160,13 +161,13 @@ function Set-TopdeskPersonArchiveStatus {
     # Set ArchiveStatus variables based on archive parameter
     if ($Archive -eq $true) {
 
-         #When the 'archiving reason' setting is not configured in the target connector configuration
+        #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
             $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
             $AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+                    Message = $errorMessage
+                    IsError = $true
+                })
             Throw "Error(s) occured while looking up required values"
         }
 
@@ -183,16 +184,17 @@ function Set-TopdeskPersonArchiveStatus {
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
             $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
             $AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+                    Message = $errorMessage
+                    IsError = $true
+                })
             Throw "Error(s) occured while looking up required values"
         } # else
 
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
         $body = @{ id = $archivingReasonObject.id }
-    } else {
+    }
+    else {
         $archiveStatus = 'person'
         $archiveUri = 'unarchive'
         $body = $null
@@ -255,9 +257,9 @@ try {
     $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apiKey
 
     $splatParams = @{
-        Headers                   = $authHeaders
-        BaseUrl                   = $config.baseUrl
-        PersonReference           = $aRef
+        Headers         = $authHeaders
+        BaseUrl         = $config.baseUrl
+        PersonReference = $aRef
     }
     $TopdeskPerson = Get-TopdeskPersonById @splatParams
 
@@ -266,17 +268,19 @@ try {
         # When a person cannot be found, assume the person is already deleted and report success with the default audit message
         if ($dryRun -eq $true) {
             $auditLogs.Add([PSCustomObject]@{
-                Message = "Archiving TOPdesk person for: [$($p.DisplayName)]: person with account reference [$aRef] cannot be found"
-            })
+                    Message = "Archiving TOPdesk person for: [$($p.DisplayName)]: person with account reference [$aRef] cannot be found"
+                })
         }
-    } else {
+    }
+    else {
 
         # Add an auditMessage showing what will happen during enforcement
         if ($dryRun -eq $true) {
             $auditLogs.Add([PSCustomObject]@{
-                Message = "Archiving TOPdesk person for: [$($p.DisplayName)], will be executed during enforcement"
-            })
-        } else {
+                    Message = "Archiving TOPdesk person for: [$($p.DisplayName)], will be executed during enforcement"
+                })
+        }
+        else {
             Write-Verbose "Archiving TOPdesk person"
 
             # Unarchive person if required
@@ -296,10 +300,10 @@ try {
 
             # Update TOPdesk person
             $splatParamsPersonUpdate = @{
-                TopdeskPerson   = $TopdeskPerson
-                Account         = $account
-                Headers         = $authHeaders
-                BaseUrl         = $config.baseUrl
+                TopdeskPerson = $TopdeskPerson
+                Account       = $account
+                Headers       = $authHeaders
+                BaseUrl       = $config.baseUrl
             }
             Set-TopdeskPerson @splatParamsPersonUpdate
 
@@ -320,12 +324,13 @@ try {
 
             $success = $true
             $auditLogs.Add([PSCustomObject]@{
-                Message = "Archive person was successful."
-                IsError = $false
-            })
+                    Message = "Archive person was successful."
+                    IsError = $false
+                })
         }
     }
-} catch {
+}
+catch {
     $success = $false
     $ex = $PSItem
     Write-Verbose ($ex | ConvertTo-Json)
@@ -333,19 +338,22 @@ try {
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
             $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
-        } else {
+        }
+        else {
             #$errorObj = Resolve-HTTPError -ErrorObject $ex
             $errorMessage = "Could not $action person. Error: $($ex.Exception.Message)"
         }
-    } else {
+    }
+    else {
         $errorMessage = "Could not archive person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
 
     $auditLogs.Add([PSCustomObject]@{
-        Message = $errorMessage
-        IsError = $true
-    })
-} finally {
+            Message = $errorMessage
+            IsError = $true
+        })
+}
+finally {
     $result = [PSCustomObject]@{
         Success   = $success
         Auditlogs = $auditLogs
