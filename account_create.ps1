@@ -937,46 +937,44 @@ try {
 
     # region write
     # Prepare manager record, if manager has to be set
-    if (-Not([string]::IsNullOrEmpty($account.manager.id))) {
-        if ($TopdeskManager.isManager -eq $false) {
-            if ($TopdeskManager.status -eq 'personArchived') {
+    if (-Not([string]::IsNullOrEmpty($account.manager.id)) -and ($TopdeskManager.isManager -eq $false)) {
+        if ($TopdeskManager.status -eq 'personArchived') {
 
-                # Unarchive manager
-                $managerShouldArchive = $true
-                $splatParamsManagerUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskManager
-                    Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
-                    Archive         = $false
-                    ArchivingReason = $config.personArchivingReason
-                    AuditLogs       = [ref]$auditLogs
-                }
-                Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
+            # Unarchive manager
+            $managerShouldArchive = $true
+            $splatParamsManagerUnarchive = @{
+                TopdeskPerson   = [ref]$TopdeskManager
+                Headers         = $authHeaders
+                BaseUrl         = $config.baseUrl
+                Archive         = $false
+                ArchivingReason = $config.personArchivingReason
+                AuditLogs       = [ref]$auditLogs
             }
+            Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
+        }
 
-            # Set isManager to true
-            $splatParamsManagerIsManager = @{
-                TopdeskPerson = $TopdeskManager
-                Headers       = $authHeaders
-                BaseUrl       = $config.baseUrl
-                IsManager     = $true
+        # Set isManager to true
+        $splatParamsManagerIsManager = @{
+            TopdeskPerson = $TopdeskManager
+            Headers       = $authHeaders
+            BaseUrl       = $config.baseUrl
+            IsManager     = $true
+        }
+        Set-TopdeskPersonIsManager @splatParamsManagerIsManager
+
+        # Archive manager if required
+        if ($managerShouldArchive -and $TopdeskManager.status -ne 'personArchived') {
+
+            # Archive manager
+            $splatParamsManagerArchive = @{
+                TopdeskPerson   = [ref]$TopdeskManager
+                Headers         = $authHeaders
+                BaseUrl         = $config.baseUrl
+                Archive         = $true
+                ArchivingReason = $config.personArchivingReason
+                AuditLogs       = [ref]$auditLogs
             }
-            Set-TopdeskPersonIsManager @splatParamsManagerIsManager
-
-            # Archive manager if required
-            if ($managerShouldArchive -and $TopdeskManager.status -ne 'personArchived') {
-
-                # Archive manager
-                $splatParamsManagerArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskManager
-                    Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
-                    Archive         = $true
-                    ArchivingReason = $config.personArchivingReason
-                    AuditLogs       = [ref]$auditLogs
-                }
-                Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
-            }
+            Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
         }
     }
 
