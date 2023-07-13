@@ -939,6 +939,27 @@ try {
     #endregion lookup
 
     # region write
+    # Verify if a user must be created or correlated
+    if ([string]::IsNullOrEmpty($TopdeskPerson)) {
+        $action = 'Create'
+        $actionType = 'created'
+    }
+    else {
+        $action = 'Correlate'
+        $actionType = 'correlated'
+        
+        # Example to only set certain attributes when creating a person, but skip them when updating
+        
+        # $account.PSObject.Properties.Remove('showDepartment')
+
+        # If SSO is not used. You need to remove tasLoginName and password from the update. Else the local password will be reset.
+        # $account.PSObject.Properties.Remove('tasLoginName')
+        # $account.PSObject.Properties.Remove('password')
+        
+        $account.PSObject.Properties.Remove('isManager')
+    }
+
+    if (-not($dryRun -eq $true)) {
     # Prepare manager record, if manager has to be set
     if (-Not([string]::IsNullOrEmpty($account.manager.id)) -and ($TopdeskManager.isManager -eq $false)) {
         if ($TopdeskManager.status -eq 'personArchived') {
@@ -981,36 +1002,9 @@ try {
         }
     }
 
-    # Verify if a user must be created or correlated
-    if ([string]::IsNullOrEmpty($TopdeskPerson)) {
-        $action = 'Create'
-        $actionType = 'created'
-    }
-    else {
-        $action = 'Correlate'
-        $actionType = 'correlated'
-        
-        # Example to only set certain attributes when creating a person, but skip them when updating
-        
-        # $account.PSObject.Properties.Remove('showDepartment')
-
-        # If SSO is not used. You need to remove tasLoginName and password from the update. Else the local password will be reset.
-        # $account.PSObject.Properties.Remove('tasLoginName')
-        # $account.PSObject.Properties.Remove('password')
-        
-        $account.PSObject.Properties.Remove('isManager')
-    }
-
-    # Add an auditMessage showing what will happen during enforcement
-    if ($dryRun -eq $true) {
-        $auditLogs.Add([PSCustomObject]@{
-                Message = "$action Topdesk account for: [$($p.DisplayName)], will be executed during enforcement"
-            })
-    }
-
-    # Process
-    if (-not($dryRun -eq $true)) {
-        switch ($action) {
+         # Process
+ 
+         switch ($action) {
             'Create' {
                 Write-Verbose "Creating Topdesk person for: [$($p.DisplayName)]"
                 $splatParamsPersonNew = @{
@@ -1055,6 +1049,13 @@ try {
                 IsError = $false
             })
     }
+    else {
+        # Add an auditMessage showing what will happen during enforcement
+        Write-Warning "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+        $auditLogs.Add([PSCustomObject]@{
+                Message = "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+            })
+    }   
 }
 catch {
     $success = $false
