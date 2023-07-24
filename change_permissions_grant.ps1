@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Grant
 #
-# Version: 2.0
+# Version: 2.0.1
 #####################################################
 
 # Initialize default values
@@ -121,7 +121,7 @@ function Get-HelloIdTopdeskTemplateById {
 
     # Check if file exists.
     try {
-        $permissionList = Get-Content -Raw -Encoding utf8 -Path $config.notificationJsonPath | ConvertFrom-Json
+        $permissionList = Get-Content -Raw -Encoding utf8 -Path $JsonPath | ConvertFrom-Json
     } catch {
         $ex = $PSItem
         $errorMessage = "Could not retrieve Topdesk permissions file. Error: $($ex.Exception.Message)"
@@ -821,7 +821,7 @@ try {
     if (-not($dryRun -eq $true)) {
         Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
 
-        if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($managerAccountReference)))) {
+        if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
             Write-Verbose "Check if manager is archived"
             # get person (manager)
             $splatParamsPerson = @{
@@ -885,7 +885,7 @@ try {
         $TopdeskChange = New-TopdeskChange @splatParamsTopdeskChange
 
         if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
-            if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($managerAccountReference)))) {
+            if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
                 Write-Verbose "Manager $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
