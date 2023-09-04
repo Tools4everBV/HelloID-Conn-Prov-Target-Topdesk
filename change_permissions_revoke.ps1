@@ -819,7 +819,7 @@ try {
     }
 
     if (-not($dryRun -eq $true)) {
-        Write-Verbose "revokeing TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
+        Write-Verbose "revoking TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
 
         if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
             Write-Verbose "Check if manager is archived"
