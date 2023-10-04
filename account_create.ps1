@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Create
 #
-# Version: 2.0.2
+# Version: 2.0.3
 #####################################################
 
 # Initialize default values
@@ -200,7 +200,7 @@ function Invoke-TopdeskRestMethod {
             Invoke-RestMethod @splatParams -Verbose:$false
         }
         catch {
-            $PSCmdlet.ThrowTerminatingError($_)
+            throw $_
         }
     }
 }

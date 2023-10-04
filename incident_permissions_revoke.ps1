@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Revoke-Incident
 #
-# Version: 2.0
+# Version: 2.0.1
 #####################################################
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
@@ -88,7 +88,7 @@ function Format-Description {
         Resolve-Variables -String ([ref]$Description) -VariablesToResolve $variablesFound
         Write-Output $Description
     } catch {
-        $PSCmdlet.ThrowTerminatingError($_)
+        throw $_
     }
 }
 
@@ -130,7 +130,7 @@ function Invoke-TopdeskRestMethod {
             }
             Invoke-RestMethod @splatParams -Verbose:$false
         } catch {
-            $PSCmdlet.ThrowTerminatingError($_)
+            throw $_
         }
     }
 }

@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Resource-Departments
 #
-# Version: 2.0
+# Version: 2.0.1
 #####################################################
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
@@ -81,7 +81,7 @@ function Invoke-TOPdeskRestMethod {
             }
             Invoke-RestMethod @splatParams -Verbose:$false
         } catch {
-            $PSCmdlet.ThrowTerminatingError($_)
+            throw $_
         }
     }
 }

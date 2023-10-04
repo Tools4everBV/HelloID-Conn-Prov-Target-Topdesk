@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Revoke
 #
-# Version: 2.0.1
+# Version: 2.0.2
 #####################################################
 
 # Initialize default values
@@ -92,7 +92,7 @@ function Invoke-TopdeskRestMethod {
 
             Invoke-RestMethod @splatParams -Verbose:$false
         } catch {
-            $PSCmdlet.ThrowTerminatingError($_)
+            throw $_
         }
     }
 }
@@ -270,7 +270,7 @@ function Format-Description {
 
         Write-Output $Description
     } catch {
-        $PSCmdlet.ThrowTerminatingError($_)
+        throw $_
     }
 }
 
