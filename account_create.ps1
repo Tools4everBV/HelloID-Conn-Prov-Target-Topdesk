@@ -943,10 +943,12 @@ try {
     if ([string]::IsNullOrEmpty($TopdeskPerson)) {
         $action = 'Create'
         $actionType = 'created'
+        $dryRunMessage = "DryRun: Would create to account [$($p.displayName)]"
     }
     else {
         $action = 'Correlate'
         $actionType = 'correlated'
+        $dryRunMessage = "DryRun: Would correlate to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
         
         # Example to only set certain attributes when creating a person, but skip them when updating
         
@@ -1053,9 +1055,9 @@ try {
     }
     else {
         # Add an auditMessage showing what will happen during enforcement
-        Write-Warning "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+        Write-Warning $dryRunMessage
         $auditLogs.Add([PSCustomObject]@{
-                Message = "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+                Message = $dryRunMessage
             })
         # aRef must have a value for dryRun
         $aRef = "Unknown"
