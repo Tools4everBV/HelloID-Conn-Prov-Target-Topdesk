@@ -14,22 +14,24 @@
 
 ## Table of contents
 
-- [Introduction](#Introduction)
-- [Getting started](#Getting-started)
-  + [Prerequisites](#Prerequisites)
-  + [Connection settings](#Connection-settings)
-  + [Permissions](#Permissions)
-  + [Filters](#Filters)
-- [Setup the connector](#Setup-The-Connector)
-  + [Remove attributes when correlating a Topdesk person](#Remove-attributes-when-correlating-a-Topdesk-person)
-  + [Disable department or budgetholder](#Disable-department-or-budgetholder)
-  + [Extra fields](#Extra-fields)
-  + [Changes](#Changes)
-  + [Incidents](#Incidents)
-- [Remarks](#Remarks)
-  + [Only require tickets](#Only-require-tickets)
-- [Getting help](#Getting-help)
-- [HelloID Docs](#HelloID-docs)
+- [HelloID-Conn-Prov-Target-Topdesk](#helloid-conn-prov-target-topdesk)
+	- [Table of contents](#table-of-contents)
+	- [Introduction](#introduction)
+	- [Getting started](#getting-started)
+		- [Prerequisites](#prerequisites)
+		- [Connection settings](#connection-settings)
+		- [Permissions](#permissions)
+			- [Filters](#filters)
+	- [Setup the connector](#setup-the-connector)
+		- [Remove attributes when correlating a Topdesk person](#remove-attributes-when-correlating-a-topdesk-person)
+		- [Disable department or budgetholder](#disable-department-or-budgetholder)
+		- [Extra fields](#extra-fields)
+		- [Changes](#changes)
+		- [Incidents](#incidents)
+	- [Remarks](#remarks)
+		- [Only require tickets](#only-require-tickets)
+	- [Getting help](#getting-help)
+	- [HelloID docs](#helloid-docs)
 
 ## Introduction
 
@@ -296,6 +298,7 @@ The incident JSON file has the following structure:
 		"CallType": "Aanvraag",
 		"Impact": null,
 		"Priority": null,
+		"Duration": null,
 		"EntryType": null,
 		"Urgency": null,
 		"ProcessingStatus": null
@@ -313,6 +316,7 @@ The incident JSON file has the following structure:
 		"CallType": "Aanvraag",
 		"Impact": null,
 		"Priority": null,
+		"Duration": null,
 		"EntryType": null,
 		"Urgency": null,
 		"ProcessingStatus": null
@@ -336,6 +340,7 @@ The incident JSON file has the following structure:
 | CallType: | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | Impact: | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | Priority: | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
+| Duration: | Fill in the duration name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
