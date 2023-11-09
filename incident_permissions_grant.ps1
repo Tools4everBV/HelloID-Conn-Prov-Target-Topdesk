@@ -1,11 +1,12 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Grant-Incident
 #
-# Version: 2.0
+# Version: 2.1.0
 #####################################################
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json
+$m = $manager | ConvertFrom-Json
 $aRef = $AccountReference | ConvertFrom-Json
 $pRef = $permissionReference | ConvertFrom-Json
 $mRef = $managerAccountReference | ConvertFrom-Json
@@ -16,6 +17,7 @@ $auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
 $account = @{
     userPrincipalName = $($p.accounts.MicrosoftActiveDirectory.userPrincipalName)
     sAMAccountName    = $($p.accounts.MicrosoftActiveDirectory.sAMAccountName)
+    mail              = $($p.accounts.MicrosoftActiveDirectory.mail)
 }
 
 # Enable TLS1.2
@@ -524,7 +526,7 @@ function Set-TopdeskPersonArchiveStatus {
                     IsError = $true
                 })
             Throw "Error(s) occured while looking up required values"
-        } # else
+        }
 
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
@@ -845,8 +847,8 @@ try {
         }
     }
 
+    # Resolve priority id 
     if (-not [string]::IsNullOrEmpty($template.Priority)) {
-        # Resolve priority id 
         $splatParamsPriority = @{
             AuditLogs       = [ref]$auditLogs
             BaseUrl         = $config.baseUrl
@@ -857,11 +859,30 @@ try {
             SearchAttribute = 'name'
         }
         
-
         # Add Impact to request object
         $requestObject += @{
             priority = @{
                 id = Get-TopdeskIdentifier @splatParamsPriority
+            }
+        }
+    }
+
+    # Resolve duration id 
+    if (-not [string]::IsNullOrEmpty($template.Duration)) {
+        $splatParamsDuration = @{
+            AuditLogs       = [ref]$auditLogs
+            BaseUrl         = $config.baseUrl
+            Headers         = $authHeaders
+            Class           = 'Duration'
+            Value           = $template.Duration
+            Endpoint        = '/tas/api/incidents/durations'
+            SearchAttribute = 'name'
+        }
+        
+        # Add Impact to request object
+        $requestObject += @{
+            duration = @{
+                id = Get-TopdeskIdentifier @splatParamsDuration
             }
         }
     }
@@ -930,7 +951,6 @@ try {
         Throw "Error(s) occured while looking up required values"
     }
 
-    #    $auditLogs
     # Add an auditMessage showing what will happen during enforcement
     if ($dryRun -eq $true) {
         $auditLogs.Add([PSCustomObject]@{
