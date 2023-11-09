@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Create
 #
-# Version: 2.0.2
+# Version: 2.0.3
 #####################################################
 
 # Initialize default values
@@ -1013,6 +1013,7 @@ try {
                     BaseUrl = $config.baseUrl
                 }
                 $TopdeskPerson = New-TopdeskPerson @splatParamsPersonNew
+                $aRef = $TopdeskPerson.id
 
             } 'Correlate' {
                 Write-Verbose "Correlating and updating Topdesk person for: [$($p.DisplayName)]"
@@ -1040,6 +1041,7 @@ try {
                     BaseUrl       = $config.baseUrl
                 }
                 Set-TopdeskPerson @splatParamsPersonUpdate
+                $aRef = $TopdeskPerson.id
             }
         }
 
@@ -1055,6 +1057,8 @@ try {
         $auditLogs.Add([PSCustomObject]@{
                 Message = "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
             })
+        # aRef must have a value for dryRun
+        $aRef = "Unknown"
     }   
 }
 catch {
@@ -1088,7 +1092,7 @@ catch {
 finally {
     $result = [PSCustomObject]@{
         Success          = $success
-        AccountReference = $TopdeskPerson.id
+        AccountReference = $aRef
         Auditlogs        = $auditLogs
         Account          = $account
         ExportData       = [PSCustomObject]@{
