@@ -17,6 +17,7 @@
 			"CallType": "Aanvraag",
 			"Impact": null,
 			"Priority": null,
+			"Duration": null,
 			"EntryType": null,
 			"Urgency": null,
 			"ProcessingStatus": null
@@ -34,6 +35,7 @@
 			"CallType": "Aanvraag",
 			"Impact": null,
 			"Priority": null,
+			"Duration": null,
 			"EntryType": null,
 			"Urgency": null,
 			"ProcessingStatus": null
@@ -57,6 +59,7 @@
 			"CallType": "Aanvraag",
 			"Impact": null,
 			"Priority": null,
+			"Duration": null,
 			"EntryType": null,
 			"Urgency": null,
 			"ProcessingStatus": null
@@ -74,6 +77,7 @@
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
 			"Priority": "P1",
+			"Duration": "1 dag",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
 			"ProcessingStatus": "Geregistreerd"
@@ -87,7 +91,7 @@
 		"Grant": {
 			"Caller": "Manager",
 			"RequestShort": "Aanvraag Smartphone ($($p.displayName))",
-			"RequestDescription": "Er is door een leidinggevende een smartphone + simkaart aangevraagd voor een nieuwe medewerker.<br>Graag registreren op onderstaande medewerker:<br>Voornaam medewerker, $($p.Name.GivenName),<br>Achternaam medewerker $($p.Name.FamilyName),<br>Telefoonnummer privé, $($p.Contact.Business.Phone.Mobile),<br>Afdeling: $($p.PrimaryContract.Department.DisplayName),<br>Kostenplaats: $($p.PrimaryContract.CostCenter.Name),<br>Functie: $($p.PrimaryContract.Title.Name)<br>Manager: $($p.PrimaryManager.Displayname)",
+			"RequestDescription": "Er is door een leidinggevende $($m.displayName) een smartphone + simkaart aangevraagd voor een nieuwe medewerker.<br>Graag registreren op onderstaande medewerker:<br>Voornaam medewerker, $($p.Name.GivenName),<br>Achternaam medewerker $($p.Name.FamilyName),<br>Telefoonnummer privé, $($p.Contact.Business.Phone.Mobile),<br>Afdeling: $($p.PrimaryContract.Department.DisplayName),<br>Kostenplaats: $($p.PrimaryContract.CostCenter.Name),<br>Functie: $($p.PrimaryContract.Title.Name)<br>Manager: $($p.PrimaryManager.Displayname)",
 			"Action": null,
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
@@ -97,6 +101,7 @@
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
 			"Priority": "P1",
+			"Duration": "1 dag",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
 			"ProcessingStatus": "Geregistreerd"
@@ -122,6 +127,7 @@
 			"CallType": "Aanvraag",
 			"Impact": "Organisatie",
 			"Priority": "P1",
+			"Duration": "1 dag",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
 			"ProcessingStatus": "Geregistreerd"
