@@ -934,6 +934,10 @@ try {
     }
 
     if ($auditLogs.isError -contains - $true) {
+        if ($dryRun -eq $true) {
+            # aRef must have a value for dryRun
+            $aRef = "Unknown"
+        }
         Throw "Error(s) occured while looking up required values"
     }
     #endregion lookup
