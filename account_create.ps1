@@ -8,6 +8,7 @@
 $config = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json
 $mRef = $managerAccountReference | ConvertFrom-Json
+$aRef = "Unknown" # aRef must have a value for dryRun
 $success = $false
 $auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
 
@@ -934,10 +935,6 @@ try {
     }
 
     if ($auditLogs.isError -contains - $true) {
-        if ($dryRun -eq $true) {
-            # aRef must have a value for dryRun
-            $aRef = "Unknown"
-        }
         Throw "Error(s) occured while looking up required values"
     }
     #endregion lookup
@@ -947,7 +944,7 @@ try {
     if ([string]::IsNullOrEmpty($TopdeskPerson)) {
         $action = 'Create'
         $actionType = 'created'
-        $dryRunMessage = "DryRun: Would create to account [$($p.displayName)]"
+        $dryRunMessage = "DryRun: Would create to account for [$($p.displayName)]"
     }
     else {
         $action = 'Correlate'
@@ -1063,8 +1060,6 @@ try {
         $auditLogs.Add([PSCustomObject]@{
                 Message = $dryRunMessage
             })
-        # aRef must have a value for dryRun
-        $aRef = "Unknown"
     }   
 }
 catch {
