@@ -1,13 +1,14 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Create
 #
-# Version: 2.0.2
+# Version: 2.0.3
 #####################################################
 
 # Initialize default values
 $config = $configuration | ConvertFrom-Json
 $p = $person | ConvertFrom-Json
 $mRef = $managerAccountReference | ConvertFrom-Json
+$aRef = "Unknown" # aRef must have a value for dryRun
 $success = $false
 $auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
 
@@ -943,10 +944,12 @@ try {
     if ([string]::IsNullOrEmpty($TopdeskPerson)) {
         $action = 'Create'
         $actionType = 'created'
+        $dryRunMessage = "DryRun: Would create to account for [$($p.displayName)]"
     }
     else {
         $action = 'Correlate'
         $actionType = 'correlated'
+        $dryRunMessage = "DryRun: Would correlate to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
         
         # Example to only set certain attributes when creating a person, but skip them when updating
         
@@ -1013,6 +1016,7 @@ try {
                     BaseUrl = $config.baseUrl
                 }
                 $TopdeskPerson = New-TopdeskPerson @splatParamsPersonNew
+                $aRef = $TopdeskPerson.id
 
             } 'Correlate' {
                 Write-Verbose "Correlating and updating Topdesk person for: [$($p.DisplayName)]"
@@ -1040,6 +1044,7 @@ try {
                     BaseUrl       = $config.baseUrl
                 }
                 Set-TopdeskPerson @splatParamsPersonUpdate
+                $aRef = $TopdeskPerson.id
             }
         }
 
@@ -1051,9 +1056,9 @@ try {
     }
     else {
         # Add an auditMessage showing what will happen during enforcement
-        Write-Warning "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+        Write-Warning $dryRunMessage
         $auditLogs.Add([PSCustomObject]@{
-                Message = "DryRun: Would $action to account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+                Message = $dryRunMessage
             })
     }   
 }
@@ -1088,7 +1093,7 @@ catch {
 finally {
     $result = [PSCustomObject]@{
         Success          = $success
-        AccountReference = $TopdeskPerson.id
+        AccountReference = $aRef
         Auditlogs        = $auditLogs
         Account          = $account
         ExportData       = [PSCustomObject]@{
