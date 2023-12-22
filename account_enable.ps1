@@ -1,19 +1,14 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Enable
 #
-# Version: 2.0
+# Version: 3.0.0 | Powershell V2
 #####################################################
 
-# Initialize default values
-$config = $configuration | ConvertFrom-Json
-$p = $person | ConvertFrom-Json
-$aRef = $AccountReference | ConvertFrom-Json
-
-$success = $false
-$auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
+# Set to true at start, because only when an error occurs it is set to false
+$outputContext.Success = $true
 
 # Set debug logging
-switch ($($config.IsDebug)) {
+switch ($($actionContext.Configuration.isDebug)) {
     $true { $VerbosePreference = 'Continue' }
     $false { $VerbosePreference = 'SilentlyContinue' }
 }
@@ -21,20 +16,35 @@ switch ($($config.IsDebug)) {
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
-#region mapping
-# If you need to update values, use the delete script as an example
-#endregion mapping
-
-#region helperfunctions
-function Set-AuthorizationHeaders {
-    [CmdletBinding()]
+#region functions
+function Resolve-HTTPError {
     param (
-        [Parameter(Mandatory)]
+        [object]$ErrorObject
+    )
+    process {
+        $httpErrorObj = [PSCustomObject]@{
+            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId 
+            MyCommand             = $ErrorObject.InvocationInfo.MyCommand
+            RequestUri            = $ErrorObject.TargetObject.RequestUri
+            ScriptStackTrace      = $ErrorObject.ScriptStackTrace
+            ErrorMessage          = ''
+        }
+        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') {
+            $httpErrorObj.ErrorMessage = $ErrorObject.ErrorDetails.Message
+        }
+        elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
+            $httpErrorObj.ErrorMessage = [System.IO.StreamReader]::new($ErrorObject.Exception.Response.GetResponseStream()).ReadToEnd()
+        }
+        Write-Output $httpErrorObj
+    }
+}
+
+function Set-AuthorizationHeaders {
+    param (
         [ValidateNotNullOrEmpty()]
         [string]
         $Username,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ApiKey
@@ -51,16 +61,12 @@ function Set-AuthorizationHeaders {
     Write-Output $authHeaders
 }
 
-
 function Invoke-TopdeskRestMethod {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Method,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Uri,
@@ -71,7 +77,6 @@ function Invoke-TopdeskRestMethod {
         [string]
         $ContentType = 'application/json; charset=utf-8',
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers
     )
@@ -83,30 +88,27 @@ function Invoke-TopdeskRestMethod {
                 Method      = $Method
                 ContentType = $ContentType
             }
+
             if ($Body) {
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
             Invoke-RestMethod @splatParams -Verbose:$false
         }
         catch {
-            $PSCmdlet.ThrowTerminatingError($_)
+            Throw $_
         }
     }
 }
 
 function Get-TopdeskPersonById {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
         $PersonReference
@@ -124,34 +126,71 @@ function Get-TopdeskPersonById {
     Write-Output $responseGet
 }
 
-function Set-TopdeskPersonArchiveStatus {
-    [CmdletBinding()]
+function Get-TopdeskPerson {
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
+        [String]
+        $AccountReference
+    )
+
+    # Check if the account reference is empty, if so, generate audit message
+    if ([string]::IsNullOrEmpty($AccountReference)) {
+
+        # Throw an error when account reference is empty
+        Write-Warning "The account reference is empty. This is a scripting issue."
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Message = "The account reference is empty. This is a scripting issue."
+                IsError = $true
+            })
+        return
+    }
+
+    # AcountReference is available, query person
+    $splatParams = @{
+        Headers         = $Headers
+        BaseUrl         = $BaseUrl
+        PersonReference = $AccountReference
+    }
+    $person = Get-TopdeskPersonById @splatParams
+
+    if ([string]::IsNullOrEmpty($person)) {
+        Write-Warning "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Message = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
+                IsError = $true
+            })
+    }
+    else {
+        Write-Output $person
+    }
+}
+
+function Set-TopdeskPersonArchiveStatus {
+    param (
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $BaseUrl,
+
+        [System.Collections.IDictionary]
+        $Headers,
+
         [ValidateNotNullOrEmpty()]
         [Object]
         [Ref]$TopdeskPerson,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Bool]
         $Archive,
 
         [Parameter()]
         [String]
-        $ArchivingReason,
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $ArchivingReason
     )
 
     # Set ArchiveStatus variables based on archive parameter
@@ -159,9 +198,8 @@ function Set-TopdeskPersonArchiveStatus {
 
         #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
-            $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
-            $AuditLogs.Add([PSCustomObject]@{
-                    Message = $errorMessage
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
             Throw "Error(s) occured while looking up required values"
@@ -178,14 +216,12 @@ function Set-TopdeskPersonArchiveStatus {
 
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
-            $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
-            $AuditLogs.Add([PSCustomObject]@{
-                    Message = $errorMessage
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
             Throw "Error(s) occured while looking up required values"
-        } # else
-
+        }
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
         $body = @{ id = $archivingReasonObject.id }
@@ -195,10 +231,8 @@ function Set-TopdeskPersonArchiveStatus {
         $archiveUri = 'unarchive'
         $body = $null
     }
-
     # Check the current status of the Person and compare it with the status in archiveStatus
     if ($archiveStatus -ne $TopdeskPerson.status) {
-
         # Archive / unarchive person
         Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
@@ -211,112 +245,85 @@ function Set-TopdeskPersonArchiveStatus {
         $TopdeskPerson.status = $archiveStatus
     }
 }
-
-
-function Get-TopdeskPerson {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $BaseUrl,
-
-        [Parameter(Mandatory)]
-        [System.Collections.IDictionary]
-        $Headers,
-
-        [Parameter(Mandatory)]
-        [String]
-        $AccountReference,
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
-    )
-
-    # Check if the account reference is empty, if so, generate audit message
-    if ([string]::IsNullOrEmpty($AccountReference)) {
-
-        # Throw an error when account reference is empty
-        $errorMessage = "The account reference is empty. This is a scripting issue."
-        $AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
-        return
-    }
-
-    # AcountReference is available, query person
-    $splatParams = @{
-        Headers         = $Headers
-        BaseUrl         = $BaseUrl
-        PersonReference = $AccountReference
-    }
-    $person = Get-TopdeskPersonById @splatParams
-
-    if ([string]::IsNullOrEmpty($person)) {
-        $errorMessage = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
-        $AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
-    }
-    else {
-        Write-Output $person
-    }
-}
-#endregion helperfunctions
+#endregion functions
 
 #region lookup
 try {
+    $action = 'Process'
+
     # Setup authentication headers
-    $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apiKey
+    $splatParamsAuthorizationHeaders = @{
+        UserName = $actionContext.Configuration.username
+        ApiKey   = $actionContext.Configuration.apikey
+    }
+    $authHeaders = Set-AuthorizationHeaders @splatParamsAuthorizationHeaders
 
     # get person
     $splatParamsPerson = @{
-        AccountReference = $aRef
-        AuditLogs        = [ref]$auditLogs
+        AccountReference = $actionContext.References.Account
         Headers          = $authHeaders
-        baseUrl          = $config.baseUrl
+        BaseUrl          = $actionContext.Configuration.baseUrl
     }
     $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
-    #endregion lookup
 
-    # Add an auditMessage showing what will happen during enforcement
-    if ($dryRun -eq $true) {
-        $auditLogs.Add([PSCustomObject]@{
-                Message = "Activating TOPdesk person for: [$($p.DisplayName)], will be executed during enforcement"
-            })
+    if ($outputContext.AuditLogs.isError -contains - $true) {
+        Throw "Error(s) occured while looking up required values"
     }
-    else {
-        Write-Verbose "Activating TOPdesk person"
+    #endregion lookup
+    
+    # region write
+    $action = 'Enable'
+    if (-Not($actionContext.DryRun -eq $true)) {
+        # Prepare manager record, if manager has to be set
 
-        # Always activate person in the enable process
+        Write-Verbose "Activating Topdesk person for: [$($personContext.Person.DisplayName)]"
+
+        # Unarchive person if required
         if ($TopdeskPerson.status -eq 'personArchived') {
 
-            # Activate person
-            $splatParamsPersonArchive = @{
+            # Unarchive person
+            $splatParamsPersonUnarchive = @{
                 TopdeskPerson   = [ref]$TopdeskPerson
                 Headers         = $authHeaders
-                BaseUrl         = $config.baseUrl
+                BaseUrl         = $actionContext.Configuration.baseUrl
                 Archive         = $false
-                ArchivingReason = $config.personArchivingReason
-                AuditLogs       = [ref]$auditLogs
+                ArchivingReason = $actionContext.Configuration.personArchivingReason
+
             }
-            Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+            Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "EnableAccount" # Optionally specify a different action for this audit log
+                    Message = "Account with id [$($TopdeskPerson.id) successfully enabled"
+                    IsError = $false
+                })
+        }
+        else {
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "EnableAccount" # Optionally specify a different action for this audit log
+                    Message = "Account with id [$($TopdeskPerson.id) successfully enabled (already enabled)"
+                    IsError = $false
+                }) 
         }
 
-        $success = $true
-        $auditLogs.Add([PSCustomObject]@{
-                Message = "Activate person was successful"
-                IsError = $false
-            })
+        $outputContext.Data = $TopdeskPerson
+        $outputContext.PreviousData = $TopdeskPerson
+
     }
+    else {
+        # Add an auditMessage showing what will happen during enforcement
+        Write-Warning "DryRun: Would enable account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Message = "DryRun: Would enable account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+            })
+    }   
 }
 catch {
-    $success = $false
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+        #write-verbose ($ex | ConvertTo-Json)
+
         if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
             $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
         }
@@ -326,21 +333,21 @@ catch {
         }
     }
     else {
-        $errorMessage = "Could not activate person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not $action person. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
 
-    # Only log when there are no lookup errors, as these generate their own audit message
+    # Only log when there are no lookup values, as these generate their own audit message
     if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
-        $auditLogs.Add([PSCustomObject]@{
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
                 IsError = $true
             })
     }
 }
 finally {
-    $result = [PSCustomObject]@{
-        Success   = $success
-        Auditlogs = $auditLogs
+    # Check if auditLogs contains errors, if errors are found, set success to false
+    if ($outputContext.AuditLogs.IsError -contains $true) {
+        $outputContext.Success = $false
     }
-    Write-Output $result | ConvertTo-Json -Depth 10
 }
+#endregion Write

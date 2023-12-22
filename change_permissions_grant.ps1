@@ -1,43 +1,41 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Grant
 #
-# Version: 2.0.1
+# Version: 3.0.0 | Powershell V2
 #####################################################
 
-# Initialize default values
-$config = $configuration | ConvertFrom-Json
-$p = $person | ConvertFrom-Json
-$aRef = $AccountReference | ConvertFrom-Json
-$pRef = $permissionReference | ConvertFrom-Json
-$mRef = $managerAccountReference | ConvertFrom-Json
-$success = $false
-$auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
+# The permissionReference object contains the Identification object provided in the retrieve permissions call
+$pRef = $actionContext.References.Permission
 
-# Map the account variables used in the JSON
-$account = @{
-    userPrincipalName = $($p.accounts.MicrosoftActiveDirectory.userPrincipalName)
-    sAMAccountName = $($p.accounts.MicrosoftActiveDirectory.sAMAccountName)
+# To resolve variables in the JSON (compatible with powershell v1 target)
+$p = $personContext.Person
+
+# Set to true at start, because only when an error occurs it is set to false
+$outputContext.Success = $true
+
+# Set debug logging
+switch ($($actionContext.Configuration.isDebug)) {
+    $true { $VerbosePreference = 'Continue' }
+    $false { $VerbosePreference = 'SilentlyContinue' }
 }
 
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
-# Set debug logging
-switch ($($config.IsDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
+# Map the account variables used in the JSON
+$account = @{
+    userPrincipalName = $personContext.Person.Accounts.MicrosoftActiveDirectory.userPrincipalName
+    sAMAccountName    = $personContext.Person.Accounts.MicrosoftActiveDirectory.sAMAccountName
+    mail              = $personContext.Person.Accounts.MicrosoftActiveDirectory.mail
 }
 
 #region functions
 function Set-AuthorizationHeaders {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Username,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ApiKey
@@ -55,14 +53,11 @@ function Set-AuthorizationHeaders {
 }
 
 function Invoke-TopdeskRestMethod {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Method,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Uri,
@@ -73,7 +68,6 @@ function Invoke-TopdeskRestMethod {
         [string]
         $ContentType = 'application/json; charset=utf-8',
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers
     )
@@ -85,81 +79,79 @@ function Invoke-TopdeskRestMethod {
                 Method      = $Method
                 ContentType = $ContentType
             }
-  
+
             if ($Body) {
                 $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
             }
-
             Invoke-RestMethod @splatParams -Verbose:$false
-        } catch {
-            $PSCmdlet.ThrowTerminatingError($_)
+        }
+        catch {
+            Throw $_
         }
     }
 }
 
 function Get-HelloIdTopdeskTemplateById {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $JsonPath,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Id,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Type,            # 'grant' or 'revoke'
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $Type
     )
 
     # Check if file exists.
     try {
         $permissionList = Get-Content -Raw -Encoding utf8 -Path $JsonPath | ConvertFrom-Json
-    } catch {
+    }
+    catch {
         $ex = $PSItem
         $errorMessage = "Could not retrieve Topdesk permissions file. Error: $($ex.Exception.Message)"
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
     }
 
     # Check if entitlement with id exists
-    $entitlementSet = $permissionList | Where-Object {($_.Identification.id -eq $pRef.id)}
+    $entitlementSet = $permissionList | Where-Object { ($_.Identification.id -eq $pRef.id) }
     if ([string]::IsNullOrEmpty($entitlementSet)) {
         $errorMessage = "Could not find entitlement set with id '$($pRef.id)'. This is likely an issue with the json file."
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
     }
 
     # Check if entitlement with id and specific type exists
     if (-not($entitlementSet.PSObject.Properties.Name -Contains $type)) {
         $errorMessage = "Could not find grant entitlement for entitlementSet '$($pRef.id)'. This is likely an issue with the json file."
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
     }
 
     # If empty, nothing should be done.
     if ([string]::IsNullOrEmpty($entitlementSet.$type)) {
         $message = "Action '$type' for entitlement '$($pRef.id)' is not configured."
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $message
-            IsError = $false
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $message
+                IsError = $false
+            })
         return
     }
 
@@ -168,24 +160,17 @@ function Get-HelloIdTopdeskTemplateById {
 
 
 function Get-TopdeskTemplateById {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
-        $Id,
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $Id
     )
 
     $splatParams = @{
@@ -199,10 +184,11 @@ function Get-TopdeskTemplateById {
 
     if ([string]::IsNullOrEmpty($topdeskTemplate)) {
         $errorMessage = "Topdesk template [$Id] not found. Please verify this template exists and it's available for the API in Topdesk."
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
     }
 
@@ -211,9 +197,7 @@ function Get-TopdeskTemplateById {
 
 
 function Get-VariablesFromString {
-    [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
         [string]
         $string
     )
@@ -229,9 +213,7 @@ function Get-VariablesFromString {
 }
 
 function Resolve-Variables {
-    [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
         [ref]
         $String,
 
@@ -246,9 +228,11 @@ function Resolve-Variables {
         $Properties | Select-Object -Skip 1 | ForEach-Object {
             if ($_ -ne $Properties[-1]) {
                 $curObject = $curObject.$_
-            } elseif ($null -ne $curObject.$_) {
+            }
+            elseif ($null -ne $curObject.$_) {
                 $String.Value = $String.Value.Replace($var, $curObject.$_)
-            } else {
+            }
+            else {
                 Write-Verbose  "Variable [$var] not found"
                 $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
             }
@@ -257,9 +241,7 @@ function Resolve-Variables {
 }
 
 function Format-Description {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Description
@@ -269,88 +251,75 @@ function Format-Description {
         Resolve-Variables -String ([ref]$Description) -VariablesToResolve $variablesFound
 
         Write-Output $Description
-    } catch {
-        $PSCmdlet.ThrowTerminatingError($_)
+    }
+    catch {
+        Throw $_
     }
 }
 
 function Confirm-Description {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
         $Description,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
         $AttributeName,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
         $id,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
-        $AllowedLength,
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $AllowedLength
     )
     if ($Description.Length -gt $AllowedLength) {
         $errorMessage = "Could not grant TOPdesk entitlement [$id]: The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
         
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
-    } #else { 
-        #Write-Verbose "The length for string [$Description] is [$($Description.Length)] which is shorter than the allowed length [$allowedLength]"
-    #}
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
+    }
 }
 
 function Get-TopdeskRequesterByType {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Type,                        # 'email of requester' or 'employee' or 'manager'
+        $Type,
 
         [string]
-        $accountReference,            # optional, only required when type is employee
+        $accountReference,
 
         [string]
-        $managerAccountReference,     # optional, only required when type is manager
+        $managerAccountReference,
 
         [string]
-        $managerFallback,             # optional, will be used when the manager reference is empty
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $managerFallback
     )
 
     # Validate employee entry
     if ($type -eq 'employee') {
         if ([string]::IsNullOrEmpty($accountReference)) {
-            $errorMessage = "Could not set requester: The account reference is empty." # add Could not grant TOPdesk entitlement: [$($pRef.id)]
-            $auditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
-        } else {
+            $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The account reference is empty."
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "GrantPermission"
+                    Message = $errorMessage
+                    IsError = $true
+                })
+        }
+        else {
             Write-Output $accountReference
         }
         return
@@ -363,18 +332,21 @@ function Get-TopdeskRequesterByType {
             write-verbose "Type: Manager - managerAccountReference leeg"
             if ([string]::IsNullOrEmpty($managerFallback)) {
                 write-verbose "Type: Manager - managerAccountReference - leeg - fallback leeg"
-                $errorMessage = "Could not set requester: The manager account reference is empty and no fallback email is configured." # Could not grant TOPdesk entitlement: [$($pRef.id)]
-                $auditLogs.Add([PSCustomObject]@{
-                    Message = $errorMessage
-                    IsError = $true
-                })
+                $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The manager account reference is empty and no fallback email is configured."
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "GrantPermission"
+                        Message = $errorMessage
+                        IsError = $true
+                    })
                 return
-            } else {
+            }
+            else {
                 write-verbose "Type: Manager - managerAccountReference - leeg - fallback gevuld"
                 # Set fallback adress and look it up below
                 $type = $managerFallback
             }
-        } else {
+        }
+        else {
             write-verbose "Type: Manager - managerAccountReference - gevuld: [$managerAccountReference]"
             Write-Output $managerAccountReference
             return
@@ -387,61 +359,62 @@ function Get-TopdeskRequesterByType {
         Method  = 'GET'
         Headers = $Headers
     }
-    $responseGet = Invoke-TopdeskRestMethod @splatParams        #todo: have to find out what the response looks like
+    $responseGet = Invoke-TopdeskRestMethod @splatParams
 
     # Check if only one result is returned
     if ([string]::IsNullOrEmpty($responseGet.id)) {
 
         # no results found
-         $errorMessage = "Could not set requester: Topdesk person with email [$Type] not found."
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $errorMessage = "Could not set requester: Topdesk person with email [$Type] not found."
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
-    } elseif ($responseGet.Count -eq 1) {
+    }
+    elseif ($responseGet.Count -eq 1) {
 
         # one record found, correlate, return id
         write-output $responseGet.id
-    } else {
+    }
+    else {
 
         # Multiple records found, correlation
         $errorMessage = "Multiple [$($responseGet.Count)] persons found with Email address [$Email]. Login names: [$($responseGet.tasLoginName)]"
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
     }
 }
 
 function Get-TopdeskChangeType {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [string]
-        $changeType,                        # 'simple' or 'extensive'
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $changeType
     )
 
     # Show audit message if type is empty
     if ([string]::IsNullOrEmpty($changeType)) {
         $errorMessage = "The change type is not set. It should be set to 'simple' or 'extensive'"
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
     }
 
     # Show audit message if type is not 
     if (-not ($changeType -eq 'simple' -or $changeType -eq 'extensive')) {
         $errorMessage = "The configured change type [$changeType] is invalid. It should be set to 'simple' or 'extensive'"
-        $auditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
     }
 
@@ -449,18 +422,14 @@ function Get-TopdeskChangeType {
 }
 
 function Get-TopdeskPersonById {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]
         $PersonReference
@@ -479,23 +448,16 @@ function Get-TopdeskPersonById {
 }
 
 function Get-TopdeskPerson {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
         [String]
-        $AccountReference,
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $AccountReference
     )
 
     # Check if the account reference is empty, if so, generate audit message
@@ -503,72 +465,67 @@ function Get-TopdeskPerson {
 
         # Throw an error when account reference is empty
         $errorMessage = "The account reference is empty. This is a scripting issue."
-        $AuditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
         return
     }
 
     # AcountReference is available, query person
     $splatParams = @{
-        Headers                   = $Headers
-        BaseUrl                   = $BaseUrl
-        PersonReference           = $AccountReference
+        Headers         = $Headers
+        BaseUrl         = $BaseUrl
+        PersonReference = $AccountReference
     }
     $person = Get-TopdeskPersonById @splatParams
 
     if ([string]::IsNullOrEmpty($person)) {
-        $errorMessage = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
-        $AuditLogs.Add([PSCustomObject]@{
-            Message = $errorMessage
-            IsError = $true
-        })
-    } else {
+        $errorMessage = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the account entitlement."
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = $errorMessage
+                IsError = $true
+            })
+    }
+    else {
         Write-Output $person
     }
 }
 
 function Set-TopdeskPersonArchiveStatus {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Object]
         [Ref]$TopdeskPerson,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Bool]
         $Archive,
 
-        [Parameter()]
         [String]
-        $ArchivingReason,
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $ArchivingReason
     )
 
     # Set ArchiveStatus variables based on archive parameter
     if ($Archive -eq $true) {
 
-         #When the 'archiving reason' setting is not configured in the target connector configuration
+        #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
             $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
-            $AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "GrantPermission"
+                    Message = $errorMessage
+                    IsError = $true
+                })
             Throw "Error(s) occured while looking up required values"
         }
 
@@ -584,17 +541,19 @@ function Set-TopdeskPersonArchiveStatus {
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
             $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
-            $AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "GrantPermission"
+                    Message = $errorMessage
+                    IsError = $true
+                })
             Throw "Error(s) occured while looking up required values"
         } # else
 
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
         $body = @{ id = $archivingReasonObject.id }
-    } else {
+    }
+    else {
         $archiveStatus = 'person'
         $archiveUri = 'unarchive'
         $body = $null
@@ -617,24 +576,17 @@ function Set-TopdeskPersonArchiveStatus {
 }
 
 function New-TopdeskChange {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $BaseUrl,
 
-        [Parameter(Mandatory)]
         [System.Collections.IDictionary]
         $Headers,
 
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [PsObject]
-        $TopdeskChange,
-
-        [System.Collections.Generic.List[PSCustomObject]]
-        [ref]$AuditLogs
+        $TopdeskChange
     )
 
     $splatParams = @{
@@ -643,7 +595,9 @@ function New-TopdeskChange {
         Headers = $Headers
         Body    = $TopdeskChange | ConvertTo-Json
     }
+    
     Write-Verbose ($TopdeskChange | ConvertTo-Json)
+
     $change = Invoke-TopdeskRestMethod @splatParams
 
     Write-Verbose "Created change with number [$($change.number)]"
@@ -653,18 +607,15 @@ function New-TopdeskChange {
 #endregion
 
 try {
-
-#region lookuptemplate
-    if ($config.disableNotifications -eq 'true') {
+    if ($actionContext.Configuration.disableNotifications -eq 'true') {
         Throw "Notifications are disabled"
     }
 
     # Lookup template from json file (C00X)
     $splatParamsHelloIdTopdeskTemplate = @{
-        JsonPath        = $config.notificationJsonPath
-        Id              = $pRef.id
-        Type            = "Grant"
-        AuditLogs       = [Ref]$auditLogs
+        JsonPath = $actionContext.Configuration.notificationJsonPath
+        Id       = $pRef.id
+        Type     = "Grant"
     }
     $template = Get-HelloIdTopdeskTemplateById @splatParamsHelloIdTopdeskTemplate
     
@@ -674,14 +625,13 @@ try {
     }
 
     # Setup authentication headers
-    $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apiKey
+    $authHeaders = Set-AuthorizationHeaders -UserName $actionContext.Configuration.username -ApiKey $actionContext.Configuration.apiKey
 
     # Lookup Topdesk template id (sja xyz)
     $splatParamsTopdeskTemplate = @{
-        Headers          = $authHeaders
-        BaseUrl          = $config.baseUrl
-        Id               = $template.Template
-        AuditLogs        = [Ref]$auditLogs
+        Headers = $authHeaders
+        BaseUrl = $actionContext.Configuration.baseUrl
+        Id      = $template.Template
     }
     $templateId = Get-TopdeskTemplateById @splatParamsTopdeskTemplate
 
@@ -694,17 +644,16 @@ try {
 
     # Resolve variables in the BriefDescription field
     $splatParamsBriefDescription = @{
-        description       = $template.BriefDescription
+        description = $template.BriefDescription
     }
     $briefDescription = Format-Description @splatParamsBriefDescription
 
     #Validate length of briefDescription
     $splatParamsValidateBriefDescription = @{
-        Description      = $briefDescription
-        AllowedLength    = 80
-        AttributeName    = 'BriefDescription'
-        AuditLogs        = [Ref]$auditLogs
-        id               = $pref.id
+        Description   = $briefDescription
+        AllowedLength = 80
+        AttributeName = 'BriefDescription'
+        id            = $pref.id
     }
     Confirm-Description @splatParamsValidateBriefDescription
 
@@ -715,7 +664,7 @@ try {
 
     # Resolve variables in the request field
     $splatParamsRequest = @{
-        description       = $template.Request
+        description = $template.Request
     }
     $request = Format-Description @splatParamsRequest
 
@@ -727,12 +676,11 @@ try {
     # Resolve requester
     $splatParamsTopdeskRequester = @{
         Headers                 = $authHeaders
-        baseUrl                 = $config.baseUrl
+        baseUrl                 = $actionContext.Configuration.baseUrl
         Type                    = $template.Requester
-        accountReference        = $aRef
-        managerAccountReference = $mRef
-        managerFallback         = $config.notificationRequesterFallback
-        AuditLogs               = [Ref]$auditLogs
+        accountReference        = $actionContext.References.Account 
+        managerAccountReference = $actionContext.References.ManagerAccount
+        managerFallback         = $actionContext.Configuration.notificationRequesterFallback
     }
     $requesterId = Get-TopdeskRequesterByType @splatParamsTopdeskRequester
 
@@ -745,8 +693,7 @@ try {
 
     # Validate change type
     $splatParamsTopdeskTemplate = @{
-        changeType       = $template.ChangeType
-        AuditLogs        = [Ref]$auditLogs
+        changeType = $template.ChangeType
     }
     $changeType = Get-TopdeskChangeType @splatParamsTopdeskTemplate
 
@@ -805,44 +752,39 @@ try {
         }
     }
     
-    if ($auditLogs.isError -contains $true) {
+    if ($outputContext.AuditLogs.IsError -contains $true) {
         Throw "Error(s) occured while looking up required values"
     }
 
     # Add an auditMessage showing what will happen during enforcement
-    if ($dryRun -eq $true) {
-
-        $auditLogs.Add([PSCustomObject]@{
-            Message = "Grant Topdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)], will be executed during enforcement"
-        })
+    if ($actionContext.DryRun -eq $true) {
+        Write-Warning "Grant Topdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)], will be executed during enforcement"
         Write-Verbose ($requestObject | ConvertTo-Json)
     }
 
-    if (-not($dryRun -eq $true)) {
-        Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($p.DisplayName)]"
+    if (-Not($actionContext.DryRun -eq $true)) {
+        Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
 
-        if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
+        if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
             Write-Verbose "Check if manager is archived"
             # get person (manager)
             $splatParamsPerson = @{
-                AccountReference          = $mRef
-                AuditLogs                 = [ref]$auditLogs
-                Headers                   = $authHeaders
-                BaseUrl                   = $config.baseUrl
+                AccountReference = $actionContext.References.ManagerAccount
+                Headers          = $authHeaders
+                BaseUrl          = $actionContext.Configuration.baseUrl
             }
             $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
             if ($TopdeskPerson.status -eq 'personArchived') {
                 Write-Verbose "Manager $($TopdeskPerson.id) will be unarchived"
                 # Unarchive person (manager)
-                $shouldArchive  = $true
+                $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
+                    BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
-                    ArchivingReason = $config.personArchivingReason
-                    AuditLogs       = [ref]$auditLogs
+                    ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
             }
@@ -852,24 +794,22 @@ try {
             Write-Verbose "Check if employee is archived"
             # get person (employee)
             $splatParamsPerson = @{
-                AccountReference          = $aRef
-                AuditLogs                 = [ref]$auditLogs
-                Headers                   = $authHeaders
-                BaseUrl                   = $config.baseUrl
+                AccountReference = $actionContext.References.Account 
+                Headers          = $authHeaders
+                BaseUrl          = $actionContext.Configuration.baseUrl
             }
             $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
             
             if ($TopdeskPerson.status -eq 'personArchived') {
                 Write-Verbose "Employee $($TopdeskPerson.id) will be unarchived"
                 # Unarchive person (employee)
-                $shouldArchive  = $true
+                $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
+                    BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
-                    ArchivingReason = $config.personArchivingReason
-                    AuditLogs       = [ref]$auditLogs
+                    ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
             }
@@ -877,23 +817,21 @@ try {
 
         # Create change in Topdesk
         $splatParamsTopdeskChange = @{
-            Headers                 = $authHeaders
-            baseUrl                 = $config.baseUrl
-            TopdeskChange           = $requestObject
-            AuditLogs               = [Ref]$auditLogs
+            Headers       = $authHeaders
+            baseUrl       = $actionContext.Configuration.baseUrl
+            TopdeskChange = $requestObject
         }
         $TopdeskChange = New-TopdeskChange @splatParamsTopdeskChange
 
         if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
-            if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($mRef)))) {
+            if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
                 Write-Verbose "Manager $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
+                    BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $true
-                    ArchivingReason = $config.personArchivingReason
-                    AuditLogs       = [ref]$auditLogs
+                    ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
@@ -902,30 +840,29 @@ try {
                 $splatParamsPersonArchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
-                    BaseUrl         = $config.baseUrl
+                    BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $true
-                    ArchivingReason = $config.personArchivingReason
-                    AuditLogs       = [ref]$auditLogs
+                    ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
         }
-        
-        $success = $true
-        $auditLogs.Add([PSCustomObject]@{
-            Message = "Grant TOPdesk entitlement: [$($pRef.id)] with number [$($TopdeskChange.number)] was successful."
-            IsError = $false
-        })
+
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "GrantPermission"
+                Message = "Grant TOPdesk entitlement: [$($pRef.id)] with number [$($TopdeskChange.number)] was successful."
+                IsError = $false
+            })
     }
-} catch {
-    $success = $false
+}
+catch {
     $ex = $PSItem
     
     switch ($ex.Exception.Message) {
 
         'HelloID Template not found' {
-                # Only log when there are no lookup values, as these generate their own audit message, set success based on error state
-                $success = -Not($auditLogs.isError -contains $true)
+            # Only log when there are no lookup values, as these generate their own audit message, set success based on error state
+            $success = -Not($auditLogs.isError -contains $true)
         }
 
         'Error(s) occured while looking up required values' {
@@ -936,30 +873,33 @@ try {
             # Don't do anything when notifications are disabled, mark them as a success
             $success = $true
             $message = 'Not creating Topdesk change, because the notifications are disabled in the connector configuration.'
-            $auditLogs.Add([PSCustomObject]@{
-                Message = $message
-                IsError = $false
-            })
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "GrantPermission"
+                    Message = $message
+                    IsError = $false
+                })
 
         } default {
             Write-Verbose ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                $errorMessage ="Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
-            } else {
+                $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
+            }
+            else {
                 $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
             } 
-            $auditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "GrantPermission"
+                    Message = $errorMessage
+                    IsError = $true
+                })
         }
     }
-# End
-} finally {
-    $result = [PSCustomObject]@{
-        Success   = $success
-        Auditlogs = $auditLogs
+    # End
+}
+finally {
+    # Check if auditLogs contains errors, if errors are found, set succes to false
+    if ($outputContext.AuditLogs.IsError -contains $true) {
+        $outputContext.Success = $false
     }
-    Write-Output $result | ConvertTo-Json -Depth 10
 }

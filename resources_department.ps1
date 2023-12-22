@@ -1,151 +1,24 @@
 #####################################################
-# HelloID-Conn-Prov-Target-TOPdesk-Resource-Departments
+# HelloID-Conn-Prov-Target-Topdesk-Resource-Departments
 #
-# Version: 2.0
+# Version: 3.0.0 | Powershell V2
 #####################################################
-# Initialize default values
-$config = $configuration | ConvertFrom-Json
-$rRef = $resourceContext | ConvertFrom-Json
 
-$success = $false
-$auditLogs = [System.Collections.Generic.List[PSCustomObject]]::new()
-
-# Enable TLS1.2
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+# Set to true at start, because only when an error occurs it is set to false
+$outputContext.Success = $true
 
 # Set debug logging
-switch ($($config.IsDebug)) {
+switch ($($actionContext.Configuration.isDebug)) {
     $true { $VerbosePreference = 'Continue' }
     $false { $VerbosePreference = 'SilentlyContinue' }
 }
 
+# Enable TLS1.2
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+
 #region functions
-function Set-AuthorizationHeaders {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Username,
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $ApiKey
-    )
-    # Create basic authentication string
-    $bytes = [System.Text.Encoding]::ASCII.GetBytes("${Username}:${Apikey}")
-    $base64 = [System.Convert]::ToBase64String($bytes)
-
-    # Set authentication headers
-    $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
-    $authHeaders.Add("Authorization", "BASIC $base64")
-    $authHeaders.Add("Accept", 'application/json')
-
-    Write-Output $authHeaders
-}
-
-function Invoke-TOPdeskRestMethod {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Method,
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Uri,
-
-        [object]
-        $Body,
-
-        [string]
-        $ContentType = 'application/json; charset=utf-8',
-
-        [Parameter(Mandatory)]
-        [System.Collections.IDictionary]
-        $Headers
-    )
-    process {
-        try {
-            $splatParams = @{
-                Uri         = $Uri
-                Headers     = $Headers
-                Method      = $Method
-                ContentType = $ContentType
-            }
-            if ($Body) {
-                $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
-            }
-            Invoke-RestMethod @splatParams -Verbose:$false
-        } catch {
-            $PSCmdlet.ThrowTerminatingError($_)
-        }
-    }
-}
-
-function Get-TOPdeskDepartments {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $BaseUrl,
-        
-        [Parameter(Mandatory)]
-        [System.Collections.IDictionary]
-        $Headers
-    )
-
-    $splatParams = @{
-        Uri     = "$baseUrl/tas/api/departments"
-        Method  = 'GET'
-        Headers = $Headers
-    }
-
-    $responseGet = Invoke-TOPdeskRestMethod @splatParams
-    Write-Verbose "Retrieved $($responseGet.count) departments from TOPdesk"
-    Write-Output $responseGet
-}
-
-function New-TOPdeskDepartment {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Name,
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        
-        $BaseUrl,
-        [Parameter(Mandatory)]
-        [System.Collections.IDictionary]
-        $Headers
-    )
-
-    $splatParams = @{
-        Uri     = "$BaseUrl/tas/api/departments"
-        Method  = 'POST'
-        Headers = $Headers
-        body    = @{name=$Name} | ConvertTo-Json
-    }
-    $responseCreate = Invoke-TOPdeskRestMethod @splatParams
-    Write-Verbose "Created department with name [$($name)] and id [$($responseCreate.id)] in TOPdesk"
-    Write-Output $responseCreate
-}
-
-
 function Resolve-HTTPError {
-    [CmdletBinding()]
     param (
-        [Parameter(Mandatory,
-            ValueFromPipeline
-        )]
         [object]$ErrorObject
     )
     process {
@@ -165,75 +38,201 @@ function Resolve-HTTPError {
         Write-Output $httpErrorObj
     }
 }
-#endregion
+
+function Set-AuthorizationHeaders {
+    param (
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Username,
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ApiKey
+    )
+    # Create basic authentication string
+    $bytes = [System.Text.Encoding]::ASCII.GetBytes("${Username}:${Apikey}")
+    $base64 = [System.Convert]::ToBase64String($bytes)
+
+    # Set authentication headers
+    $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
+    $authHeaders.Add("Authorization", "BASIC $base64")
+    $authHeaders.Add("Accept", 'application/json')
+
+    Write-Output $authHeaders
+}
+
+function Invoke-TopdeskRestMethod {
+    param (
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Method,
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Uri,
+
+        [object]
+        $Body,
+
+        [string]
+        $ContentType = 'application/json; charset=utf-8',
+
+        [System.Collections.IDictionary]
+        $Headers
+    )
+    process {
+        try {
+            $splatParams = @{
+                Uri         = $Uri
+                Headers     = $Headers
+                Method      = $Method
+                ContentType = $ContentType
+            }
+
+            if ($Body) {
+                $splatParams['Body'] = [Text.Encoding]::UTF8.GetBytes($Body)
+            }
+            Invoke-RestMethod @splatParams -Verbose:$false
+        }
+        catch {
+            Throw $_
+        }
+    }
+}
+
+function Get-TopdeskDepartments {
+    param (
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $baseUrl,
+        [System.Collections.IDictionary]
+        $Headers
+    )
+
+    $splatParams = @{
+        Uri     = "$baseUrl/tas/api/departments"
+        Method  = 'GET'
+        Headers = $Headers
+    }
+    $responseGet = Invoke-TopdeskRestMethod @splatParams
+    Write-Verbose "Retrieved $($responseGet.count) department from Topdesk"
+    Write-Output $responseGet
+}
+
+function New-TopdeskDepartment {
+    param (
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $BaseUrl,
+
+        [System.Collections.IDictionary]
+        $Headers
+    )
+
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/departments"
+        Method  = 'POST'
+        Headers = $Headers
+        body    = @{name = $Name } | ConvertTo-Json
+    }
+    $responseCreate = Invoke-TopdeskRestMethod @splatParams
+    Write-Verbose "Created department with name [$($name)] and id [$($responseCreate.id)] in Topdesk"
+    Write-Output $responseCreate
+}
+#endregion functions
 
 #Begin
 try {
-    $authHeaders = Set-AuthorizationHeaders -UserName $Config.username -ApiKey $Config.apikey
-    $TopdeskDepartments = Get-TOPdeskDepartments -Headers $authHeaders -BaseUrl $Config.baseUrl
+    # Setup authentication headers    
+    $splatParamsAuthorizationHeaders = @{
+        UserName = $actionContext.Configuration.username
+        ApiKey   = $actionContext.Configuration.apikey
+    }
+    $authHeaders = Set-AuthorizationHeaders @splatParamsAuthorizationHeaders
+    
+    # Get budget holders
+    $splatParamsDepartments = @{
+        Headers = $authHeaders
+        BaseUrl = $actionContext.Configuration.baseUrl
+    }
+    $TopdeskDepartments = Get-TopdeskDepartments @splatParamsDepartments
 
     # Remove items with no name
-    $TopdeskDepartments = $TopdeskDepartments.Where({ $_.Name -ne "" -and  $_.Name -ne $null })
-    $rRefSourceData = $rRef.sourceData.Where({ $_.displayName -ne "" -and  $_.displayName -ne $null })
-    
+    $TopdeskDepartments = $TopdeskDepartments.Where({ $_.Name -ne "" -and $_.Name -ne $null })
+    $rRefSourceData = $resourceContext.SourceData.Where({ $_.displayName -ne "" -and $_.displayName -ne $null })
+
     # Process
-    $success = $true
     foreach ($HelloIdDepartment in $rRefSourceData) {
-        
-        if (-not($TopdeskDepartments.name -eq $HelloIdDepartment.displayName)) {
-            # Create department
-            if (-not ($dryRun -eq $true)) {
+        if (-not($TopdeskDepartments.Name -eq $HelloIdDepartment.displayName)) {
+            # Create budgetholder
+            if (-not ($actionContext.DryRun -eq $true)) {
                 try {
-                    write-verbose ($HelloIdDepartment | ConvertTo-Json)
-                    Write-Verbose "Creating TOPdesk department with the name [ $($HelloIdDepartment.displayName) ] in TOPdesk..."
-                    $newDepartment = New-TOPdeskDepartment -Name $HelloIdDepartment.displayName -BaseUrl $Config.baseUrl -Headers $authHeaders
+                    Write-Verbose "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
+                    # Create budget holder
+                    $splatParamsCreateDepartment = @{
+                        Headers = $authHeaders
+                        BaseUrl = $actionContext.Configuration.baseUrl
+                        Name    = $HelloIdDepartment.displayName
+                    }
+                    $newDepartment = New-TopdeskDepartment @splatParamsCreateDepartment
                     
-                    $auditLogs.Add([PSCustomObject]@{
-                        Message = "Created TOPdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
-                        IsError = $false
-                    })
-                } catch {
-                    $success = $false
+                    $outputContext.AuditLogs.Add([PSCustomObject]@{
+                            Action  = "CreateResource"    
+                            Message = "Created Topdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
+                            IsError = $false
+                        })
+                }
+                catch {
                     $ex = $PSItem
+                    
                     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                        $errorMessage = "Could not create department. Error: $($ex.ErrorDetails.Message)"
-                    } else {
-                        $errorMessage = "Could not create department. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+                        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.ErrorDetails.Message)"
+                    }
+                    else {
+                        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
                     }
                     Write-Verbose "$errorMessage"
-                    $auditLogs.Add([PSCustomObject]@{
-                        Message = $errorMessage
-                        IsError = $true
-                    })
+                    $outputContext.AuditLogs.Add([PSCustomObject]@{
+                            Action  = "CreateResource"    
+                            Message = $errorMessage
+                            IsError = $true
+                        })
                 }
-            } else {
-                Write-Verbose "Preview: Would create topdesk department $($HelloIdDepartment.displayName)"
             }
-        } else {
-            Write-Verbose "Not creating department [$($HelloIdDepartment.displayName)] as it already exists in TOPdesk"
+            else {
+                Write-Warning "Preview: Would create Topdesk department $($HelloIdDepartment.displayName)"
+            }
+        }
+        else {
+            Write-Verbose "Not creating department [$($HelloIdDepartment.displayName)] as it already exists in Topdesk"
         }
     }
-} catch {
-    $success = $false
+}
+catch {
     $ex = $PSItem
-    #write-verbose ($ex.Exception.message | ConvertTo-Json)
+    
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-HTTPError -ErrorObject $ex
-        $errorMessage = "Could not read or create departments. Error: $($errorObj.ErrorMessage)"
-    } else {
-        $errorMessage = "Could not read or create departments. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create departments. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
-    $auditLogs.Add([PSCustomObject]@{
-        Message = $errorMessage
-        IsError = $true
-    })
-# End
-} finally {
-   $result = [PSCustomObject]@{
-        Success   = $success
-        Auditlogs = $auditLogs
+    else {
+        $errorMessage = "Could not create departments. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
-    Write-Output $result | ConvertTo-Json -Depth 10
+    $outputContext.AuditLogs.Add([PSCustomObject]@{
+            Action  = "CreateResource"    
+            Message = $errorMessage
+            IsError = $true
+        })
+}
+finally {
+    # Check if auditLogs contains errors, if errors are found, set success to false
+    if ($outputContext.AuditLogs.IsError -contains $true) {
+        $outputContext.Success = $false
+    }
 }

@@ -31,16 +31,6 @@
     }
   },
   {
-    "key": "notificationJsonPath",
-    "type": "input",
-    "defaultValue": "",
-    "templateOptions": {
-      "label": "Notification file path",
-      "placeholder": "Please enter path to the TOPdesk notifcation file",
-      "required": false
-    }
-  },
-  {
     "key": "personArchivingReason",
     "type": "input",
     "defaultValue": "Persoon uit organisatie",
@@ -51,21 +41,22 @@
     }
   },
   {
+    "key": "notificationJsonPath",
+    "type": "input",
+    "defaultValue": "",
+    "templateOptions": {
+      "label": "Notification file path incident",
+      "placeholder": "Please enter path to the TOPdesk notifcation file",
+      "required": false
+    }
+  },
+  {
     "key": "notificationRequesterFallback",
     "type": "input",
     "defaultValue": "",
     "templateOptions": {
       "label": "Fallback email",
       "description": "When a manager is set as the requester but the manager account reference is empty",
-      "required": false
-    }
-  },
-  {
-    "key": "isDebug",
-    "type": "checkbox",
-    "defaultValue": true,
-    "templateOptions": {
-      "label": "Toggle debug logging",
       "required": false
     }
   },
@@ -130,6 +121,15 @@
           "label": "Clear the budgetholder field in TOPdesk"
         }
       ]
+    }
+  },
+  {
+    "key": "isDebug",
+    "type": "checkbox",
+    "defaultValue": true,
+    "templateOptions": {
+      "label": "Toggle debug logging",
+      "required": false
     }
   }
 ]
