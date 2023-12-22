@@ -42,7 +42,7 @@ _HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a s
 
 | :warning: Warning |
 |:-|
-| <b> When changes or incidents are in scope, a helloID agent on-premise is required. </b> |
+| <b> When changes or incidents are in scope, a helloID agent on-premise is required. For cloud only changes or incidents use the [HelloID Topdesk notification system](https://github.com/Tools4everBV/HelloID-Conn-Prov-Notification-Topdesk) </b> |
 
   - Archiving reason that is configured in Topdesk
   - Credentials with the rights as described in permissions
