@@ -145,6 +145,7 @@ function Get-TopdeskPerson {
         # Throw an error when account reference is empty
         Write-Warning "The account reference is empty. This is a scripting issue."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "DisableAccount"
                 Message = "The account reference is empty. This is a scripting issue."
                 IsError = $true
             })
@@ -162,6 +163,7 @@ function Get-TopdeskPerson {
     if ([string]::IsNullOrEmpty($person)) {
         Write-Warning "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "DisableAccount"
                 Message = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
                 IsError = $true
             })
@@ -199,6 +201,7 @@ function Set-TopdeskPersonArchiveStatus {
         #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "DisableAccount"
                     Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
@@ -217,6 +220,7 @@ function Set-TopdeskPersonArchiveStatus {
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "DisableAccount"
                     Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
@@ -292,14 +296,14 @@ try {
             Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DisableAccount" # Optionally specify a different action for this audit log
+                    Action  = "DisableAccount"
                     Message = "Account with id [$($TopdeskPerson.id) successfully disabled"
                     IsError = $false
                 })
         }
         else {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DisableAccount" # Optionally specify a different action for this audit log
+                    Action  = "DisableAccount"
                     Message = "Account with id [$($TopdeskPerson.id) successfully disabled (already disabled)"
                     IsError = $false
                 }) 
@@ -312,7 +316,9 @@ try {
         # Add an auditMessage showing what will happen during enforcement
         Write-Warning "DryRun: Would enable account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "DisableAccount"
                 Message = "DryRun: Would enable account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+                IsError = $false
             })
     }   
 }
@@ -320,13 +326,11 @@ catch {
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        #write-verbose ($ex | ConvertTo-Json)
 
         if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
             $errorMessage = "Could not $action person. Error: $($ex.ErrorDetails.Message)"
         }
         else {
-            #$errorObj = Resolve-HTTPError -ErrorObject $ex
             $errorMessage = "Could not $action person. Error: $($ex.Exception.Message)"
         }
     }
@@ -337,6 +341,7 @@ catch {
     # Only log when there are no lookup values, as these generate their own audit message
     if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "DisableAccount"
                 Message = $errorMessage
                 IsError = $true
             })

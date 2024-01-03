@@ -145,6 +145,7 @@ function Get-TopdeskPerson {
         # Throw an error when account reference is empty
         Write-Warning "The account reference is empty. This is a scripting issue."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "EnableAccount"
                 Message = "The account reference is empty. This is a scripting issue."
                 IsError = $true
             })
@@ -162,6 +163,7 @@ function Get-TopdeskPerson {
     if ([string]::IsNullOrEmpty($person)) {
         Write-Warning "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "EnableAccount"
                 Message = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
                 IsError = $true
             })
@@ -199,6 +201,7 @@ function Set-TopdeskPersonArchiveStatus {
         #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "EnableAccount"
                     Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
@@ -217,6 +220,7 @@ function Set-TopdeskPersonArchiveStatus {
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "EnableAccount"
                     Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
@@ -293,14 +297,14 @@ try {
             Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "EnableAccount" # Optionally specify a different action for this audit log
+                    Action  = "EnableAccount"
                     Message = "Account with id [$($TopdeskPerson.id) successfully enabled"
                     IsError = $false
                 })
         }
         else {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "EnableAccount" # Optionally specify a different action for this audit log
+                    Action  = "EnableAccount"
                     Message = "Account with id [$($TopdeskPerson.id) successfully enabled (already enabled)"
                     IsError = $false
                 }) 
@@ -314,7 +318,9 @@ try {
         # Add an auditMessage showing what will happen during enforcement
         Write-Warning "DryRun: Would enable account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "EnableAccount"
                 Message = "DryRun: Would enable account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
+                IsError = $false
             })
     }   
 }
@@ -339,6 +345,7 @@ catch {
     # Only log when there are no lookup values, as these generate their own audit message
     if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "EnableAccount"
                 Message = $errorMessage
                 IsError = $true
             })

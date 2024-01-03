@@ -120,6 +120,7 @@ function Get-TopdeskBranch {
     # Check if branch.lookupValue property exists in the account object set in the mapping
     if (-not($account.branch.PSObject.Properties.Name -contains 'lookupValue')) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
                 Message = "Requested to lookup branch, but branch.lookupValue is missing. This is a mapping issue."
                 IsError = $true
             })
@@ -129,6 +130,7 @@ function Get-TopdeskBranch {
     if ([string]::IsNullOrEmpty($Account.branch.lookupValue)) {
         # As branch is always a required field,  no branch in lookup value = error
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
                 Message = "The lookup value for Branch is empty but it's a required field."
                 IsError = $true
             })
@@ -147,6 +149,7 @@ function Get-TopdeskBranch {
 
             # As branch is a required field, if no branch is found, an error is logged
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateAccount"
                     Message = "Branch with name [$($Account.branch.lookupValue)] isn't found in Topdesk but it's a required field."
                     IsError = $true
                 })
@@ -181,6 +184,7 @@ function Get-TopdeskDepartment {
     # Check if department.lookupValue property exists in the account object set in the mapping
     if (-not($Account.department.PSObject.Properties.Name -Contains 'lookupValue')) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
                 Message = "Requested to lookup department, but department.lookupValue is not set. This is a mapping issue."
                 IsError = $true
             })
@@ -191,6 +195,7 @@ function Get-TopdeskDepartment {
         if ([System.Convert]::ToBoolean($LookupErrorHrDepartment)) {
             # True, no department in lookup value = throw error
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateAccount"
                     Message = "The lookup value for Department is empty and the connector is configured to stop when this happens."
                     IsError = $true
                 })
@@ -217,6 +222,7 @@ function Get-TopdeskDepartment {
             if ([System.Convert]::ToBoolean($LookupErrorTopdesk)) {
                 # True, no department found = throw error
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "CreateAccount"
                         Message = "Department [$($Account.department.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
                         IsError = $true
                     })
@@ -260,6 +266,7 @@ function Get-TopdeskBudgetHolder {
     # Check if budgetholder.lookupValue property exists in the account object set in the mapping
     if (-not($Account.budgetHolder.PSObject.Properties.Name -Contains 'lookupValue')) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
                 Message = "Requested to lookup budgetholder, but budgetholder.lookupValue is missing. This is a mapping issue."
                 IsError = $true
             })
@@ -271,6 +278,7 @@ function Get-TopdeskBudgetHolder {
         if ([System.Convert]::ToBoolean($lookupErrorHrBudgetHolder)) {
             # True, no budgetholder in lookup value = throw error
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateAccount"
                     Message = "The lookup value for budgetholder is empty and the connector is configured to stop when this happens."
                     IsError = $true
                 })
@@ -298,6 +306,7 @@ function Get-TopdeskBudgetHolder {
             if ([System.Convert]::ToBoolean($lookupErrorTopdesk)) {
                 # True, no budgetholder found = throw error
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "CreateAccount"
                         Message = "Budgetholder [$($Account.budgetHolder.lookupValue)] not found in Topdesk and the connector is configured to stop when this happens."
                         IsError = $true
                     })
@@ -359,7 +368,8 @@ function Get-TopdeskPersonByCorrelationAttribute {
     else {
         # Multiple records found, correlation
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Message = "Multiple [$($responseGet.Count)] $($PersonType)s found with [$CorrelationAttribute] [$($CorrelationValue)]. Login names: [$($responseGet.tasLoginName -join ', ')]"
+                Action  = "CreateAccount"
+                Message = "Multiple [$($responseGet.Count)] $($PersonType)s found with [$CorrelationField] [$($CorrelationValue)]. Login names: [$($responseGet.tasLoginName -join ', ')]"
                 IsError = $true
             })
     }
@@ -408,6 +418,7 @@ function Get-TopdeskPersonManager {
     # Check if manager.id property exists in the account object set in the mapping
     if (-not($Account.manager.PSObject.Properties.Name -Contains 'id')) {
         $AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
                 Message = "Requested to lookup manager, but manager.id is missing. This is a scripting issue."
                 IsError = $true
             })
@@ -431,6 +442,7 @@ function Get-TopdeskPersonManager {
         
     if ([string]::IsNullOrEmpty($personManager)) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
                 Message = "Manager with reference [$($Account.manager.id)] is not found."
                 IsError = $true
             })
@@ -467,6 +479,7 @@ function Set-TopdeskPersonArchiveStatus {
         #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateAccount"
                     Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
@@ -485,6 +498,7 @@ function Set-TopdeskPersonArchiveStatus {
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateAccount"
                     Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
@@ -660,7 +674,9 @@ try {
             else {
                 Write-Warning "DryRun: Would correlate account [$($personContext.Person.DisplayName)] on field [$($correlationField)] with value [$($correlationValue)]"
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "CorrelateAccount" # Optionally specify a different action for this audit log
                         Message = "DryRun: Would correlate account [$($personContext.Person.DisplayName)] on field [$($correlationField)] with value [$($correlationValue)]"
+                        IsError = $false
                     })
             }
             $outputContext.AccountReference = $TopdeskPerson.id
@@ -669,6 +685,7 @@ try {
     }
     else {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CorrelateAccount" # Optionally specify a different action for this audit log
                 Message = "Configuration of correlation is madatory."
                 IsError = $true
             })
@@ -796,7 +813,7 @@ try {
             $outputContext.Data = $TopdeskPerson
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "CreateAccount" # Optionally specify a different action for this audit log
+                    Action  = "CreateAccount"
                     Message = "Account with id [$($TopdeskPerson.id)] successfully created"
                     IsError = $false
                 })
@@ -804,7 +821,9 @@ try {
         else {
             Write-Warning "DryRun: Would create account [$($personContext.Person.DisplayName)]"
             $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateAccount"
                     Message = "DryRun: Would create account [$($personContext.Person.DisplayName)]"
+                    IsError = $false
                 })
         }
     }
@@ -830,6 +849,7 @@ catch {
     # Only log when there are no lookup values, as these generate their own audit message
     if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateAccount"
                 Message = $errorMessage
                 IsError = $true
             })
