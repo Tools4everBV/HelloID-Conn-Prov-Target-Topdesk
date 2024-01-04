@@ -664,17 +664,15 @@ try {
         if (!([string]::IsNullOrEmpty($TopdeskPerson))) {
             if (-Not($actionContext.DryRun -eq $true)) {
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Action  = "CorrelateAccount" # Optionally specify a different action for this audit log
+                        Action  = "CorrelateAccount"
                         Message = "Correlated account with username $($correlatedAccount.UserName) on field $($correlationField) with value $($correlationValue)"
                         IsError = $false
                     })
-
-
             }
             else {
                 Write-Warning "DryRun: Would correlate account [$($personContext.Person.DisplayName)] on field [$($correlationField)] with value [$($correlationValue)]"
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Action  = "CorrelateAccount" # Optionally specify a different action for this audit log
+                        Action  = "CorrelateAccount"
                         Message = "DryRun: Would correlate account [$($personContext.Person.DisplayName)] on field [$($correlationField)] with value [$($correlationValue)]"
                         IsError = $false
                     })
@@ -685,7 +683,7 @@ try {
     }
     else {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "CorrelateAccount" # Optionally specify a different action for this audit log
+                Action  = "CorrelateAccount"
                 Message = "Configuration of correlation is madatory."
                 IsError = $true
             })
