@@ -1,5 +1,5 @@
 // Please enter the mapping logic to generate the Lastname.
-function generateLastName() {
+function getLastName() {
     let middleName = Person.Name.FamilyNamePrefix;
     let lastName = Person.Name.FamilyName;
     let middleNamePartner = Person.Name.FamilyNamePartnerPrefix;
@@ -7,6 +7,7 @@ function generateLastName() {
     let convention = Person.Name.Convention;
 
     let nameFormatted = '';
+    let lastNameOutput = '';
 
     switch (convention) {
         case "B":
@@ -33,12 +34,12 @@ function generateLastName() {
     }
 
     if (typeof nameFormatted !== 'undefined' && nameFormatted) {
-        lastName = nameFormatted.trim();
+        lastNameOutput = nameFormatted.trim();
     } else {
-        lastName = nameFormatted;
+        lastNameOutput = nameFormatted;
     }
-    
-    return lastName;
+
+    return lastNameOutput;
 }
 
-generateLastName();
+getLastName();

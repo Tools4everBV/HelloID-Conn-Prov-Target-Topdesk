@@ -1,18 +1,20 @@
-function getValue() {
+function getGender() {
     let gender = Person.Details.Gender;
-    let outputGender = ''
+    let outputGender = '';
+
     switch (gender) {
         case "M":
-            outputGender = 'MALE'
+            outputGender = 'MALE';
             break;
         case "V":
-            outputGender = 'FEMALE'
+            outputGender = 'FEMALE';
             break;
         default:
-            outputGender = 'UNDEFINED'
+            outputGender = 'UNDEFINED';
             break;
     }
+
     return outputGender;
 }
 
-getValue();
+getGender();

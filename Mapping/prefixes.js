@@ -1,9 +1,10 @@
-function getValue() {
+function getPrefixes() {
     let middleName = Person.Name.FamilyNamePrefix;
     let middleNamePartner = Person.Name.FamilyNamePartnerPrefix;
     let convention = Person.Name.Convention;
-
+    
     let nameFormatted = '';
+    let prefix = '';
 
     switch (convention) {
         case "B":
@@ -28,7 +29,8 @@ function getValue() {
     } else {
         prefix = nameFormatted;
     }
+
     return prefix;
 }
 
-getValue();
+getPrefixes();
