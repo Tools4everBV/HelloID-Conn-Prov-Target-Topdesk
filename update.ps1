@@ -822,7 +822,7 @@ try {
 
         $outputContext.AuditLogs.Add([PSCustomObject]@{
                 Action  = "UpdateAccount"
-                Message = "Account with id [$($TopdeskPerson.id) successfully updated"
+                Message = "Account with id [$($TopdeskPerson.id)] successfully updated"
                 IsError = $false
             })
     }

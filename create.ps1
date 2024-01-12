@@ -664,7 +664,7 @@ try {
             if (-Not($actionContext.DryRun -eq $true)) {
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
                         Action  = "CorrelateAccount"
-                        Message = "Correlated account with username $($correlatedAccount.UserName) on field $($correlationField) with value $($correlationValue)"
+                        Message = "Correlated account with id [$($TopdeskPerson.id)] on field $($correlationField) with value $($correlationValue)"
                         IsError = $false
                     })
             }

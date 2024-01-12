@@ -308,7 +308,7 @@ try {
         if ([string]::IsNullOrEmpty($TopdeskPerson)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Action  = "DeleteAccount"
-                    Message = "Account with id [$($actionContext.References.Account) successfully archived (skiped not found)"
+                    Message = "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
                     IsError = $false
                 })
         }
@@ -339,26 +339,23 @@ try {
             }
             $TopdeskPersonUpdated = Set-TopdeskPerson @splatParamsPersonUpdate
     
-            # As the update process could be started for an inactive HelloID person, the user return should be archived state
-            if ($TopdeskPerson.status -ne 'personArchived') {
-    
-                # Archive person
-                $splatParamsPersonArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
-                    Headers         = $authHeaders
-                    BaseUrl         = $actionContext.Configuration.baseUrl
-                    Archive         = $true
-                    ArchivingReason = $actionContext.Configuration.personArchivingReason
-                }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+            # As the update process could be started for an inactive HelloID person, the user return should be archived state    
+            # Archive person
+            $splatParamsPersonArchive = @{
+                TopdeskPerson   = [ref]$TopdeskPerson
+                Headers         = $authHeaders
+                BaseUrl         = $actionContext.Configuration.baseUrl
+                Archive         = $true
+                ArchivingReason = $actionContext.Configuration.personArchivingReason
             }
+            Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
 
             $outputContext.Data = $TopdeskPersonUpdated
             $outputContext.PreviousData = $TopdeskPerson
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Action  = "DeleteAccount"
-                    Message = "Account with id [$($TopdeskPerson.id) successfully archived"
+                    Message = "Account with id [$($TopdeskPerson.id)] successfully archived"
                     IsError = $false
                 })
         }
@@ -375,10 +372,10 @@ try {
         }
         else {
             # Add an auditMessage showing what will happen during enforcement
-            Write-Warning "DryRun: Would skiped archive account for id [$($actionContext.References.Account)"
+            Write-Warning "DryRun: Would skiped archive account for id [$($actionContext.References.Account)]"
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Action  = "DeleteAccount"
-                    Message = "DryRun: Would skiped archive account for id [$($actionContext.References.Account)"
+                    Message = "DryRun: Would skiped archive account for id [$($actionContext.References.Account)]"
                     IsError = $false
                 })
         }

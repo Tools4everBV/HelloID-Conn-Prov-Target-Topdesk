@@ -296,14 +296,14 @@ try {
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Action  = "DisableAccount"
-                    Message = "Account with id [$($TopdeskPerson.id) successfully disabled"
+                    Message = "Account with id [$($TopdeskPerson.id)] successfully disabled"
                     IsError = $false
                 })
         }
         else {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Action  = "DisableAccount"
-                    Message = "Account with id [$($TopdeskPerson.id) successfully disabled (already disabled)"
+                    Message = "Account with id [$($TopdeskPerson.id)] successfully disabled (already disabled)"
                     IsError = $false
                 }) 
         }
