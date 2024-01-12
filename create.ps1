@@ -468,7 +468,6 @@ function Set-TopdeskPersonArchiveStatus {
         [Bool]
         $Archive,
 
-        [Parameter()]
         [String]
         $ArchivingReason
     )

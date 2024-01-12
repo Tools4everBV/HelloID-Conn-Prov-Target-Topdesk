@@ -190,7 +190,6 @@ function Set-TopdeskPersonArchiveStatus {
         [Bool]
         $Archive,
 
-        [Parameter()]
         [String]
         $ArchivingReason
     )
@@ -302,7 +301,7 @@ try {
     $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
     #endregion lookup
-    $actionContext.DryRun = $false
+
     #region write
     $action = 'Delete'
     if (-Not($actionContext.DryRun -eq $true)) {
