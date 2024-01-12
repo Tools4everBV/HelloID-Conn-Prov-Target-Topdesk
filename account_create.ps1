@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Create
 #
-# Version: 3.0.0 | Powershell V2
+# Version: 3.0.0 | new-powershell-connector
 #####################################################
 
 # Set to true at start, because only when an error occurs it is set to false
