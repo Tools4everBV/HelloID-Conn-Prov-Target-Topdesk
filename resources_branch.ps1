@@ -1,5 +1,5 @@
 #####################################################
-# HelloID-Conn-Prov-Target-Topdesk-Resource-BudgetHolders
+# HelloID-Conn-Prov-Target-Topdesk-Resource-Branches
 #
 # Version: 3.0.0 | Powershell V2
 #####################################################
@@ -100,7 +100,46 @@ function Invoke-TopdeskRestMethod {
     }
 }
 
-function Get-TopdeskBudgetHolders {
+function Get-TopdeskCountry {
+    param (
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $BaseUrl,
+
+        [System.Collections.IDictionary]
+        $Headers,
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $CountryName
+    )
+
+
+    # Lookup Value is filled in, lookup value in Topdesk
+    $splatParams = @{
+        Uri     = "$baseUrl/tas/api/countries"
+        Method  = 'GET'
+        Headers = $Headers
+    }
+    $responseGet = Invoke-TopdeskRestMethod @splatParams
+    $country = $responseGet | Where-object name -eq $CountryName
+
+    # When country is not found in Topdesk
+    if ([string]::IsNullOrEmpty($country.id)) {
+        write-verbose "Aviable countries [$($responseGet | Convertto-json)]"
+        $errorMessage = "Country [$CountryName)] not found in Topdesk. This is a mapping error."
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Message = $errorMessage
+                IsError = $true
+            })
+    }
+    else {
+        Write-Verbose "Retrieved country [$($country.name)] from TOPdesk [$($country.id)]"
+        Write-Output $country
+    }
+}
+
+function Get-TOPdeskBranches {
     param (
         [ValidateNotNullOrEmpty()]
         [string]
@@ -110,23 +149,23 @@ function Get-TopdeskBudgetHolders {
     )
 
     $splatParams = @{
-        Uri     = "$baseUrl/tas/api/budgetholders"
+        Uri     = "$baseUrl/tas/api/branches"
         Method  = 'GET'
         Headers = $Headers
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
-    Write-Verbose "Retrieved $($responseGet.count) budgetholders from Topdesk"
+    Write-Verbose "Retrieved $($responseGet.count) branches from Topdesk"
     Write-Output $responseGet
 }
 
-function New-TopdeskBudgetHolder {
+function New-TOPdeskBranch {
     param (
         [ValidateNotNullOrEmpty()]
-        [string]
-        $Name,
+        [Object]
+        $Branch,
 
         [ValidateNotNullOrEmpty()]
-        [string]
+        [String]
         $BaseUrl,
 
         [System.Collections.IDictionary]
@@ -134,13 +173,13 @@ function New-TopdeskBudgetHolder {
     )
 
     $splatParams = @{
-        Uri     = "$BaseUrl/tas/api/budgetholders"
+        Uri     = "$BaseUrl/tas/api/branches"
         Method  = 'POST'
         Headers = $Headers
-        body    = @{name = $Name } | ConvertTo-Json
+        Body    = $Branch | ConvertTo-Json
     }
-    $responseCreate = Invoke-TopdeskRestMethod @splatParams
-    Write-Verbose "Created budgetholder with name [$($name)] and id [$($responseCreate.id)] in Topdesk"
+    $responseCreate = Invoke-TOPdeskRestMethod @splatParams
+    Write-Verbose "Created branch with name [$($Branch.name)] and id [$($responseCreate.id)] in TOPdesk"
     Write-Output $responseCreate
 }
 #endregion functions
@@ -154,34 +193,55 @@ try {
     }
     $authHeaders = Set-AuthorizationHeaders @splatParamsAuthorizationHeaders
     
-    # Get budget holders
-    $splatParamsBudgetHolders = @{
+    # Get branches
+    $splatParamsBranches = @{
         Headers = $authHeaders
         BaseUrl = $actionContext.Configuration.baseUrl
     }
-    $TopdeskBudgetHolders = Get-TopdeskBudgetHolders @splatParamsBudgetHolders
+    $TopdeskBranches = Get-TOPdeskBranches @splatParamsBranches
 
     # Remove items with no name
-    $TopdeskBudgetHolders = $TopdeskBudgetHolders.Where({ $_.Name -ne "" -and $_.Name -ne $null })
-    $rRefSourceData = $resourceContext.SourceData.Where({ $_.Name -ne "" -and $_.Name -ne $null })
+    $TopdeskBranches = $TopdeskBranches.Where({ $_.name -ne "" -and $_.name -ne $null })
+    $rRefSourceData = $resourceContext.SourceData.Where({ $_.name -ne "" -and $_.name -ne $null })
+
+    # Lookup country
+    $splatParamsCountry = @{
+        Headers     = $authHeaders
+        BaseUrl     = $actionContext.Configuration.baseUrl
+        CountryName = 'Nederland'
+    }
+    $country = Get-TopdeskCountry @splatParamsCountry
+
+    if ($outputContext.AuditLogs.isError -contains $true) {
+        Throw "Error(s) occured while looking up required values"
+    }
 
     # Process
-    foreach ($HelloIdBudgetHolder in $rRefSourceData) {
-        if (-not($TopdeskBudgetHolders.Name -eq $HelloIdBudgetHolder.name)) {
+    foreach ($HelloIdBranch in $rRefSourceData) {
+        
+        # Mapping how to create a branch. https://developers.topdesk.com/explorer/?page=supporting-files#/Branches/createBranch
+        $branch = [PSCustomObject]@{
+            name          = $HelloIdBranch.name
+            postalAddress = @{
+                country = @{id = $country.id }
+            }
+            branchType    = 'independentBranch' # valid values: 'independentBranch' 'headBranch' 'hasAHeadBranch'.
+        }
+        if (-not($TopdeskBranches.name -eq $branch.name)) {
             if (-not ($actionContext.DryRun -eq $true)) {
                 try {
-                    Write-Verbose "Creating Topdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in Topdesk."
-                    # Create budget holder
-                    $splatParamsCreateBudgetHolder = @{
+                    Write-Verbose "Creating TOPdesk branch with the name [ $($branch.name) ] in TOPdesk..."
+                    # Create branch
+                    $splatParamsCreateBranch = @{
                         Headers = $authHeaders
                         BaseUrl = $actionContext.Configuration.baseUrl
-                        Name    = $HelloIdBudgetHolder.name
+                        Branch  = $branch
                     }
-                    $newBudgetHolder = New-TopdeskBudgetHolder @splatParamsCreateBudgetHolder
+                    $newBranch = New-TOPdeskBranch @splatParamsCreateBranch
 
                     $outputContext.AuditLogs.Add([PSCustomObject]@{
                             Action  = "CreateResource"    
-                            Message = "Created Topdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
+                            Message = "Created Topdesk branch with the name [$($newBranch.name)] and ID [$($newBranch.id)]"
                             IsError = $false
                         })
                 }
@@ -190,10 +250,10 @@ try {
                     
                     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error: $($ex.ErrorDetails.Message)"
+                        $errorMessage = "Could not create branch [$($branch.name)]. Error: $($ex.ErrorDetails.Message)"
                     }
                     else {
-                        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+                        $errorMessage = "Could not create branch [$($branch.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
                     }
                     Write-Verbose "$errorMessage"
                     $outputContext.AuditLogs.Add([PSCustomObject]@{
@@ -204,11 +264,11 @@ try {
                 }
             }
             else {
-                Write-Warning "Preview: Would create Topdesk budgetholder $($HelloIdBudgetHolder.name)"
+                Write-Warning "Preview: Would create Topdesk branch $($branch.name)"
             }
         }
         else {
-            Write-Verbose "Not creating budgetholder [$($HelloIdBudgetHolder.name)] as it already exists in Topdesk"
+            Write-Verbose "Not creating branch [$($branch.name)] as it already exists in Topdesk"
         }
     }
 }
@@ -218,16 +278,20 @@ catch {
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-HTTPError -ErrorObject $ex
-        $errorMessage = "Could not create budgetholders. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create branch. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     else {
-        $errorMessage = "Could not create budgetholders. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create branch. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
-    $outputContext.AuditLogs.Add([PSCustomObject]@{
-            Action  = "CreateResource"    
-            Message = $errorMessage
-            IsError = $true
-        })
+
+    # Only log when there are no lookup values, as these generate their own audit message
+    if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Action  = "CreateResource"    
+                Message = $errorMessage
+                IsError = $true
+            })
+    }
 }
 finally {
     # Check if auditLogs contains errors, if errors are found, set success to false

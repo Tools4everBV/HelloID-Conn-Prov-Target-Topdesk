@@ -154,7 +154,7 @@ try {
     }
     $authHeaders = Set-AuthorizationHeaders @splatParamsAuthorizationHeaders
     
-    # Get budget holders
+    # Get department
     $splatParamsDepartments = @{
         Headers = $authHeaders
         BaseUrl = $actionContext.Configuration.baseUrl
@@ -168,11 +168,10 @@ try {
     # Process
     foreach ($HelloIdDepartment in $rRefSourceData) {
         if (-not($TopdeskDepartments.Name -eq $HelloIdDepartment.displayName)) {
-            # Create budgetholder
             if (-not ($actionContext.DryRun -eq $true)) {
                 try {
                     Write-Verbose "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
-                    # Create budget holder
+                    # Create department
                     $splatParamsCreateDepartment = @{
                         Headers = $authHeaders
                         BaseUrl = $actionContext.Configuration.baseUrl
