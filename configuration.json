@@ -126,7 +126,7 @@
   {
     "key": "isDebug",
     "type": "checkbox",
-    "defaultValue": true,
+    "defaultValue": false,
     "templateOptions": {
       "label": "Toggle debug logging",
       "required": false
