@@ -1,8 +1,8 @@
 # HelloID-Conn-Prov-Target-Topdesk
 
 | :warning: Warning |
-|:-|
-| This connector has been updated to a new version (V2). This version is not backward compatible, but a Tools4ever consultant or a partner can upgrade the connector with minor effort. If you have questions please ask them on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk). |
+| :---------------- |
+| This script is for the new powershell connector. Make sure to use the mapping and correlation keys like mentionded in this readme. For more information, please read our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) |
 
 | :information_source: Information |
 |:-|
@@ -23,13 +23,13 @@
 		- [Permissions](#permissions)
 			- [Filters](#filters)
 	- [Setup the connector](#setup-the-connector)
-		- [Remove attributes when correlating a Topdesk person](#remove-attributes-when-correlating-a-topdesk-person)
-		- [Disable department or budgetholder](#disable-department-or-budgetholder)
+		- [Mapping](#mapping)
 		- [Extra fields](#extra-fields)
+		- [Correlation](#correlation)
+		- [Remove attributes when updating a Topdesk person](#remove-attributes-when-updating-a-topdesk-person)
+		- [Disable department or budgetholder](#disable-department-or-budgetholder)
 		- [Changes](#changes)
 		- [Incidents](#incidents)
-	- [Remarks](#remarks)
-		- [Only require tickets](#only-require-tickets)
 	- [Getting help](#getting-help)
 	- [HelloID docs](#helloid-docs)
 
@@ -42,7 +42,7 @@ _HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a s
 
 | :warning: Warning |
 |:-|
-| <b> When changes or incidents are in scope, a helloID agent on-premise is required. </b> |
+| <b> When changes or incidents are in scope, a helloID agent on-premise is required. For cloud only changes or incidents use the [HelloID Topdesk notification system](https://github.com/Tools4everBV/HelloID-Conn-Prov-Notification-Topdesk) </b> |
 
   - Archiving reason that is configured in Topdesk
   - Credentials with the rights as described in permissions
@@ -69,32 +69,32 @@ The following settings are required to connect to the API.
 
 The following permissions are required to use this connector. This should be configured on a specific Permission Group for the Operator HelloID uses.
 
-| Permission | Read | Write | Create | Archive
-| - | - | - | - | -
-| <b>Call Management</b>
-| First line calls | x | x | x | 
-| Second line calls | x | x | x |
-| Escalate calls | | x | |
-| Link object to call | | x | |
-| Link room to call | | x | |
-| <b>Change Management</b>
-| Requests for Simple Change | x | x | x | 
-| Requests for Extensive Change | x | x | x |
-| Simple Changes| x | x | |
-| Extensive Changes | x | x | |
-| <b>New Asset Management</b>
-| Templates | x |  | |
-| <b>Supporting Files</b>
-| Persons | x | x | x | x
-| Operators | x | x | x | x
-| Operator groups | x |  |  | 
-| Suppliers | x |  |  | 
-| Rooms | x |  |  | 
-| Login data |  | x |  | 
-| Supporting Files Settings | x | x |  |  |
-| <b>Reporting API</b>
-| REST API | x |  |  | 
-| Use application passwords |  | x |  | 
+| Permission                    | Read | Write | Create | Archive |
+| ----------------------------- | ---- | ----- | ------ | ------- |
+| <b>Call Management</b>        |
+| First line calls              | x    | x     | x      |
+| Second line calls             | x    | x     | x      |
+| Escalate calls                |      | x     |        |
+| Link object to call           |      | x     |        |
+| Link room to call             |      | x     |        |
+| <b>Change Management</b>      |
+| Requests for Simple Change    | x    | x     | x      |
+| Requests for Extensive Change | x    | x     | x      |
+| Simple Changes                | x    | x     |        |
+| Extensive Changes             | x    | x     |        |
+| <b>New Asset Management</b>   |
+| Templates                     | x    |       |        |
+| <b>Supporting Files</b>       |
+| Persons                       | x    | x     | x      | x       |
+| Operators                     | x    | x     | x      | x       |
+| Operator groups               | x    |       |        |
+| Suppliers                     | x    |       |        |
+| Rooms                         | x    |       |        |
+| Login data                    |      | x     |        |
+| Supporting Files Settings     | x    | x     |        |         |
+| <b>Reporting API</b>          |
+| REST API                      | x    |       |        |
+| Use application passwords     |      | x     |        |
 
 #### Filters
 | :information_source: Information |
@@ -103,19 +103,53 @@ It is possible to set filters in Topdesk. If you don't get a result from Topdesk
 
 ## Setup the connector
 
-### Remove attributes when correlating a Topdesk person
-There is an example of only set certain attributes when creating a person, but skipping them when updating the script. For example, if you don't use SSO then we could change the existing person's password. 
+### Mapping
+The mandatory and recommended field mapping is listed below.
+
+| :information_source: Information                                                                                                                              |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Only mapped values to the actions create, update, and delete are being used in the script. The Enable and Disable will only Unarchive and Archive the person. |
+
+| Name                     | Create | Enable | Update | Disable | Delete | Store in account data | Default mapping                                               | Mandatory | Comment                                                             |
+| ------------------------ | ------ | ------ | ------ | ------- | ------ | --------------------- | ------------------------------------------------------------- | --------- | ------------------------------------------------------------------- |
+| branch.lookupValue       | X      |        | X      |         |        |                       | Field: PrimaryContract.Location.Name                          |           | Lookupvalue                                                         |
+| budgetHolder.lookupValue | X      |        | X      |         |        |                       | Field: PrimaryContract.CostCenter.Name                        |           | Lookupvalue                                                         |
+| department.lookupValue   | X      |        | X      |         |        |                       | Field: PrimaryContract.Department.DisplayName                 |           | Lookupvalue                                                         |
+| email                    | X      |        | X      |         | X      |                       | Create/Update: Complex email.js Delete Fixed empty            |           |                                                                     |
+| employeeNumber           | X      |        | X      |         |        |                       | Field: ExternalId                                             | Yes       | Used for correlation                                                |
+| firstInitials            | X      |        | X      |         |        |                       | Complex: firstInitials.js                                     |           |                                                                     |
+| firstName                | X      |        | X      |         |        |                       | Field: Name.NickName                                          |           |                                                                     |
+| gender                   | X      |        | X      |         |        |                       | Complex: gender.js                                            |           |                                                                     |
+| id                       | X      |        | X      |         |        | Yes                   | None                                                          | Yes       | Writes back the account Refference to account data                  |
+| isManager                | X      |        |        |         |        |                       | Fixed: false                                                  |           | Oprtionaly boolean: $p.Custom.isManager when provided by the source |
+| jobTitle                 | X      |        | X      |         |        |                       | Field: PrimaryContract.Title.Name                             |           |                                                                     |
+| manager.id               | X      |        | X      |         |        |                       | None                                                          | Yes       | Used in PowerShell script for ManagerAccountRefference and fallback |
+| networkLoginName         | X      |        | X      |         | X      |                       | Create/Update: Complex networkLoginName.js Delete Fixed empty |           |                                                                     |
+| prefixes                 | X      |        | X      |         |        |                       | Complex: prefixes.js                                          |           |                                                                     |
+| showAllBranches          | X      |        | X      |         |        |                       | Fixed: true                                                   |           |                                                                     |
+| surName                  | X      |        | X      |         |        |                       | Complex: surName.js                                           |           |                                                                     |
+| tasLoginName             | X      |        | X      |         | X      |                       | Create/Update: Complex tasLoginName.js Delete Fixed empty     |           |                                                                     |
+
+### Extra fields
+You can add extra fields by adding them to the field mapping. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/).
+
+| Name         | Create | Enable | Update | Disable | Delete | Store in account data | Default mapping                      | Mandatory | Comment |
+| ------------ | ------ | ------ | ------ | ------- | ------ | --------------------- | ------------------------------------ | --------- | ------- |
+| mobileNumber | X      |        | X      |         |        |                       | Field: Contact.Business.Phone.Mobile |           |         |
+
+### Correlation
+It is mandatory to enable the correlation in the correlation tab. The default value for "person correlation field" is " ExternalId". The default value for "Account Correlation field" is "employeeNumber".
+
+### Remove attributes when updating a Topdesk person
+There is an example of only set certain attributes when correlate-update a person, but skipping them when updating the person. For example, if you don't want to update the tasLoginName.
 
 ```powershell
-# Example to only set certain attributes when creating a person, but skip them when updating
-
-# $account.PSObject.Properties.Remove('showDepartment')
-
-# If SSO is not used. You need to remove tasLoginName and password from the update. Else the local password will be reset.
-# $account.PSObject.Properties.Remove('tasLoginName')
-# $account.PSObject.Properties.Remove('password')
-
-$account.PSObject.Properties.Remove('isManager')
+    if (-not($actionContext.AccountCorrelated -eq $true)) {
+        # Example to only set certain attributes when create-correlate. If you don't want to update certain values, you need to remove them here.    
+        # $account.PSObject.Properties.Remove('email')
+        # $account.PSObject.Properties.Remove('networkLoginName')
+        # $account.PSObject.Properties.Remove('tasLoginName')
+    }
 ```
 
 ### Disable department or budgetholder
@@ -131,43 +165,20 @@ For example:
 "externalLinks": []
 ```
 
-If you don't need the mapping of the department field or the budgetholder field in Topdesk, it's necessary to comment out both mapping and the call function in the script.
+If you don't need the mapping of the department field or the budgetholder field in Topdesk, it's necessary to comment out the function in the script.
 
 Example for the department field:
-
-Mapping:
-
-```powershell
-# department          = @{ lookupValue = $p.PrimaryContract.Department.DisplayName }
-```
-
-Call function:
 
 ```powershell
 # Resolve department id
 # $splatParamsDepartment = @{
-#     Account                   = [ref]$account
-#     AuditLogs                 = [ref]$auditLogs
-#     Headers                   = $authHeaders
-#     BaseUrl                   = $config.baseUrl
-#     LookupErrorHrDepartment   = $config.lookupErrorHrDepartment
-#     LookupErrorTopdesk        = $config.lookupErrorTopdesk
+#     Account                 = [ref]$account
+#     Headers                 = $authHeaders
+#     BaseUrl                 = $actionContext.Configuration.baseUrl
+#     LookupErrorHrDepartment = $actionContext.Configuration.lookupErrorHrDepartment
+#     LookupErrorTopdesk      = $actionContext.Configuration.lookupErrorTopdesk
 # }
-# Get-TopdeskDepartment @splatParamsDepartment
-```
-
-### Extra fields
-You can add extra fields by adding them to the account mapping. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/).
-
-Example for mobileNumber:
-
-```powershell
-# Account mapping. See for all possible options the Topdesk 'supporting files' API documentation at
-# https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/createPerson
-$account = [PSCustomObject]@{
-    # other mapping fields are here
-    mobileNumber        = $p.Contact.Business.Phone.Mobile
-}
+# Get-TopdeskDepartment @splatParamsDepartment  
 ```
 
 ### Changes
@@ -178,8 +189,9 @@ Please map the correct account mapping in change_permissions_grant.ps1 and chang
 ```Powershell
 # Map the account variables used in the JSON
 $account = @{
-    userPrincipalName = $($p.accounts.MicrosoftActiveDirectory.userPrincipalName)
-    sAMAccountName = $($p.accounts.MicrosoftActiveDirectory.sAMAccountName)
+    userPrincipalName = $personContext.Person.Accounts.MicrosoftActiveDirectory.userPrincipalName
+    sAMAccountName    = $personContext.Person.Accounts.MicrosoftActiveDirectory.sAMAccountName
+    mail              = $personContext.Person.Accounts.MicrosoftActiveDirectory.mail
 }
 ```
 
@@ -247,8 +259,9 @@ Please map the correct account mapping in incident_permissions_grant.ps1 and inc
 ```Powershell
 # Map the account variables used in the JSON
 $account = @{
-    userPrincipalName = $($p.accounts.MicrosoftActiveDirectory.userPrincipalName)
-    sAMAccountName = $($p.accounts.MicrosoftActiveDirectory.sAMAccountName)
+    userPrincipalName = $personContext.Person.Accounts.MicrosoftActiveDirectory.userPrincipalName
+    sAMAccountName    = $personContext.Person.Accounts.MicrosoftActiveDirectory.sAMAccountName
+    mail              = $personContext.Person.Accounts.MicrosoftActiveDirectory.mail
 }
 ```
 
@@ -259,20 +272,21 @@ Please use the incident_example.json as a template to build you're own.
 | If you want to look up for example operator with 'employeeNumber'. Then you should change the SearchAttribute field like in the example below. Make sure you name the SearchAttribute the same as Topdesk uses. You can verifier this in the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/Operators/retrieveOperators) |
 ```powershell
      # Resolve operator id 
-    $splatParamsOperator = @{
-        AuditLogs       = [ref]$auditLogs
-        BaseUrl         = $config.baseUrl
-        Headers         = $authHeaders
-        Class           = 'Operator'
-        Value           = $template.Operator
-        Endpoint        = '/tas/api/operators'
-        SearchAttribute = 'employeeNumber' #SearchAttribute changed from 'email' -> 'employeeNumber'
-    }
+    if (-not [string]::IsNullOrEmpty($template.Operator)) {
+        $splatParamsOperator = @{
+            BaseUrl         = $actionContext.Configuration.baseUrl
+            Headers         = $authHeaders
+            Class           = 'Operator'
+            Value           = $template.Operator
+            Endpoint        = '/tas/api/operators'
+            SearchAttribute = 'email'
+        }
     
-     #Add Impact to request object
-    $requestObject += @{
-        operator = @{
-            id = Get-TopdeskIdentifier @splatParamsOperator
+        #Add Impact to request object
+        $requestObject += @{
+            operator = @{
+                id = Get-TopdeskIdentifier @splatParamsOperator
+            }
         }
     }
 ```
@@ -344,10 +358,6 @@ The incident JSON file has the following structure:
 | EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
 | ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
-
-## Remarks
-### Only require tickets
-When persons are created with the Topdesk AD sync. Then it should be possible to create incidents or changes. Use the account_create_correlate.ps1 script in this case.
 
 ## Getting help
 
