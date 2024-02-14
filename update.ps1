@@ -7,9 +7,6 @@
 # Set to true at start, because only when an error occurs it is set to false
 $outputContext.Success = $true
 
-# AccountReference must have a value
-$outputContext.AccountReference = $actionContext.References.Account
-
 # Set debug logging
 switch ($($actionContext.Configuration.isDebug)) {
     $true { $VerbosePreference = 'Continue' }
@@ -665,25 +662,35 @@ try {
     }
     Get-TopdeskBranch @splatParamsBranch
 
-    # Resolve department id
-    $splatParamsDepartment = @{
-        Account                 = [ref]$account
-        Headers                 = $authHeaders
-        BaseUrl                 = $actionContext.Configuration.baseUrl
-        LookupErrorHrDepartment = $actionContext.Configuration.lookupErrorHrDepartment
-        LookupErrorTopdesk      = $actionContext.Configuration.lookupErrorTopdesk
+    if ($Account.department.PSObject.Properties.Name -Contains 'lookupValue') {
+        # Resolve department id
+        $splatParamsDepartment = @{
+            Account                 = [ref]$account
+            Headers                 = $authHeaders
+            BaseUrl                 = $actionContext.Configuration.baseUrl
+            LookupErrorHrDepartment = $actionContext.Configuration.lookupErrorHrDepartment
+            LookupErrorTopdesk      = $actionContext.Configuration.lookupErrorTopdesk
+        }
+        Get-TopdeskDepartment @splatParamsDepartment  
     }
-    Get-TopdeskDepartment @splatParamsDepartment
+    else {
+        write-verbose "Mapping of [department.lookupValue] is missing to lookup the department in Topdesk. Action skipped"
+    }
 
-    # Resolve budgetholder id
-    $splatParamsBudgetHolder = @{
-        Account                   = [ref]$account
-        Headers                   = $authHeaders
-        BaseUrl                   = $actionContext.Configuration.baseUrl
-        lookupErrorHrBudgetHolder = $actionContext.Configuration.lookupErrorHrBudgetHolder
-        lookupErrorTopdesk        = $actionContext.Configuration.lookupErrorTopdesk
+    if ($Account.budgetHolder.PSObject.Properties.Name -Contains 'lookupValue') {
+        # Resolve budgetholder id
+        $splatParamsBudgetHolder = @{
+            Account                   = [ref]$account
+            Headers                   = $authHeaders
+            BaseUrl                   = $actionContext.Configuration.baseUrl
+            lookupErrorHrBudgetHolder = $actionContext.Configuration.lookupErrorHrBudgetHolder
+            lookupErrorTopdesk        = $actionContext.Configuration.lookupErrorTopdesk
+        }
+        Get-TopdeskBudgetholder @splatParamsBudgetHolder
     }
-    Get-TopdeskBudgetholder @splatParamsBudgetHolder
+    else {
+        write-verbose "Mapping of [budgetHolder.lookupValue] is missing to lookup the budgetHolder in Topdesk. Action skipped"
+    }
 
     # get person
     $splatParamsPerson = @{
@@ -702,8 +709,6 @@ try {
             BaseUrl = $actionContext.Configuration.baseUrl
         }
         $TopdeskManager = Get-TopdeskPersonManager @splatParamsManager
-
-
     }
     elseif (($Account.manager.PSObject.Properties.Name -Contains 'id') -and (-not ([string]::IsNullOrEmpty($personContext.Manager.ExternalId)))) {
 
@@ -717,8 +722,6 @@ try {
         $TopdeskManager = Get-TopdeskPersonByCorrelationAttribute @splatParamsManager
         # add mref id to manager
         $account.manager.id = $TopdeskManager.id
-
-
     }
 
     if ($outputContext.AuditLogs.isError -contains - $true) {
