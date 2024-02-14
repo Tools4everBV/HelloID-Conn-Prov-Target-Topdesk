@@ -1,0 +1,310 @@
+{
+  "Version": "v1",
+  "MappingFields": [
+    {
+      "Name": "firstName",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Field",
+          "Value": "\"Person.Name.NickName\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "showAllBranches",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Fixed",
+          "Value": "\"true\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "isManager",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create"
+          ],
+          "MappingMode": "Fixed",
+          "Value": "\"false\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "budgetHolder.lookupValue",
+      "Description": "",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Field",
+          "Value": "\"Person.PrimaryContract.CostCenter.Name\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "department.lookupValue",
+      "Description": "",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Field",
+          "Value": "\"Person.PrimaryContract.Department.DisplayName\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "email",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getEmail() {\\n    let mail = '';\\n\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.mail !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.mail) {\\n        mail = Person.Accounts.MicrosoftActiveDirectory.mail;\\n    }\\n\\n    return mail;\\n}\\n\\ngetEmail()\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        },
+        {
+          "MapForActions": [
+            "Delete"
+          ],
+          "MappingMode": "Fixed",
+          "Value": "\"\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "employeeNumber",
+      "Description": "[Mandatory]",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Field",
+          "Value": "\"Person.ExternalId\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "branch.lookupValue",
+      "Description": "[Mandatory]",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Field",
+          "Value": "\"Person.PrimaryContract.Location.Name\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "id",
+      "Description": "[Mandatory]",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "None",
+          "Value": "\"\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": true
+        }
+      ]
+    },
+    {
+      "Name": "manager.id",
+      "Description": "[Mandatory]",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "None",
+          "Value": "\"\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "firstInitials",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getFirstInitials() {\\n    let initials = '';\\n\\n    if (typeof Person.Name.Initials !== 'undefined' && Person.Name.Initials) {\\n        initials = Person.Name.Initials;\\n        // Max length 10 char\\n        if ((initials.length) > 10) {\\n            initials = initials.substring(0, 10)\\n        }\\n    }\\n\\n    return initials;\\n}\\n\\ngetFirstInitials();\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "gender",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getGender() {\\n    let gender = 'UNDEFINED';\\n\\n    if (typeof Person.Details.Gender !== 'undefined' && Person.Details.Gender) {      \\n        switch (Person.Details.Gender) {\\n            case \\\"M\\\":\\n                gender = 'MALE';\\n                break;\\n            case \\\"V\\\":\\n                gender = 'FEMALE';\\n                break;\\n            default:\\n                gender = 'UNDEFINED';\\n                break;\\n        }\\n    }\\n\\n    return gender;\\n}\\n\\ngetGender();\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "jobTitle",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Field",
+          "Value": "\"Person.PrimaryContract.Title.Name\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "networkLoginName",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getNetworkLoginName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.userPrincipalName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.userPrincipalName) {\\r\\n        upn = Person.Accounts.MicrosoftActiveDirectory.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetNetworkLoginName()\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        },
+        {
+          "MapForActions": [
+            "Delete"
+          ],
+          "MappingMode": "Fixed",
+          "Value": "\"\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "prefixes",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getPrefixes() {\\n    let middleName = Person.Name.FamilyNamePrefix;\\n    let middleNamePartner = Person.Name.FamilyNamePartnerPrefix;\\n    let convention = Person.Name.Convention;\\n\\n    let nameFormatted = '';\\n    let prefix = '';\\n\\n    switch (convention) {\\n        case \\\"P\\\":\\n        case \\\"PB\\\":\\n            nameFormatted = middleNamePartner;\\n            break;\\n        case \\\"B\\\":\\n        case \\\"BP\\\":\\n        default:\\n            nameFormatted = middleName;\\n            break;\\n    }\\n\\n    if (typeof nameFormatted !== 'undefined' && nameFormatted) {\\n        prefix = nameFormatted.trim();\\n    } else {\\n        prefix = nameFormatted;\\n    }\\n\\n    return prefix;\\n}\\n\\ngetPrefixes();\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "surName",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"// Please enter the mapping logic to generate the Lastname.\\nfunction getLastName() {\\n    let middleName = Person.Name.FamilyNamePrefix;\\n    let lastName = Person.Name.FamilyName;\\n    let middleNamePartner = Person.Name.FamilyNamePartnerPrefix;\\n    let lastNamePartner = Person.Name.FamilyNamePartner;\\n    let convention = Person.Name.Convention;\\n\\n    let nameFormatted = '';\\n    let sureName = ''\\n\\n    switch (convention) {\\n        case \\\"BP\\\":\\n            nameFormatted = lastName + ' - ';\\n            if (typeof middleNamePartner !== 'undefined' && middleNamePartner) { nameFormatted = nameFormatted + middleNamePartner + ' ' }\\n            nameFormatted = nameFormatted + lastNamePartner;\\n            break;\\n        case \\\"P\\\":\\n            nameFormatted = lastNamePartner;\\n            break;\\n        case \\\"PB\\\":\\n            nameFormatted = lastNamePartner + ' - ';\\n            if (typeof middleName !== 'undefined' && middleName) { nameFormatted = nameFormatted + middleName + ' ' }\\n            nameFormatted = nameFormatted + lastName;\\n            break;\\n        case \\\"B\\\":\\n        default:\\n            nameFormatted = lastName;\\n            break;\\n    }\\n\\n    if (typeof nameFormatted !== 'undefined' && nameFormatted) {\\n        sureName = nameFormatted.trim();\\n    } else {\\n        sureName = nameFormatted;\\n    }\\n\\n    return sureName;\\n}\\n\\ngetLastName();\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "tasLoginName",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getTasLoginName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.userPrincipalName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.userPrincipalName) {\\r\\n        upn = Person.Accounts.MicrosoftActiveDirectory.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetTasLoginName()\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        },
+        {
+          "MapForActions": [
+            "Delete"
+          ],
+          "MappingMode": "Fixed",
+          "Value": "\"\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    }
+  ],
+  "UniqueFieldNames": []
+}
