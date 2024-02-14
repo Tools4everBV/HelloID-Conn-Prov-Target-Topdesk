@@ -1,15 +1,11 @@
+
 # HelloID-Conn-Prov-Target-Topdesk
 
-| :warning: Warning |
-| :---------------- |
-| This script is for the new powershell connector. Make sure to use the mapping and correlation keys like mentionded in this readme. For more information, please read our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) |
+> [!IMPORTANT]
+> This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
 
-| :information_source: Information |
-|:-|
-| This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements. |
-<br />
-<p align="center"> 
-  <img src="https://www.tools4ever.nl/connector-logos/topdesk-logo.png">
+<p align="center">
+    <img src="./Logo.png">
 </p>
 
 ## Table of contents
@@ -18,15 +14,14 @@
 	- [Table of contents](#table-of-contents)
 	- [Introduction](#introduction)
 	- [Getting started](#getting-started)
-		- [Prerequisites](#prerequisites)
+		- [Provisioning PowerShell V2 connector](#provisioning-powershell-v2-connector)
+			- [Correlation configuration](#correlation-configuration)
+			- [Field mapping](#field-mapping)
 		- [Connection settings](#connection-settings)
-		- [Permissions](#permissions)
-			- [Filters](#filters)
+		- [Prerequisites](#prerequisites)
+		- [Remarks](#remarks)
 	- [Setup the connector](#setup-the-connector)
-		- [Mapping](#mapping)
-		- [Extra fields](#extra-fields)
-		- [Correlation](#correlation)
-		- [Remove attributes when updating a Topdesk person](#remove-attributes-when-updating-a-topdesk-person)
+		- [Remove attributes when updating a Topdesk person instead of correlating](#remove-attributes-when-updating-a-topdesk-person-instead-of-correlating)
 		- [Disable department or budgetholder](#disable-department-or-budgetholder)
 		- [Changes](#changes)
 		- [Incidents](#incidents)
@@ -37,37 +32,96 @@
 
 _HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a set of REST APIs that allow you to programmatically interact with its data. The [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commands that are used.
 
+| Endpoint                           | Description                                                |
+| ---------------------------------- | ---------------------------------------------------------- |
+| /tas/api/persons                   | `GET / POST / PATCH` actions to read and write the persons |
+| /tas/api/branches                  | `GET / POST` read and create branches                      |
+| /tas/api/departments               | `GET / POST` read and create departments                   |
+| /tas/api/budgetholders             | `GET / POST` read and create budgetholders                 |
+| /tas/api/archiving-reasons         | `GET` archiving-reasons to archive persons                 |
+| /tas/api/applicableChangeTemplates | `GET` read change template from Topdesk                    |
+| /tas/api/operatorChanges           | `POST` create changes in Topdesk                           |
+| /tas/api/incidents                 | `GET / POST` read and create incidents                     |
+| /tas/api/operatorgroups            | `GET` read operator groups used for incidents              |
+| /tas/api/operators                 | `GET` read operators used for incidents                    |
+| /tas/api/countries                 | `GET` read countries used for create branches              |
+
+The following lifecycle actions are available:
+
+| Action                     | Description                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| create.ps1                 | PowerShell _create_ or _correlate_ lifecycle action                          |
+| delete.ps1                 | PowerShell _delete_ lifecycle action (empty configured values and archive)   |
+| disable.ps1                | PowerShell _disable_ lifecycle action                                        |
+| enable.ps1                 | PowerShell _enable_ lifecycle action                                         |
+| update.ps1                 | PowerShell _update_ lifecycle action                                         |
+| grant.change.ps1           | PowerShell _grant_  lifecycle action (create change on entitlement grant)    |
+| revoke.change.ps1          | PowerShell _revoke_ lifecycle action (create change on entitlement revoke)   |
+| permissions.change.ps1     | PowerShell _permissions_ lifecycle action (read configured change.json)      |
+| grant.incident.ps1         | PowerShell _grant_ lifecycle action (create incident on entitlement grant)   |
+| revoke.incident.ps1        | PowerShell _revoke_ lifecycle action (create incident on entitlement revoke) |
+| permissions.incident.ps1   | PowerShell _permissions_ lifecycle action (read configured incident.json)    |
+| resources.branch.ps1       | PowerShell _resources_ lifecycle action (create braches)                     |
+| resources.department.ps1   | PowerShell _resources_ lifecycle action (create departments)                 |
+| resources.budgetholder.ps1 | PowerShell _resources_ lifecycle action (create budgetholders)               |
+| configuration.json         | Default _configuration.json_                                                 |
+| fieldMapping.json          | Default _fieldMapping.json_                                                  |
+
 ## Getting started
-### Prerequisites
 
-| :warning: Warning |
-|:-|
-| <b> When changes or incidents are in scope, a helloID agent on-premise is required. For cloud only changes or incidents use the [HelloID Topdesk notification system](https://github.com/Tools4everBV/HelloID-Conn-Prov-Notification-Topdesk) </b> |
+### Provisioning PowerShell V2 connector
 
-  - Archiving reason that is configured in Topdesk
-  - Credentials with the rights as described in permissions
+#### Correlation configuration
+
+The correlation configuration is used to specify which properties will be used to match an existing account within _HelloID-Conn-Prov-Target-Topdesk to a person in _HelloID_.
+
+To properly setup the correlation:
+
+1. Open the `Correlation` tab.
+
+2. Specify the following configuration:
+
+    | Setting                   | Value            |
+    | ------------------------- | ---------------- |
+    | Enable correlation        | `True`           |
+    | Person correlation field  | ``               |
+    | Account correlation field | `employeeNumber` |
+
+> [!TIP]
+> _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
+
+#### Field mapping
+
+The field mapping can be imported by using the [_fieldMapping.json_](./fieldMapping.json) file.
+
+> [!TIP]
+> You can add extra fields by adding them to the account mapping. For example `mobileNumber`. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
+
 
 ### Connection settings
 
 The following settings are required to connect to the API.
 
-| Setting |Description | Mandatory 
-| - | - | - 
-| BaseUrl | The URL to the API | Yes 
-| UserName| The UserName to connect to the API | Yes 
-| Password | The Password to connect to the API | Yes 
-| Notification file path | Location of the JSON file needed for changes or incidents | No 
-| Archiving reason | Fill in an archiving reason that is configured in Topdesk | Yes 
-| Fallback email | When a manager is set as the requester (in the JSON file) but the manager account reference is empty | No 
-| Toggle debug logging | Creates extra logging for debug purposes | Yes
-| Do not create changes or incidents | If enabled no changes or incidents will be created in Topdesk | Yes
-| When no item is found in Topdesk | Stop processing and generate an error or keep the current value and continue. For example, when no budgetholder or department is found in Topdesk. | Yes
-| When no department in source data | Stop processing and generate an error or clear the department field in Topdesk | Yes
-| When no budgetholder in source data | Stop processing and generate an error or clear the budgetholder field in Topdesk |  Yes
+| Setting                             | Description                                                                                                             | Mandatory |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------- |
+| BaseUrl                             | The URL to the API                                                                                                      | Yes       |
+| UserName                            | The UserName to connect to the API                                                                                      | Yes       |
+| Password                            | The Password to connect to the API                                                                                      | Yes       |
+| Notification file path              | Location of the JSON file needed for changes or incidents                                                               |           |
+| Archiving reason                    | Fill in an archiving reason that is configured in Topdesk                                                               | Yes       |
+| Fallback email                      | When a manager is set as the requester (in the JSON file) but the manager account reference is empty                    |           |
+| Do not create changes or incidents  | If enabled no changes or incidents will be created in Topdesk                                                           |           |
+| When no item is found in Topdesk    | Stop processing and generate an error or keep the current value and continue if budgetHolder or Department is not found | Yes       |
+| When no department in source data   | Stop processing and generate an error or clear the department field in Topdesk                                          | Yes       |
+| When no budgetholder in source data | Stop processing and generate an error or clear the budgetholder field in Topdesk                                        | Yes       |
+| Toggle debug logging                | Creates extra logging for debug purposes                                                                                |
 
-### Permissions
+### Prerequisites
+> [!IMPORTANT]
+> <b> When changes or incidents are in scope, a helloID agent on-premise is required. For cloud only changes or incidents use the [HelloID Topdesk notification system](https://github.com/Tools4everBV/HelloID-Conn-Prov-Notification-Topdesk) </b> 
 
-The following permissions are required to use this connector. This should be configured on a specific Permission Group for the Operator HelloID uses.
+an archiving reason that is configured in Topdesk.
+Credentials with the rights listed below. 
 
 | Permission                    | Read | Write | Create | Archive |
 | ----------------------------- | ---- | ----- | ------ | ------- |
@@ -96,52 +150,16 @@ The following permissions are required to use this connector. This should be con
 | REST API                      | x    |       |        |
 | Use application passwords     |      | x     |        |
 
-#### Filters
-| :information_source: Information |
-|:-|
-It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk. |
+> [!NOTE]
+> It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk.
+
+
+### Remarks
 
 ## Setup the connector
 
-### Mapping
-The mandatory and recommended field mapping is listed below.
-
-| :information_source: Information                                                                                                                              |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Only mapped values to the actions create, update, and delete are being used in the script. The Enable and Disable will only Unarchive and Archive the person. |
-
-| Name                     | Create | Enable | Update | Disable | Delete | Store in account data | Default mapping                                               | Mandatory | Comment                                                             |
-| ------------------------ | ------ | ------ | ------ | ------- | ------ | --------------------- | ------------------------------------------------------------- | --------- | ------------------------------------------------------------------- |
-| branch.lookupValue       | X      |        | X      |         |        |                       | Field: PrimaryContract.Location.Name                          |           | Lookupvalue                                                         |
-| budgetHolder.lookupValue | X      |        | X      |         |        |                       | Field: PrimaryContract.CostCenter.Name                        |           | Lookupvalue                                                         |
-| department.lookupValue   | X      |        | X      |         |        |                       | Field: PrimaryContract.Department.DisplayName                 |           | Lookupvalue                                                         |
-| email                    | X      |        | X      |         | X      |                       | Create/Update: Complex email.js Delete Fixed empty            |           |                                                                     |
-| employeeNumber           | X      |        | X      |         |        |                       | Field: ExternalId                                             | Yes       | Used for correlation                                                |
-| firstInitials            | X      |        | X      |         |        |                       | Complex: firstInitials.js                                     |           |                                                                     |
-| firstName                | X      |        | X      |         |        |                       | Field: Name.NickName                                          |           |                                                                     |
-| gender                   | X      |        | X      |         |        |                       | Complex: gender.js                                            |           |                                                                     |
-| id                       | X      |        | X      |         |        | Yes                   | None                                                          | Yes       | Writes back the account Refference to account data                  |
-| isManager                | X      |        |        |         |        |                       | Fixed: false                                                  |           | Oprtionaly boolean: $p.Custom.isManager when provided by the source |
-| jobTitle                 | X      |        | X      |         |        |                       | Field: PrimaryContract.Title.Name                             |           |                                                                     |
-| manager.id               | X      |        | X      |         |        |                       | None                                                          | Yes       | Used in PowerShell script for ManagerAccountRefference and fallback |
-| networkLoginName         | X      |        | X      |         | X      |                       | Create/Update: Complex networkLoginName.js Delete Fixed empty |           |                                                                     |
-| prefixes                 | X      |        | X      |         |        |                       | Complex: prefixes.js                                          |           |                                                                     |
-| showAllBranches          | X      |        | X      |         |        |                       | Fixed: true                                                   |           |                                                                     |
-| surName                  | X      |        | X      |         |        |                       | Complex: surName.js                                           |           |                                                                     |
-| tasLoginName             | X      |        | X      |         | X      |                       | Create/Update: Complex tasLoginName.js Delete Fixed empty     |           |                                                                     |
-
-### Extra fields
-You can add extra fields by adding them to the field mapping. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/).
-
-| Name         | Create | Enable | Update | Disable | Delete | Store in account data | Default mapping                      | Mandatory | Comment |
-| ------------ | ------ | ------ | ------ | ------- | ------ | --------------------- | ------------------------------------ | --------- | ------- |
-| mobileNumber | X      |        | X      |         |        |                       | Field: Contact.Business.Phone.Mobile |           |         |
-
-### Correlation
-It is mandatory to enable the correlation in the correlation tab. The default value for "person correlation field" is " ExternalId". The default value for "Account Correlation field" is "employeeNumber".
-
-### Remove attributes when updating a Topdesk person
-There is an example of only set certain attributes when correlate-update a person, but skipping them when updating the person. For example, if you don't want to update the tasLoginName.
+### Remove attributes when updating a Topdesk person instead of correlating
+In the `update.ps1` script. There is an example of only set certain attributes when correlating a person, but skipping them when updating them.
 
 ```powershell
     if (-not($actionContext.AccountCorrelated -eq $true)) {
@@ -154,7 +172,7 @@ There is an example of only set certain attributes when correlate-update a perso
 
 ### Disable department or budgetholder
 
-The fields department and budgetholder are both non-required lookup fields in Topdesk. This means you first need to look up the field and then use the returned GUID (ID) to set the Topdesk person. 
+The fields _department_ and _budgetholder_ are both non-required lookup fields in Topdesk. This means you first need to look up the field and then use the returned GUID (ID) to set the Topdesk operator. 
 
 For example:
 
@@ -165,21 +183,10 @@ For example:
 "externalLinks": []
 ```
 
-If you don't need the mapping of the department field or the budgetholder field in Topdesk, it's necessary to comment out the function in the script.
+If you don't need the mapping of the department field or the budgetholder field in Topdesk, you can remove `department.lookupValue` or `budgetHolder.lookupValue` from the field mapping. The create and update script will skip the lookup action. 
 
-Example for the department field:
-
-```powershell
-# Resolve department id
-# $splatParamsDepartment = @{
-#     Account                 = [ref]$account
-#     Headers                 = $authHeaders
-#     BaseUrl                 = $actionContext.Configuration.baseUrl
-#     LookupErrorHrDepartment = $actionContext.Configuration.lookupErrorHrDepartment
-#     LookupErrorTopdesk      = $actionContext.Configuration.lookupErrorTopdesk
-# }
-# Get-TopdeskDepartment @splatParamsDepartment  
-```
+> [!IMPORTANT]
+> The branch lookup value `branch.lookupValue` is still mandatory.
 
 ### Changes
 It is possible to create changes in Topdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a JSON file. The local HelloID agent needs to read this file.
@@ -234,22 +241,22 @@ The change JSON file has the following structure:
 }
 ```
 
-| JSON field | Description
-| - | -
-| Id: | Unique identifier in the JSON for HelloID. This cannot change!
-| DisplayName: | The value is shown when selecting the entitlement in HelloID.
-| Grant / Revoke: | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the change_example.JSON to see how this works.
-| Requester: | It is possible to edit who is the requester of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
-| Request: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use \n for "enter".
-| Action: | Commonly filled in the Topdesk change template. If so use null.
-| BriefDescription: | Fill in the desired title of the change.
-| Template: | Fill in the Topdesk template code of the change. This is mandatory.
-| Category: | Commonly filled in the Topdesk change template. If so use null.
-| SubCategory: | Commonly filled in the Topdesk change template. If so use null.
-| ChangeType: | Fill in the change type Simple or Extensive.
-| Impact: | Commonly filled in the Topdesk change template. If so use null.
-| Benefit: | Commonly filled in the Topdesk change template. If so use null.
-| Priority: | Commonly filled in the Topdesk change template. If so use null.
+| JSON field        | Description                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Id:               | Unique identifier in the JSON for HelloID. This cannot change!                                                                                                                                                                                                                                                                                                             |
+| DisplayName:      | The value is shown when selecting the entitlement in HelloID.                                                                                                                                                                                                                                                                                                              |
+| Grant / Revoke:   | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the change_example.JSON to see how this works.                                                                                                                                           |
+| Requester:        | It is possible to edit who is the requester of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again. |
+| Request:          | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use \n for "enter".                                                                                                                                                                                                                              |
+| Action:           | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| BriefDescription: | Fill in the desired title of the change.                                                                                                                                                                                                                                                                                                                                   |
+| Template:         | Fill in the Topdesk template code of the change. This is mandatory.                                                                                                                                                                                                                                                                                                        |
+| Category:         | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| SubCategory:      | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| ChangeType:       | Fill in the change type Simple or Extensive.                                                                                                                                                                                                                                                                                                                               |
+| Impact:           | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| Benefit:          | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| Priority:         | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
 
 ### Incidents
 It is possible to create incidents in Topdesk when granting or revoking an entitlement in HelloID. The content of the incidents is managed in a JSON file. The local HelloID agent needs to read this file.
@@ -267,9 +274,9 @@ $account = @{
 
 Please use the incident_example.json as a template to build you're own.
 
-| :information_source: Information |
-|:-|
-| If you want to look up for example operator with 'employeeNumber'. Then you should change the SearchAttribute field like in the example below. Make sure you name the SearchAttribute the same as Topdesk uses. You can verifier this in the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/Operators/retrieveOperators) |
+> [!TIP]
+> If you want to look up for example operator with 'employeeNumber'. Then you should change the SearchAttribute field like in the example below. Make sure you name the SearchAttribute the same as Topdesk uses. You can verifier this in the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/Operators/retrieveOperators)
+
 ```powershell
      # Resolve operator id 
     if (-not [string]::IsNullOrEmpty($template.Operator)) {
@@ -337,34 +344,37 @@ The incident JSON file has the following structure:
 	}
 }
 ```
-| JSON field | Description
-| - | -
-| Id: | Unique identifier in the JSON for HelloID.
-| DisplayName: | The value is shown when selecting the entitlement in HelloID.
-| Grant / Revoke: | It is possible to create an incident when granting and revoking an entitlement. It is also possible to create an incident when only granting or revoking an entitlement. Please look at the incident_example.json to see how this works.
-| Caller: | It is possible to edit who is the caller of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again.
-| RequestShort: | Fill in the desired title of the incident. Size range: maximum 80 characters. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.
-| RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
-| Action: | Fill in the action field if needed. If not used fill in null. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)
-| Branch: | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.
-| OperatorGroup: | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Operator: | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Category: | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| SubCategory: | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| CallType: | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Impact: | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Priority: | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Duration: | Fill in the duration name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| EntryType: | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| Urgency: | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.
-| ProcessingStatus: | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.
+| JSON field          | Description                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Id:                 | Unique identifier in the JSON for HelloID.                                                                                                                                                                                                                                                                                                                              |
+| DisplayName:        | The value is shown when selecting the entitlement in HelloID.                                                                                                                                                                                                                                                                                                           |
+| Grant / Revoke:     | It is possible to create an incident when granting and revoking an entitlement. It is also possible to create an incident when only granting or revoking an entitlement. Please look at the incident_example.json to see how this works.                                                                                                                                |
+| Caller:             | It is possible to edit who is the caller of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again. |
+| RequestShort:       | Fill in the desired title of the incident. Size range: maximum 80 characters. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee.                                                                                                                                                                                           |
+| RequestDescription: | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)                                                                     |
+| Action:             | Fill in the action field if needed. If not used fill in null. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use <'br'> to enter. For more HTML tags: [Topdesk incident API documentation](https://developers.topdesk.com/documentation/index-apidoc.html#api-Incident-CreateIncident)                                 |
+| Branch:             | Fill in the branch name that is used in Topdesk. This is a mandatory lookup field.                                                                                                                                                                                                                                                                                      |
+| OperatorGroup:      | Fill in the operator group name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                              |
+| Operator:           | Fill in the operator email that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                   |
+| Category:           | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                    |
+| SubCategory:        | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                 |
+| CallType:           | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                 |
+| Impact:             | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                      |
+| Priority:           | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                    |
+| Duration:           | Fill in the duration name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                    |
+| EntryType:          | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                  |
+| Urgency:            | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                     |
+| ProcessingStatus:   | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.                                                                           |
 
 ## Getting help
 
-> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-Configure-a-custom-PowerShell-target-system) pages_
+> [!TIP]
+> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
 
-> _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk)_
+> [!TIP]
+>  _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk)._
 
 ## HelloID docs
 
-> The official HelloID documentation can be found at: https://docs.helloid.com/
+The official HelloID documentation can be found at: https://docs.helloid.com/
+
