@@ -9,8 +9,16 @@
 
 try {
     $permissionList = Get-Content -Raw -Encoding utf8 -Path $actionContext.Configuration.notificationJsonPath | ConvertFrom-Json
-    $permissions = $permissionList | Select-Object -Property displayName, identification
-    $outputContext.Permissions = $permissions
+    foreach ($permission in $permissionList) {
+        $outputContext.Permissions.Add(
+            @{
+                displayName    = $permission.DisplayName
+                identification = @{
+                    Id = $permission.Identification.id
+                }
+            }
+        )
+    }
 }
 catch {
     $ex = $PSItem
