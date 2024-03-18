@@ -169,39 +169,20 @@ try {
     foreach ($HelloIdDepartment in $rRefSourceData) {
         if (-not($TopdeskDepartments.Name -eq $HelloIdDepartment.displayName)) {
             if (-not ($actionContext.DryRun -eq $true)) {
-                try {
-                    Write-Verbose "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
-                    # Create department
-                    $splatParamsCreateDepartment = @{
-                        Headers = $authHeaders
-                        BaseUrl = $actionContext.Configuration.baseUrl
-                        Name    = $HelloIdDepartment.displayName
-                    }
-                    $newDepartment = New-TopdeskDepartment @splatParamsCreateDepartment
-                    
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = "Created Topdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
-                            IsError = $false
-                        })
+                Write-Verbose "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
+                # Create department
+                $splatParamsCreateDepartment = @{
+                    Headers = $authHeaders
+                    BaseUrl = $actionContext.Configuration.baseUrl
+                    Name    = $HelloIdDepartment.displayName
                 }
-                catch {
-                    $ex = $PSItem
+                $newDepartment = New-TopdeskDepartment @splatParamsCreateDepartment
                     
-                    if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
-                        $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.ErrorDetails.Message)"
-                    }
-                    else {
-                        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
-                    }
-                    Write-Verbose "$errorMessage"
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = $errorMessage
-                            IsError = $true
-                        })
-                }
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "CreateResource"    
+                        Message = "Created Topdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
+                        IsError = $false
+                    })
             }
             else {
                 Write-Warning "Preview: Would create Topdesk department $($HelloIdDepartment.displayName)"
@@ -218,10 +199,10 @@ catch {
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-HTTPError -ErrorObject $ex
-        $errorMessage = "Could not create departments. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     else {
-        $errorMessage = "Could not create departments. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
             Action  = "CreateResource"    

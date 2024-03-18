@@ -229,39 +229,20 @@ try {
         }
         if (-not($TopdeskBranches.name -eq $branch.name)) {
             if (-not ($actionContext.DryRun -eq $true)) {
-                try {
-                    Write-Verbose "Creating TOPdesk branch with the name [ $($branch.name) ] in TOPdesk..."
-                    # Create branch
-                    $splatParamsCreateBranch = @{
-                        Headers = $authHeaders
-                        BaseUrl = $actionContext.Configuration.baseUrl
-                        Branch  = $branch
-                    }
-                    $newBranch = New-TOPdeskBranch @splatParamsCreateBranch
+                Write-Verbose "Creating TOPdesk branch with the name [ $($branch.name) ] in TOPdesk..."
+                # Create branch
+                $splatParamsCreateBranch = @{
+                    Headers = $authHeaders
+                    BaseUrl = $actionContext.Configuration.baseUrl
+                    Branch  = $branch
+                }
+                $newBranch = New-TOPdeskBranch @splatParamsCreateBranch
 
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = "Created Topdesk branch with the name [$($newBranch.name)] and ID [$($newBranch.id)]"
-                            IsError = $false
-                        })
-                }
-                catch {
-                    $ex = $PSItem
-                    
-                    if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
-                        $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                        $errorMessage = "Could not create branch [$($branch.name)]. Error: $($ex.ErrorDetails.Message)"
-                    }
-                    else {
-                        $errorMessage = "Could not create branch [$($branch.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
-                    }
-                    Write-Verbose "$errorMessage"
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = $errorMessage
-                            IsError = $true
-                        })
-                }
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "CreateResource"    
+                        Message = "Created Topdesk branch with the name [$($newBranch.name)] and ID [$($newBranch.id)]"
+                        IsError = $false
+                    })
             }
             else {
                 Write-Warning "Preview: Would create Topdesk branch $($branch.name)"
@@ -278,10 +259,10 @@ catch {
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-HTTPError -ErrorObject $ex
-        $errorMessage = "Could not create branch. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create branch [$($branch.name)]. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     else {
-        $errorMessage = "Could not create branch. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create branch [$($branch.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
 
     # Only log when there are no lookup values, as these generate their own audit message

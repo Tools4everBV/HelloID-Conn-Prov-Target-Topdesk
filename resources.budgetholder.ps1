@@ -169,39 +169,20 @@ try {
     foreach ($HelloIdBudgetHolder in $rRefSourceData) {
         if (-not($TopdeskBudgetHolders.Name -eq $HelloIdBudgetHolder.name)) {
             if (-not ($actionContext.DryRun -eq $true)) {
-                try {
-                    Write-Verbose "Creating Topdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in Topdesk."
-                    # Create budget holder
-                    $splatParamsCreateBudgetHolder = @{
-                        Headers = $authHeaders
-                        BaseUrl = $actionContext.Configuration.baseUrl
-                        Name    = $HelloIdBudgetHolder.name
-                    }
-                    $newBudgetHolder = New-TopdeskBudgetHolder @splatParamsCreateBudgetHolder
+                Write-Verbose "Creating Topdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in Topdesk."
+                # Create budget holder
+                $splatParamsCreateBudgetHolder = @{
+                    Headers = $authHeaders
+                    BaseUrl = $actionContext.Configuration.baseUrl
+                    Name    = $HelloIdBudgetHolder.name
+                }
+                $newBudgetHolder = New-TopdeskBudgetHolder @splatParamsCreateBudgetHolder
 
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = "Created Topdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
-                            IsError = $false
-                        })
-                }
-                catch {
-                    $ex = $PSItem
-                    
-                    if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
-                        $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error: $($ex.ErrorDetails.Message)"
-                    }
-                    else {
-                        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
-                    }
-                    Write-Verbose "$errorMessage"
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = $errorMessage
-                            IsError = $true
-                        })
-                }
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "CreateResource"    
+                        Message = "Created Topdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
+                        IsError = $false
+                    })
             }
             else {
                 Write-Warning "Preview: Would create Topdesk budgetholder $($HelloIdBudgetHolder.name)"
@@ -218,10 +199,10 @@ catch {
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-HTTPError -ErrorObject $ex
-        $errorMessage = "Could not create budgetholders. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     else {
-        $errorMessage = "Could not create budgetholders. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
             Action  = "CreateResource"    
