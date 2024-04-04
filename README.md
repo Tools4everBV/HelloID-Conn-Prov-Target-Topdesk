@@ -191,7 +191,7 @@ If you don't need the mapping of the department field or the budgetholder field 
 ### Changes
 It is possible to create changes in Topdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a JSON file. The local HelloID agent needs to read this file.
 
-Please map the correct account mapping in change_permissions_grant.ps1 and change_permissions_revoke.ps1. If used in the JSON file.
+Please map the correct account mapping in [_grantPermission.ps1_](./permissions/change/grantPermission.ps1) and [_revokePermission.ps1_](./permissions/change/revokePermission.ps1). If used in the JSON file.
 
 ```Powershell
 # Map the account variables used in the JSON
@@ -202,7 +202,7 @@ $account = @{
 }
 ```
 
-Please use the change_example.json as a template to build you're own.
+Please use the [_example.change.json_](./permissions/change/example.change.json) as a template to build you're own.
 
 The change JSON file has the following structure:
 
@@ -261,7 +261,7 @@ The change JSON file has the following structure:
 ### Incidents
 It is possible to create incidents in Topdesk when granting or revoking an entitlement in HelloID. The content of the incidents is managed in a JSON file. The local HelloID agent needs to read this file.
 
-Please map the correct account mapping in incident_permissions_grant.ps1 and incident_permissions_revoke.ps1. If used in the JSON file.
+Please map the correct account mapping in [_grantPermission.ps1_](./permissions/incident/grantPermission.ps1) and [_revokePermission.ps1_](./permissions/incident/revokePermission.ps1). If used in the JSON file.
 
 ```Powershell
 # Map the account variables used in the JSON
@@ -272,7 +272,7 @@ $account = @{
 }
 ```
 
-Please use the incident_example.json as a template to build you're own.
+Please use the [_example.incident.json_](./permissions/incident/example.incident.json) as a template to build you're own.
 
 > [!TIP]
 > If you want to look up for example operator with 'employeeNumber'. Then you should change the SearchAttribute field like in the example below. Make sure you name the SearchAttribute the same as Topdesk uses. You can verifier this in the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/Operators/retrieveOperators)
