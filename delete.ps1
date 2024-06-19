@@ -1,11 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Delete
-#
-# Version: 3.0.0 | new-powershell-connector
+# PowerShell V2
 #####################################################
-
-# Set to true at start, because only when an error occurs it is set to false
-$outputContext.Success = $true
 
 # Set debug logging
 switch ($($actionContext.Configuration.isDebug)) {
@@ -17,28 +13,33 @@ switch ($($actionContext.Configuration.isDebug)) {
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
 #region functions
-function Resolve-HTTPError {
+function ConvertTo-TopDeskFlatObject {
     param (
-        [object]$ErrorObject
+        [Parameter(Mandatory = $true)]
+        [pscustomobject] $Object,
+        [string] $Prefix = ""
     )
-    process {
-        $httpErrorObj = [PSCustomObject]@{
-            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId
-            MyCommand             = $ErrorObject.InvocationInfo.MyCommand
-            RequestUri            = $ErrorObject.TargetObject.RequestUri
-            ScriptStackTrace      = $ErrorObject.ScriptStackTrace
-            ErrorMessage          = ''
+ 
+    $result = [ordered]@{}
+ 
+    foreach ($property in $Object.PSObject.Properties) {
+        $name = if ($Prefix) { "$Prefix`_$($property.Name)" } else { $property.Name }
+ 
+        if ($null -ne $property.Value) {
+            if ($property.Value -is [pscustomobject]) {
+                $flattenedSubObject = ConvertTo-TopDeskFlatObject -Object $property.Value -Prefix $name
+                foreach ($subProperty in $flattenedSubObject.PSObject.Properties) {
+                    $result[$subProperty.Name] = [string]$subProperty.Value
+                }
+            }
+            else {
+                $result[$name] = [string]$property.Value
+            }
         }
-        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') {
-            $httpErrorObj.ErrorMessage = $ErrorObject.ErrorDetails.Message
-        }
-        elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
-            $httpErrorObj.ErrorMessage = [System.IO.StreamReader]::new($ErrorObject.Exception.Response.GetResponseStream()).ReadToEnd()
-        }
-        Write-Output $httpErrorObj
     }
+ 
+    [PSCustomObject]$result
 }
-
 function Set-AuthorizationHeaders {
     param (
         [ValidateNotNullOrEmpty()]
@@ -113,16 +114,23 @@ function Get-TopdeskPersonById {
         [String]
         $PersonReference
     )
-
-    # Lookup value is filled in, lookup person in Topdesk
-    $splatParams = @{
-        Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
-        Method  = 'GET'
-        Headers = $Headers
+    try {
+        # Lookup value is filled in, lookup person in Topdesk
+        $splatParams = @{
+            Uri     = "$BaseUrl/tas/api/persons/id/$PersonReference"
+            Method  = 'GET'
+            Headers = $Headers
+        }
+        $responseGet = Invoke-TopdeskRestMethod @splatParams
     }
-    $responseGet = Invoke-TopdeskRestMethod @splatParams
-
-    # Output result if something was found. Result is empty when nothing is found (i think) - TODO: Test this!!!
+    catch {
+        if ($_.Exception.Response.StatusCode -eq 404) {
+            $responseGet = $null
+        }
+        else {
+            throw
+        }
+    }
     Write-Output $responseGet
 }
 
@@ -159,18 +167,7 @@ function Get-TopdeskPerson {
         PersonReference = $AccountReference
     }
     $person = Get-TopdeskPersonById @splatParams
-
-    if ([string]::IsNullOrEmpty($person)) {
-        Write-Warning "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
-        $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "DeleteAccount"
-                Message = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the entitlement."
-                IsError = $true
-            })
-    }
-    else {
-        Write-Output $person
-    }
+    Write-Output $person
 }
 
 function Set-TopdeskPersonArchiveStatus {
@@ -300,24 +297,70 @@ try {
     }
     $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
+    if ($outputContext.AuditLogs.isError -contains - $true) {
+        Throw "Error(s) occured while looking up required values"
+    }
     #endregion lookup
 
-    #region write
-    $action = 'Delete'
-    if (-Not($actionContext.DryRun -eq $true)) {
-        if ([string]::IsNullOrEmpty($TopdeskPerson)) {
-            $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DeleteAccount"
-                    Message = "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
-                    IsError = $false
-                })
+    #region Calulate action
+    if (-Not([string]::IsNullOrEmpty($TopdeskPerson))) {
+        # Only compare object if a account object exists
+        if (-Not([string]::IsNullOrEmpty($account))) {
+            # Flatten the JSON object
+            $accountDifferenceObject = ConvertTo-TopDeskFlatObject -Object $account
+            $accountReferenceObject = ConvertTo-TopDeskFlatObject -Object $TopdeskPerson
+            # Define properties to compare for update
+            $accountPropertiesToCompare = $accountDifferenceObject.PsObject.Properties.Name
+
+            $accountSplatCompareProperties = @{
+                ReferenceObject  = $accountReferenceObject.PSObject.Properties | Where-Object { $_.Name -in $accountPropertiesToCompare }
+                DifferenceObject = $accountDifferenceObject.PSObject.Properties | Where-Object { $_.Name -in $accountPropertiesToCompare }
+            }
+            if ($null -ne $accountSplatCompareProperties.ReferenceObject -and $null -ne $accountSplatCompareProperties.DifferenceObject) {
+                $accountPropertiesChanged = Compare-Object @accountSplatCompareProperties -PassThru
+                $accountOldProperties = $accountPropertiesChanged | Where-Object { $_.SideIndicator -eq "<=" }
+                $accountNewProperties = $accountPropertiesChanged | Where-Object { $_.SideIndicator -eq "=>" }
+            }
         }
+        if ($accountNewProperties) {
+            $action = 'UpdateAndDisable'
+            Write-Information "Account property(s) required to update: $($accountNewProperties.Name -join ', ')"
+        }
+        elseif ($TopdeskPerson.status -eq 'person') {
+            $action = 'Disable'
+        }   
         else {
+            $action = 'NoChanges'
+        }
+    }
+    else {
+        $action = 'NotFound' 
+    }        
+
+    Write-Verbose "Compared current account to mapped properties. Result: $action"
+    #endregion Calulate action
+
+    #region write
+    switch ($action) {
+        'UpdateAndDisable' {
             Write-Verbose "Archiving Topdesk person for: [$($personContext.Person.DisplayName)]"
+
+            $accountChangedPropertiesObject = [PSCustomObject]@{
+                OldValues = @{}
+                NewValues = @{}
+            }
+    
+            foreach ($accountOldProperty in ($accountOldProperties | Where-Object { $_.Name -in $accountNewProperties.Name })) {
+                $accountChangedPropertiesObject.OldValues.$($accountOldProperty.Name) = $accountOldProperty.Value
+            }
+    
+            foreach ($accountNewProperty in $accountNewProperties) {
+                $accountChangedPropertiesObject.NewValues.$($accountNewProperty.Name) = $accountNewProperty.Value
+            }
 
             # Unarchive person if required
             if ($TopdeskPerson.status -eq 'personArchived') {
-
+        
                 # Unarchive person
                 $splatParamsPersonUnarchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
@@ -325,11 +368,16 @@ try {
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
-
+        
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                if (-Not($actionContext.DryRun -eq $true)) {
+                    Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                }
+                else {
+                    Write-Warning "DryRun would unarchive person for update"
+                }
             }
-
+        
             # Update TOPdesk person
             $splatParamsPersonUpdate = @{
                 TopdeskPerson = $TopdeskPerson
@@ -337,9 +385,13 @@ try {
                 Headers       = $authHeaders
                 BaseUrl       = $actionContext.Configuration.baseUrl
             }
-            $TopdeskPersonUpdated = Set-TopdeskPerson @splatParamsPersonUpdate
-    
-            # As the update process could be started for an inactive HelloID person, the user return should be archived state    
+            if (-Not($actionContext.DryRun -eq $true)) {
+                $TopdeskPersonUpdated = Set-TopdeskPerson @splatParamsPersonUpdate
+            }
+            else {
+                Write-Warning "DryRun would update Person. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+            }
+           
             # Archive person
             $splatParamsPersonArchive = @{
                 TopdeskPerson   = [ref]$TopdeskPerson
@@ -348,38 +400,87 @@ try {
                 Archive         = $true
                 ArchivingReason = $actionContext.Configuration.personArchivingReason
             }
-            Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
-
+            if (-Not($actionContext.DryRun -eq $true)) {
+                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+            }
+            else {
+                Write-Warning "DryRun would archive person after update"
+            }
+                
+            $outputContext.AccountReference = $TopdeskPerson.id
             $outputContext.Data = $TopdeskPersonUpdated
             $outputContext.PreviousData = $TopdeskPerson
 
+            if (-Not($actionContext.DryRun -eq $true)) {
+                Write-Information "Account with id [$($TopdeskPerson.id)] successfully updated and archived. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Message = "Account with id [$($TopdeskPerson.id)] successfully updated and archived. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                        IsError = $false
+                    })
+            }
+
+            break
+        }
+
+        'Disable' {        
+            $splatParamsPersonArchive = @{
+                TopdeskPerson   = [ref]$TopdeskPerson
+                Headers         = $authHeaders
+                BaseUrl         = $actionContext.Configuration.baseUrl
+                Archive         = $true
+                ArchivingReason = $actionContext.Configuration.personArchivingReason
+            }
+            if (-Not($actionContext.DryRun -eq $true)) {
+                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+
+                Write-Information "Account with id [$($TopdeskPerson.id)] successfully archived"
+
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Message = "Account with id [$($TopdeskPerson.id)] successfully archived"
+                        IsError = $false
+                    })
+            }
+            else {
+                Write-Warning "DryRun would archive person"
+            }
+                
+            $outputContext.Data = $account
+            $outputContext.PreviousData = $TopdeskPerson
+
+            break
+        }
+        
+        'NoChanges' {        
+            $outputContext.AccountReference = $TopdeskPerson.id
+            $outputContext.Data = $account
+            $outputContext.PreviousData = $TopdeskPerson
+                
+            Write-Information "Account with id [$($actionContext.References.Account)] already archived"
+
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DeleteAccount"
-                    Message = "Account with id [$($TopdeskPerson.id)] successfully archived"
+                    Message = "Account with id [$($actionContext.References.Account)] already archived"
                     IsError = $false
                 })
+
+            break
+        }
+        
+        'NotFound' {        
+            $outputContext.Data = $account
+            $outputContext.PreviousData = $account
+
+            Write-Information "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
+                
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
+                    IsError = $false
+                })
+
+            break
         }
     }
-    else {
-        if ([string]::IsNullOrEmpty($TopdeskPerson)) {
-            # Add an auditMessage showing what will happen during enforcement
-            Write-Warning "DryRun: Would archive account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
-            $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DeleteAccount"
-                    Message = "DryRun: Would archive account [$($TopdeskPerson.dynamicName) ($($TopdeskPerson.Id))]"
-                    IsError = $false
-                })
-        }
-        else {
-            # Add an auditMessage showing what will happen during enforcement
-            Write-Warning "DryRun: Would skiped archive account for id [$($actionContext.References.Account)]"
-            $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DeleteAccount"
-                    Message = "DryRun: Would skiped archive account for id [$($actionContext.References.Account)]"
-                    IsError = $false
-                })
-        }
-    }    
+    #endregion Write   
 }
 catch {
     $ex = $PSItem
@@ -400,16 +501,17 @@ catch {
     # Only log when there are no lookup values, as these generate their own audit message
     if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "DeleteAccount"
                 Message = $errorMessage
                 IsError = $true
             })
     }
 }
 finally {
-    # Check if auditLogs contains errors, if errors are found, set success to false
+    # Check if auditLogs contains errors, if no errors are found, set success to true
     if ($outputContext.AuditLogs.IsError -contains $true) {
         $outputContext.Success = $false
     }
+    else {
+        $outputContext.Success = $true
+    }
 }
-#endregion Write

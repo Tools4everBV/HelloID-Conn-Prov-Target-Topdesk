@@ -1,7 +1,6 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Grant
-#
-# Version: 3.0.0 | new-powershell-connector
+# PowerShell V2
 #####################################################
 
 # The permissionReference object contains the Identification object provided in the retrieve permissions call

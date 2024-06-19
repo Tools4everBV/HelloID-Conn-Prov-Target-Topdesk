@@ -1,7 +1,6 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Permissions-Incidents
-#
-# Version: 3.0.0 | new-powershell-connector
+# PowerShell V2
 #####################################################
 
 # Enable TLS1.2

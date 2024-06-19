@@ -49,8 +49,8 @@
       ]
     },
     {
-      "Name": "budgetHolder.lookupValue",
-      "Description": "",
+      "Name": "budgetHolder.name",
+      "Description": "Removing this field will skip looking up and updating the budgetHolder field",
       "Type": "Text",
       "MappingActions": [
         {
@@ -66,8 +66,8 @@
       ]
     },
     {
-      "Name": "department.lookupValue",
-      "Description": "",
+      "Name": "department.name",
+      "Description": "Removing this field will skip looking up and updating the department field",
       "Type": "Text",
       "MappingActions": [
         {
@@ -125,7 +125,7 @@
       ]
     },
     {
-      "Name": "branch.lookupValue",
+      "Name": "branch.name",
       "Description": "[Mandatory]",
       "Type": "Text",
       "MappingActions": [
@@ -160,7 +160,7 @@
     },
     {
       "Name": "manager.id",
-      "Description": "[Mandatory]",
+      "Description": "Removing this field will skip looking up and updating the manager field",
       "Type": "Text",
       "MappingActions": [
         {

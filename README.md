@@ -22,7 +22,7 @@
 		- [Remarks](#remarks)
 	- [Setup the connector](#setup-the-connector)
 		- [Remove attributes when updating a Topdesk person instead of correlating](#remove-attributes-when-updating-a-topdesk-person-instead-of-correlating)
-		- [Disable department or budgetholder](#disable-department-or-budgetholder)
+		- [Disable department, budgetholder or manager](#disable-department-budgetholder-or-manager)
 		- [Changes](#changes)
 		- [Incidents](#incidents)
 	- [Getting help](#getting-help)
@@ -93,6 +93,9 @@ To properly setup the correlation:
 #### Field mapping
 
 The field mapping can be imported by using the [_fieldMapping.json_](./fieldMapping.json) file.
+
+> [!IMPORTANT]
+> If your current fieldmapping contains _[branch/department/budgetHolder].lookupValue_ you should replace this with _[].name_.
 
 > [!TIP]
 > You can add extra fields by adding them to the account mapping. For example `mobileNumber`. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
@@ -170,9 +173,9 @@ In the `update.ps1` script. There is an example of only set certain attributes w
     }
 ```
 
-### Disable department or budgetholder
+### Disable department, budgetholder or manager
 
-The fields _department_ and _budgetholder_ are both non-required lookup fields in Topdesk. This means you first need to look up the field and then use the returned GUID (ID) to set the Topdesk operator. 
+The fields _department_, _budgetholder_ and _manager_ are non-required lookup fields in Topdesk. This means you first need to look up the field and then use the returned GUID (ID) to set the Topdesk person. 
 
 For example:
 
@@ -183,10 +186,10 @@ For example:
 "externalLinks": []
 ```
 
-If you don't need the mapping of the department field or the budgetholder field in Topdesk, you can remove `department.lookupValue` or `budgetHolder.lookupValue` from the field mapping. The create and update script will skip the lookup action. 
+If you don't need the mapping of the fields in Topdesk, you can remove `department.name`, `budgetHolder.name` or `manager.id` from the field mapping. The create and update script will skip the lookup action. 
 
 > [!IMPORTANT]
-> The branch lookup value `branch.lookupValue` is still mandatory.
+> The branch lookup value `branch.name` is still mandatory.
 
 ### Changes
 It is possible to create changes in Topdesk when granting or revoking an entitlement in HelloID. The content of the changes is managed in a JSON file. The local HelloID agent needs to read this file.
