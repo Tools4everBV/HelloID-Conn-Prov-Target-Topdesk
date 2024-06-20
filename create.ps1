@@ -544,9 +544,12 @@ function New-TopdeskPerson {
     Write-Verbose "Creating person"
 
     # Clear manager attribute when id = null
-    if ([string]::IsNullOrEmpty($Account.manager.id)) {
-        $Account.manager.PSObject.Properties.Remove('id')
-        $Account.PSObject.Properties.Remove('manager')
+
+    if ($account.manager.PSObject.Properties.Name -Contains 'id') {
+        if ([string]::IsNullOrEmpty($Account.manager.id)) {
+            $Account.manager.PSObject.Properties.Remove('id')
+            $Account.PSObject.Properties.Remove('manager')
+        }
     }
 
     $splatParams = @{
