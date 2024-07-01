@@ -716,6 +716,15 @@ try {
     }
     #endregion lookup
     
+    #region remove value for update
+    if (-not($actionContext.AccountCorrelated -eq $true)) {
+        # Example to only set certain attributes when create-correlate. If you don't want to update certain values, you need to remove them here.    
+        # $account.PSObject.Properties.Remove('email')
+        # $account.PSObject.Properties.Remove('networkLoginName')
+        # $account.PSObject.Properties.Remove('tasLoginName')
+    }
+    #endregion remove value for update
+
     #region Calulate action
     if (-Not([string]::IsNullOrEmpty($TopdeskPerson))) {
         # Flatten the JSON object
@@ -751,13 +760,6 @@ try {
     #endregion Calulate action
 
     #region write
-    if (-not($actionContext.AccountCorrelated -eq $true)) {
-        # Example to only set certain attributes when create-correlate. If you don't want to update certain values, you need to remove them here.    
-        # $account.PSObject.Properties.Remove('email')
-        # $account.PSObject.Properties.Remove('networkLoginName')
-        # $account.PSObject.Properties.Remove('tasLoginName')
-    }
-
     # Prepare manager record, if manager has to be set
     if (-Not([string]::IsNullOrEmpty($account.manager.id)) -and ($TopdeskManager.isManager -eq $false)) {
         if ($TopdeskManager.status -eq 'personArchived') {
