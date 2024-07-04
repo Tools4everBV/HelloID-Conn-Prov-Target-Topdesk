@@ -9,9 +9,6 @@ $pRef = $actionContext.References.Permission
 # To resolve variables in the JSON (compatible with powershell v1 target)
 $p = $personContext.Person
 
-# Set to true at start, because only when an error occurs it is set to false
-$outputContext.Success = $true
-
 # Set debug logging
 switch ($($actionContext.Configuration.isDebug)) {
     $true { $VerbosePreference = 'Continue' }
@@ -612,7 +609,7 @@ try {
     $template = Get-HelloIdTopdeskTemplateById @splatParamsHelloIdTopdeskTemplate
 
     # If template is not empty (both by design or due to an error), process to lookup the information in the template
-    if ([string]::IsNullOrEmpty($template)) {
+    if ($outputContext.AuditLogs.IsError -contains $true) {
         Throw "HelloID template not found"
     }
 
@@ -1012,7 +1009,6 @@ catch {
 
         'HelloID Template not found' {
             # Only log when there are no lookup values, as these generate their own audit message, set success based on error state
-            $success = -Not($auditLogs.isError -contains $true)
         }
 
         'Error(s) occured while looking up required values' {
@@ -1021,11 +1017,9 @@ catch {
 
         'Notifications are disabled' {
             # Don't do anything when notifications are disabled, mark them as a success
-            $success = $true
-            $message = 'Not creating Topdesk incident, because the notifications are disabled in the connector configuration.'
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Action  = "GrantPermission"
-                    Message = $message
+                    Message = 'Not creating Topdesk incident, because the notifications are disabled in the connector configuration.'
                     IsError = $false
                 })
 
@@ -1048,8 +1042,11 @@ catch {
     # End
 }
 finally {
-    # Check if auditLogs contains errors, if errors are found, set succes to false
+    # Check if auditLogs contains errors, if no errors are found, set success to true
     if ($outputContext.AuditLogs.IsError -contains $true) {
         $outputContext.Success = $false
+    }
+    else {
+        $outputContext.Success = $true
     }
 }

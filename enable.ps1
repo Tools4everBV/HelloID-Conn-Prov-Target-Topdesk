@@ -273,10 +273,10 @@ try {
             if (-Not($actionContext.DryRun -eq $true)) {
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
 
-                Write-Information "Account with id [$($TopdeskPerson.id)] successfully enabled"
+                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully enabled"
 
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Account with id [$($TopdeskPerson.id)] successfully enabled"
+                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully enabled"
                         IsError = $false
                     })
             }
@@ -288,10 +288,10 @@ try {
         }
     
         'NoChanges' {
-            Write-Information "Account with id [$($TopdeskPerson.id)] already enabled"
+            Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] already enabled"
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Account with id [$($TopdeskPerson.id)] already enabled"
+                    Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] already enabled"
                     IsError = $false
                 }) 
             break

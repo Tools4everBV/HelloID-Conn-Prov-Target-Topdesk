@@ -896,10 +896,10 @@ try {
             $outputContext.PreviousData = $TopdeskPerson
 
             if (-Not($actionContext.DryRun -eq $true)) {
-                Write-Information "Account with id [$($TopdeskPerson.id)] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
 
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Account with id [$($TopdeskPerson.id)] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
                         IsError = $false
                     })
             }
@@ -912,11 +912,11 @@ try {
             $outputContext.Data = $actionContext.Data
             $outputContext.PreviousData = $actionContext.Data
 
-            Write-Information "Account with id [$($TopdeskPerson.id)] successfully checked. No changes required"
+            Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))]successfully checked. No changes required"
 
             # AuditLog is skipped because $outputContext.Data & $outputContext.PreviousData are the same. If auditlog is required please change this variables above
             # $outputContext.AuditLogs.Add([PSCustomObject]@{
-            #         Message = "Account with id [$($TopdeskPerson.id)] successfully checked. No changes required"
+            #         Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully checked. No changes required"
             #         IsError = $false
             #     })
 

@@ -81,11 +81,11 @@ To properly setup the correlation:
 
 2. Specify the following configuration:
 
-    | Setting                   | Value            |
-    | ------------------------- | ---------------- |
-    | Enable correlation        | `True`           |
-    | Person correlation field  | ``               |
-    | Account correlation field | `employeeNumber` |
+    | Setting                   | Value                             |
+    | ------------------------- | --------------------------------- |
+    | Enable correlation        | `True`                            |
+    | Person correlation field  | `PersonContext.Person.ExternalId` |
+    | Account correlation field | `employeeNumber`                  |
 
 > [!TIP]
 > _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.

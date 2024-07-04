@@ -412,10 +412,10 @@ try {
             $outputContext.PreviousData = $TopdeskPerson
 
             if (-Not($actionContext.DryRun -eq $true)) {
-                Write-Information "Account with id [$($TopdeskPerson.id)] successfully updated and archived. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully updated and archived. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
 
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Account with id [$($TopdeskPerson.id)] successfully updated and archived. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully updated and archived. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
                         IsError = $false
                     })
             }
@@ -434,10 +434,10 @@ try {
             if (-Not($actionContext.DryRun -eq $true)) {
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
 
-                Write-Information "Account with id [$($TopdeskPerson.id)] successfully archived"
+                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully archived"
 
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Account with id [$($TopdeskPerson.id)] successfully archived"
+                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully archived"
                         IsError = $false
                     })
             }
@@ -456,10 +456,10 @@ try {
             $outputContext.Data = $account
             $outputContext.PreviousData = $TopdeskPerson
                 
-            Write-Information "Account with id [$($actionContext.References.Account)] already archived"
+            Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] already archived"
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Account with id [$($actionContext.References.Account)] already archived"
+                    Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] already archived"
                     IsError = $false
                 })
 

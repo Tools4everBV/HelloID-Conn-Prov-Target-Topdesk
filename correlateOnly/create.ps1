@@ -179,11 +179,11 @@ try {
     switch ($action) {       
         'Correlate' {
             #region correlate
-            Write-Information "Account with id [$($TopdeskPerson.id)] successfully correlated on field [$($correlationField)] with value [$($correlationValue)]"
+            Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully correlated on field [$($correlationField)] with value [$($correlationValue)]"
 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Action  = "CorrelateAccount"
-                    Message = "Account with id [$($TopdeskPerson.id)] successfully correlated on field [$($correlationField)] with value [$($correlationValue)]"
+                    Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully correlated on field [$($correlationField)] with value [$($correlationValue)]"
                     IsError = $false
                 })
 
