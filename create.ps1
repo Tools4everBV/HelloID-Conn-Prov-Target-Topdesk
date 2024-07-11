@@ -600,7 +600,7 @@ try {
         $TopdeskPerson = Get-TopdeskPersonByCorrelationAttribute @splatParamsPerson
     }
     else {
-        Throw "Configuration of correlation is madatory."
+        Throw "Configuration of correlation is mandatory."
     }
     #endregion correlation
 
@@ -827,10 +827,7 @@ catch {
 }
 finally {
     # Check if auditLogs contains errors, if no errors are found, set success to true
-    if ($outputContext.AuditLogs.IsError -contains $true) {
-        $outputContext.Success = $false
-    }
-    else {
+    if ($outputContext.AuditLogs.IsError -notContains $true) {
         $outputContext.Success = $true
     }
 

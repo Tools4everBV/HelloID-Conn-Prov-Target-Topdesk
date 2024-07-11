@@ -74,7 +74,7 @@
     "type": "radio",
     "defaultValue": "true",
     "templateOptions": {
-      "label": "When an item can't be found in  Topdesk",
+      "label": "When an item can't be found in Topdesk",
       "options": [
         {
           "value": "true",
