@@ -1,7 +1,6 @@
 #####################################################
 # HelloID-Conn-Prov-Target-TOPdesk-Permissions-Incidents
-#
-# Version: 3.0.0 | new-powershell-connector
+# PowerShell V2
 #####################################################
 
 # Enable TLS1.2
@@ -9,8 +8,16 @@
 
 try {
     $permissionList = Get-Content -Raw -Encoding utf8 -Path $actionContext.Configuration.notificationJsonPath | ConvertFrom-Json
-    $permissions = $permissionList | Select-Object -Property displayName, identification
-    $outputContext.Permissions = $permissions
+    foreach ($permission in $permissionList) {
+        $outputContext.Permissions.Add(
+            @{
+                displayName    = $permission.DisplayName
+                identification = @{
+                    Id = $permission.Identification.id
+                }
+            }
+        )
+    }
 }
 catch {
     $ex = $PSItem

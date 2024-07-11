@@ -1,7 +1,6 @@
 #####################################################
 # HelloID-Conn-Prov-Target-Topdesk-Resource-Departments
-#
-# Version: 3.0.0 | new-powershell-connector
+# PowerShell V2
 #####################################################
 
 # Set to true at start, because only when an error occurs it is set to false
@@ -17,28 +16,6 @@ switch ($($actionContext.Configuration.isDebug)) {
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
 #region functions
-function Resolve-HTTPError {
-    param (
-        [object]$ErrorObject
-    )
-    process {
-        $httpErrorObj = [PSCustomObject]@{
-            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId
-            MyCommand             = $ErrorObject.InvocationInfo.MyCommand
-            RequestUri            = $ErrorObject.TargetObject.RequestUri
-            ScriptStackTrace      = $ErrorObject.ScriptStackTrace
-            ErrorMessage          = ''
-        }
-        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') {
-            $httpErrorObj.ErrorMessage = $ErrorObject.ErrorDetails.Message
-        }
-        elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
-            $httpErrorObj.ErrorMessage = [System.IO.StreamReader]::new($ErrorObject.Exception.Response.GetResponseStream()).ReadToEnd()
-        }
-        Write-Output $httpErrorObj
-    }
-}
-
 function Set-AuthorizationHeaders {
     param (
         [ValidateNotNullOrEmpty()]
@@ -56,7 +33,7 @@ function Set-AuthorizationHeaders {
     # Set authentication headers
     $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
     $authHeaders.Add("Authorization", "BASIC $base64")
-    $authHeaders.Add("Accept", 'application/json')
+    $authHeaders.Add('Accept', 'application/json; charset=utf-8')
 
     Write-Output $authHeaders
 }
@@ -169,39 +146,20 @@ try {
     foreach ($HelloIdDepartment in $rRefSourceData) {
         if (-not($TopdeskDepartments.Name -eq $HelloIdDepartment.displayName)) {
             if (-not ($actionContext.DryRun -eq $true)) {
-                try {
-                    Write-Verbose "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
-                    # Create department
-                    $splatParamsCreateDepartment = @{
-                        Headers = $authHeaders
-                        BaseUrl = $actionContext.Configuration.baseUrl
-                        Name    = $HelloIdDepartment.displayName
-                    }
-                    $newDepartment = New-TopdeskDepartment @splatParamsCreateDepartment
-                    
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = "Created Topdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
-                            IsError = $false
-                        })
+                Write-Verbose "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
+                # Create department
+                $splatParamsCreateDepartment = @{
+                    Headers = $authHeaders
+                    BaseUrl = $actionContext.Configuration.baseUrl
+                    Name    = $HelloIdDepartment.displayName
                 }
-                catch {
-                    $ex = $PSItem
+                $newDepartment = New-TopdeskDepartment @splatParamsCreateDepartment
                     
-                    if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
-                        $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.ErrorDetails.Message)"
-                    }
-                    else {
-                        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
-                    }
-                    Write-Verbose "$errorMessage"
-                    $outputContext.AuditLogs.Add([PSCustomObject]@{
-                            Action  = "CreateResource"    
-                            Message = $errorMessage
-                            IsError = $true
-                        })
-                }
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = "CreateResource"    
+                        Message = "Created Topdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
+                        IsError = $false
+                    })
             }
             else {
                 Write-Warning "Preview: Would create Topdesk department $($HelloIdDepartment.displayName)"
@@ -217,11 +175,10 @@ catch {
     
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorObj = Resolve-HTTPError -ErrorObject $ex
-        $errorMessage = "Could not create departments. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     else {
-        $errorMessage = "Could not create departments. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
             Action  = "CreateResource"    

@@ -1,7 +1,6 @@
 #####################################################
-# HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Revoke
-#
-# Version: 3.0.0 | new-powershell-connector
+# HelloID-Conn-Prov-Target-TOPdesk-Entitlement-Grant
+# PowerShell V2
 #####################################################
 
 # The permissionReference object contains the Identification object provided in the retrieve permissions call
@@ -9,9 +8,6 @@ $pRef = $actionContext.References.Permission
 
 # To resolve variables in the JSON (compatible with powershell v1 target)
 $p = $personContext.Person
-
-# Set to true at start, because only when an error occurs it is set to false
-$outputContext.Success = $true
 
 # Set debug logging
 switch ($($actionContext.Configuration.isDebug)) {
@@ -47,7 +43,7 @@ function Set-AuthorizationHeaders {
     # Set authentication headers
     $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
     $authHeaders.Add("Authorization", "BASIC $base64")
-    $authHeaders.Add("Accept", 'application/json')
+    $authHeaders.Add('Accept', 'application/json; charset=utf-8')
 
     Write-Output $authHeaders
 }
@@ -114,7 +110,7 @@ function Get-HelloIdTopdeskTemplateById {
         $ex = $PSItem
         $errorMessage = "Could not retrieve Topdesk permissions file. Error: $($ex.Exception.Message)"
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -126,7 +122,7 @@ function Get-HelloIdTopdeskTemplateById {
     if ([string]::IsNullOrEmpty($entitlementSet)) {
         $errorMessage = "Could not find entitlement set with id '$($pRef.id)'. This is likely an issue with the json file."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -135,9 +131,9 @@ function Get-HelloIdTopdeskTemplateById {
 
     # Check if entitlement with id and specific type exists
     if (-not($entitlementSet.PSObject.Properties.Name -Contains $type)) {
-        $errorMessage = "Could not find revoke entitlement for entitlementSet '$($pRef.id)'. This is likely an issue with the json file."
+        $errorMessage = "Could not find grant entitlement for entitlementSet '$($pRef.id)'. This is likely an issue with the json file."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -148,7 +144,7 @@ function Get-HelloIdTopdeskTemplateById {
     if ([string]::IsNullOrEmpty($entitlementSet.$type)) {
         $message = "Action '$type' for entitlement '$($pRef.id)' is not configured."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $message
                 IsError = $false
             })
@@ -185,7 +181,7 @@ function Get-TopdeskTemplateById {
     if ([string]::IsNullOrEmpty($topdeskTemplate)) {
         $errorMessage = "Topdesk template [$Id] not found. Please verify this template exists and it's available for the API in Topdesk."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -276,10 +272,10 @@ function Confirm-Description {
         $AllowedLength
     )
     if ($Description.Length -gt $AllowedLength) {
-        $errorMessage = "Could not revoke TOPdesk entitlement [$id]: The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
+        $errorMessage = "Could not grant TOPdesk entitlement [$id]: The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
         
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -312,9 +308,9 @@ function Get-TopdeskRequesterByType {
     # Validate employee entry
     if ($type -eq 'employee') {
         if ([string]::IsNullOrEmpty($accountReference)) {
-            $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The account reference is empty."
+            $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The account reference is empty."
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "RevokePermission"
+                    Action  = "GrantPermission"
                     Message = $errorMessage
                     IsError = $true
                 })
@@ -332,9 +328,9 @@ function Get-TopdeskRequesterByType {
             write-verbose "Type: Manager - managerAccountReference leeg"
             if ([string]::IsNullOrEmpty($managerFallback)) {
                 write-verbose "Type: Manager - managerAccountReference - leeg - fallback leeg"
-                $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The manager account reference is empty and no fallback email is configured."
+                $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The manager account reference is empty and no fallback email is configured."
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Action  = "RevokePermission"
+                        Action  = "GrantPermission"
                         Message = $errorMessage
                         IsError = $true
                     })
@@ -367,7 +363,7 @@ function Get-TopdeskRequesterByType {
         # no results found
         $errorMessage = "Could not set requester: Topdesk person with email [$Type] not found."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -383,7 +379,7 @@ function Get-TopdeskRequesterByType {
         # Multiple records found, correlation
         $errorMessage = "Multiple [$($responseGet.Count)] persons found with Email address [$Email]. Login names: [$($responseGet.tasLoginName)]"
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -400,7 +396,7 @@ function Get-TopdeskChangeType {
     if ([string]::IsNullOrEmpty($changeType)) {
         $errorMessage = "The change type is not set. It should be set to 'simple' or 'extensive'"
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -411,7 +407,7 @@ function Get-TopdeskChangeType {
     if (-not ($changeType -eq 'simple' -or $changeType -eq 'extensive')) {
         $errorMessage = "The configured change type [$changeType] is invalid. It should be set to 'simple' or 'extensive'"
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -466,7 +462,7 @@ function Get-TopdeskPerson {
         # Throw an error when account reference is empty
         $errorMessage = "The account reference is empty. This is a scripting issue."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -484,7 +480,7 @@ function Get-TopdeskPerson {
     if ([string]::IsNullOrEmpty($person)) {
         $errorMessage = "Person with reference [$AccountReference)] is not found. If the person is deleted, you might need to regrant the account entitlement."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
+                Action  = "GrantPermission"
                 Message = $errorMessage
                 IsError = $true
             })
@@ -522,7 +518,7 @@ function Set-TopdeskPersonArchiveStatus {
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
             $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "RevokePermission"
+                    Action  = "GrantPermission"
                     Message = $errorMessage
                     IsError = $true
                 })
@@ -542,7 +538,7 @@ function Set-TopdeskPersonArchiveStatus {
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
             $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "RevokePermission"
+                    Action  = "GrantPermission"
                     Message = $errorMessage
                     IsError = $true
                 })
@@ -595,7 +591,9 @@ function New-TopdeskChange {
         Headers = $Headers
         Body    = $TopdeskChange | ConvertTo-Json
     }
+    
     Write-Verbose ($TopdeskChange | ConvertTo-Json)
+
     $change = Invoke-TopdeskRestMethod @splatParams
 
     Write-Verbose "Created change with number [$($change.number)]"
@@ -605,8 +603,6 @@ function New-TopdeskChange {
 #endregion
 
 try {
-    
-    #region lookuptemplate
     if ($actionContext.Configuration.disableNotifications -eq 'true') {
         Throw "Notifications are disabled"
     }
@@ -615,12 +611,12 @@ try {
     $splatParamsHelloIdTopdeskTemplate = @{
         JsonPath = $actionContext.Configuration.notificationJsonPath
         Id       = $pRef.id
-        Type     = "Revoke"
+        Type     = "Grant"
     }
     $template = Get-HelloIdTopdeskTemplateById @splatParamsHelloIdTopdeskTemplate
     
     # If template is not empty (both by design or due to an error), process to lookup the information in the template
-    if ([string]::IsNullOrEmpty($template)) {
+    if ($outputContext.AuditLogs.IsError -contains $true) {
         Throw 'HelloID template not found'
     }
 
@@ -758,12 +754,12 @@ try {
 
     # Add an auditMessage showing what will happen during enforcement
     if ($actionContext.DryRun -eq $true) {
-        Write-Warning "Revoke Topdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)], will be executed during enforcement"
+        Write-Warning "Grant Topdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)], will be executed during enforcement"
         Write-Verbose ($requestObject | ConvertTo-Json)
     }
 
     if (-Not($actionContext.DryRun -eq $true)) {
-        Write-Verbose "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
+        Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
 
         if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
             Write-Verbose "Check if manager is archived"
@@ -847,10 +843,10 @@ try {
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
         }
-        
+
         $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "RevokePermission"
-                Message = "Revoke TOPdesk entitlement: [$($pRef.id)] with number [$($TopdeskChange.number)] was successful."
+                Action  = "GrantPermission"
+                Message = "Grant TOPdesk entitlement: [$($pRef.id)] with number [$($TopdeskChange.number)] was successful."
                 IsError = $false
             })
     }
@@ -862,7 +858,6 @@ catch {
 
         'HelloID Template not found' {
             # Only log when there are no lookup values, as these generate their own audit message, set success based on error state
-            $success = -Not($auditLogs.isError -contains $true)
         }
 
         'Error(s) occured while looking up required values' {
@@ -871,11 +866,9 @@ catch {
 
         'Notifications are disabled' {
             # Don't do anything when notifications are disabled, mark them as a success
-            $success = $true
-            $message = 'Not creating Topdesk change, because the notifications are disabled in the connector configuration.'
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "RevokePermission"
-                    Message = $message
+                    Action  = "GrantPermission"
+                    Message = 'Not creating Topdesk change, because the notifications are disabled in the connector configuration.'
                     IsError = $false
                 })
 
@@ -883,13 +876,13 @@ catch {
             Write-Verbose ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-                $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
+                $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"
             }
             else {
-                $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+                $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
             } 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "RevokePermission"
+                    Action  = "GrantPermission"
                     Message = $errorMessage
                     IsError = $true
                 })
@@ -898,8 +891,8 @@ catch {
     # End
 }
 finally {
-    # Check if auditLogs contains errors, if errors are found, set succes to false
-    if ($outputContext.AuditLogs.IsError -contains $true) {
-        $outputContext.Success = $false
+    # Check if auditLogs contains errors, if no errors are found, set success to true
+    if ($outputContext.AuditLogs.IsError -notContains $true) {
+        $outputContext.Success = $true
     }
 }

@@ -31,16 +31,6 @@
     }
   },
   {
-    "key": "personArchivingReason",
-    "type": "input",
-    "defaultValue": "Persoon uit organisatie",
-    "templateOptions": {
-      "label": "Archiving reason",
-      "description": "Archiving reason is required when archiving a person",
-      "required": true
-    }
-  },
-  {
     "key": "notificationJsonPath",
     "type": "input",
     "defaultValue": "",
@@ -67,60 +57,6 @@
     "templateOptions": {
       "label": "Do not create Topdesk changes or incidents",
       "required": false
-    }
-  },
-  {
-    "key": "lookupErrorTopdesk",
-    "type": "radio",
-    "defaultValue": "true",
-    "templateOptions": {
-      "label": "When an item can't be found in Topdesk",
-      "options": [
-        {
-          "value": "true",
-          "label": "Stop processing and generate an error"
-        },
-        {
-          "value": "false",
-          "label": "Keep the current value and continue"
-        }
-      ]
-    }
-  },
-  {
-    "key": "lookupErrorHrDepartment",
-    "type": "radio",
-    "defaultValue": "true",
-    "templateOptions": {
-      "label": "When a department is empty because it's missing in the source data",
-      "options": [
-        {
-          "value": "true",
-          "label": "Stop processing and generate an error"
-        },
-        {
-          "value": "false",
-          "label": "Clear the department field in Topdesk"
-        }
-      ]
-    }
-  },
-  {
-    "key": "lookupErrorHrBudgetHolder",
-    "type": "radio",
-    "defaultValue": "true",
-    "templateOptions": {
-      "label": "When a budgetholder is empty because it's missing in the source data",
-      "options": [
-        {
-          "value": "true",
-          "label": "Stop processing and generate an error"
-        },
-        {
-          "value": "false",
-          "label": "Clear the budgetholder field in Topdesk"
-        }
-      ]
     }
   },
   {
