@@ -31,6 +31,16 @@
     }
   },
   {
+    "key": "personArchivingReason",
+    "type": "input",
+    "defaultValue": "Persoon uit organisatie",
+    "templateOptions": {
+      "label": "Archiving reason",
+      "description": "Archiving reason is required when archiving a person",
+      "required": true
+    }
+  },
+  {
     "key": "notificationJsonPath",
     "type": "input",
     "defaultValue": "",
