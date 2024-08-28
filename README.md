@@ -98,8 +98,7 @@ The field mapping can be imported by using the [_fieldMapping.json_](./fieldMapp
 > If your current fieldmapping contains _[branch/department/budgetHolder].lookupValue_ you should replace this with _[].name_.
 
 > [!TIP]
-> You can add extra fields by adding them to the account mapping. For example `mobileNumber`. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
-
+> You can add extra fields to the account mapping. For example `mobileNumber` or a boolean field `showAllBranches`. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
 
 ### Connection settings
 

@@ -18,22 +18,6 @@
       ]
     },
     {
-      "Name": "showAllBranches",
-      "Type": "Text",
-      "MappingActions": [
-        {
-          "MapForActions": [
-            "Create",
-            "Update"
-          ],
-          "MappingMode": "Fixed",
-          "Value": "\"true\"",
-          "UsedInNotifications": false,
-          "StoreInAccountData": false
-        }
-      ]
-    },
-    {
       "Name": "isManager",
       "Type": "Text",
       "MappingActions": [
