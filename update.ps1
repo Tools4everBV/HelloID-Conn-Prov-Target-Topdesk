@@ -909,8 +909,8 @@ try {
         
         'NoChanges' {        
             $outputContext.AccountReference = $TopdeskPerson.id
-            $outputContext.Data = $actionContext.Data
-            $outputContext.PreviousData = $actionContext.Data
+            $outputContext.Data = $TopdeskPerson
+            $outputContext.PreviousData = $TopdeskPerson
 
             Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))]successfully checked. No changes required"
 
