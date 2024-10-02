@@ -19,6 +19,7 @@
     },
     {
       "Name": "isManager",
+      "Description": "By default, isManager will be handled in the PowerShell scripts. The value will be set to true if that is not the case for the person manager. When a boolean is provided by the source system you can add this here and enable it for update.",
       "Type": "Text",
       "MappingActions": [
         {
