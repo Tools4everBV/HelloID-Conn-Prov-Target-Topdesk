@@ -148,7 +148,7 @@ function Get-HelloIdTopdeskTemplateById {
                 Message = $message
                 IsError = $false
             })
-        return
+        Throw "Action is not configured"
     }
 
     Write-Output $entitlementSet.$type
@@ -862,6 +862,10 @@ catch {
 
         'Error(s) occured while looking up required values' {
             # Only log when there are no lookup values, as these generate their own audit message
+        }
+
+        'Action is not configured' {
+            # If no action is configured the action is skipped
         }
 
         'Notifications are disabled' {
