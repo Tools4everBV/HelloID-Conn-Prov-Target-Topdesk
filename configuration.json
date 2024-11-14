@@ -61,6 +61,16 @@
     }
   },
   {
+    "key": "messageNoAssetsFound",
+    "type": "input",
+    "defaultValue": "No assets linked to this person",
+    "templateOptions": {
+      "label": "Message is shown when a person has no linked assets",
+      "description": "Enabling querying assets can be done in the JSON file",
+      "required": true
+    }
+  },
+  {
     "key": "disableNotifications",
     "type": "checkbox",
     "defaultValue": false,

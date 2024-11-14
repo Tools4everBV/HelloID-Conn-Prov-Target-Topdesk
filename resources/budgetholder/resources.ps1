@@ -72,7 +72,7 @@ function Invoke-TopdeskRestMethod {
             Invoke-RestMethod @splatParams -Verbose:$false
         }
         catch {
-            Throw $_
+            throw $_
         }
     }
 }

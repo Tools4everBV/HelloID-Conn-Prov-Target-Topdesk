@@ -72,7 +72,7 @@ function Invoke-TopdeskRestMethod {
             Invoke-RestMethod @splatParams -Verbose:$false
         }
         catch {
-            Throw $_
+            throw $_
         }
     }
 }
@@ -190,7 +190,7 @@ try {
     $country = Get-TopdeskCountry @splatParamsCountry
 
     if ($outputContext.AuditLogs.isError -contains $true) {
-        Throw "Error(s) occured while looking up required values"
+        throw "Error(s) occured while looking up required values"
     }
 
     # Process

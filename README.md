@@ -201,6 +201,7 @@ $account = @{
     userPrincipalName = $personContext.Person.Accounts.MicrosoftActiveDirectory.userPrincipalName
     sAMAccountName    = $personContext.Person.Accounts.MicrosoftActiveDirectory.sAMAccountName
     mail              = $personContext.Person.Accounts.MicrosoftActiveDirectory.mail
+	TopdeskAssets     = "'EnableGetAssets' not added in JSON or set to false" # Default message shown when using $account.TopdeskAssets
 }
 ```
 
@@ -225,11 +226,14 @@ The change JSON file has the following structure:
 		"ChangeType": "Simple",
 		"Impact": "Persoon",
 		"Benefit": null,
-		"Priority": "P1"
+		"Priority": "P1",
+		"EnableGetAssets": false,
+		"SkipNoAssetsFound": false,
+		"AssetsFilter": ""
 	},
 	"Revoke": {
 		"Requester": "Employee",
-		"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+		"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)\n\nAssets:\n$($account.TopdeskAssets)",
 		"Action": null,
 		"BriefDescription": "Inname Laptop ($($p.displayName))",
 		"Template": "Ws 015",
@@ -238,27 +242,33 @@ The change JSON file has the following structure:
 		"ChangeType": "Simple",
 		"Impact": "Persoon",
 		"Benefit": null,
-		"Priority": "P1"
+		"Priority": "P1",
+		"EnableGetAssets": true,
+		"SkipNoAssetsFound": true,
+		"AssetsFilter": "Hardware,Software"
 	}
 }
 ```
 
-| JSON field        | Description                                                                                                                                                                                                                                                                                                                                                                |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Id:               | Unique identifier in the JSON for HelloID. This cannot change!                                                                                                                                                                                                                                                                                                             |
-| DisplayName:      | The value is shown when selecting the entitlement in HelloID.                                                                                                                                                                                                                                                                                                              |
-| Grant / Revoke:   | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the change_example.JSON to see how this works.                                                                                                                                           |
-| Requester:        | It is possible to edit who is the requester of the change. You can fill in the E-mail of the Topdesk person or fill in 'Employee' or 'Manager'. Please note if the requester is an 'Employee' or 'Manager' the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again. |
-| Request:          | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use \n for "enter".                                                                                                                                                                                                                              |
-| Action:           | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
-| BriefDescription: | Fill in the desired title of the change.                                                                                                                                                                                                                                                                                                                                   |
-| Template:         | Fill in the Topdesk template code of the change. This is mandatory.                                                                                                                                                                                                                                                                                                        |
-| Category:         | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
-| SubCategory:      | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
-| ChangeType:       | Fill in the change type Simple or Extensive.                                                                                                                                                                                                                                                                                                                               |
-| Impact:           | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
-| Benefit:          | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
-| Priority:         | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| JSON field         | Description                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Id:                | Unique identifier in the JSON for HelloID. This cannot change!                                                                                                                                                                                                                                                                                                             |
+| DisplayName:       | The value is shown when selecting the entitlement in HelloID.                                                                                                                                                                                                                                                                                                              |
+| Grant / Revoke:    | It is possible to create a change when granting and revoking an entitlement. It is also possible to create a change when only granting or revoking an entitlement. Please look at the change_example.JSON to see how this works.                                                                                                                                           |
+| Requester:         | It is possible to edit who is the requester of the change. You can fill in the E-mail of the Topdesk person or fill in `Employee` or `Manager`. Please note if the requester is an `Employee` or `Manager` the script will check if the person is archived. If the person is archived the script will activate the person, create the change and archive the person again. |
+| Request:           | Fill in the request text. It is possible to use variables like $($p.Name.FamilyName) for the family name of the employee. Use \n for `enter`.                                                                                                                                                                                                                              |
+| Action:            | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| BriefDescription:  | Fill in the desired title of the change.                                                                                                                                                                                                                                                                                                                                   |
+| Template:          | Fill in the Topdesk template code of the change. This is mandatory.                                                                                                                                                                                                                                                                                                        |
+| Category:          | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| SubCategory:       | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| ChangeType:        | Fill in the change type `Simple` or `Extensive`.                                                                                                                                                                                                                                                                                                                           |
+| Impact:            | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| Benefit:           | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| Priority:          | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
+| EnableGetAssets:   | Set this value `true` if you want to query the assets that are linked to the person.                                                                                                                                                                                                                                                                                       |
+| SkipNoAssetsFound: | Set this value `true` if you want to skip making a change when no asset is found.                                                                                                                                                                                                                                                                                          |
+| AssetsFilter:      | For the type of assets that need to be queried. Use `,` between the types when querying more than one. Beware that the values are case-sensitive. Leave empty if you want to query all assets.                                                                                                                                                                             |
 
 ### Incidents
 It is possible to create incidents in Topdesk when granting or revoking an entitlement in HelloID. The content of the incidents is managed in a JSON file. The local HelloID agent needs to read this file.
@@ -271,6 +281,7 @@ $account = @{
     userPrincipalName = $personContext.Person.Accounts.MicrosoftActiveDirectory.userPrincipalName
     sAMAccountName    = $personContext.Person.Accounts.MicrosoftActiveDirectory.sAMAccountName
     mail              = $personContext.Person.Accounts.MicrosoftActiveDirectory.mail
+	TopdeskAssets     = "'EnableGetAssets' not added in JSON or set to false" # Default message shown when using $account.TopdeskAssets
 }
 ```
 
@@ -324,12 +335,15 @@ The incident JSON file has the following structure:
 		"Duration": null,
 		"EntryType": null,
 		"Urgency": null,
-		"ProcessingStatus": null
+		"ProcessingStatus": null,
+		"EnableGetAssets": false,
+		"SkipNoAssetsFound": false,
+		"AssetsFilter": ""
 	},
 	"Revoke": {
 		"Caller": "tester@test.com",
 		"RequestShort": "Inname Laptop ($($p.displayName))",
-		"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)",
+		"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)<br><br>Assets:<br>$($account.TopdeskAssets)",
 		"Action": "<b>Medewerker ($($p.displayName)) is in het bezit van een laptop</b>.",
 		"Branch": "Baarn",
 		"OperatorGroup": "Applicatiebeheerders",
@@ -342,7 +356,10 @@ The incident JSON file has the following structure:
 		"Duration": null,
 		"EntryType": null,
 		"Urgency": null,
-		"ProcessingStatus": null
+		"ProcessingStatus": null,
+		"EnableGetAssets": true,
+		"SkipNoAssetsFound": true,
+		"AssetsFilter": "Hardware,Software"
 	}
 }
 ```
@@ -367,6 +384,9 @@ The incident JSON file has the following structure:
 | EntryType:          | Fill in the entry type name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                  |
 | Urgency:            | Fill in the urgency name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                     |
 | ProcessingStatus:   | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.                                                                           |
+| EnableGetAssets:    | Set this value `true` if you want to query the assets that are linked to the person.                                                                                                                                                                                                                                                                                    |
+| SkipNoAssetsFound:  | Set this value `true` if you want to skip making a incident when no asset is found.                                                                                                                                                                                                                                                                                     |
+| AssetsFilter:       | For the type of assets that need to be queried. Use `,` between the types when querying more than one. Beware that the values are case-sensitive. Leave empty if you want to query all assets.                                                                                                                                                                          |
 
 ## Getting help
 
