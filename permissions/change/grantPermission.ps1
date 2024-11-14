@@ -145,7 +145,7 @@ function Get-HelloIdTopdeskTemplateById {
                 Message = $message
                 IsError = $false
             })
-        Throw "Action is not configured"
+        return
     }
 
     Write-Output $entitlementSet.$type
