@@ -145,7 +145,7 @@ function Get-HelloIdTopdeskTemplateById {
                 Message = $message
                 IsError = $false
             })
-            return
+        return
     }
 
     Write-Output $entitlementSet.$type
