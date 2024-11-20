@@ -125,32 +125,42 @@ The following settings are required to connect to the API.
 an archiving reason that is configured in Topdesk.
 Credentials with the rights listed below. 
 
-| Permission                    | Read | Write | Create | Archive |
-| ----------------------------- | ---- | ----- | ------ | ------- |
-| <b>Call Management</b>        |
-| First line calls              | x    | x     | x      |
-| Second line calls             | x    | x     | x      |
-| Escalate calls                |      | x     |        |
-| Link object to call           |      | x     |        |
-| Link room to call             |      | x     |        |
-| <b>Change Management</b>      |
-| Requests for Simple Change    | x    | x     | x      |
-| Requests for Extensive Change | x    | x     | x      |
-| Simple Changes                | x    | x     |        |
-| Extensive Changes             | x    | x     |        |
-| <b>New Asset Management</b>   |
-| Templates                     | x    |       |        |
-| <b>Supporting Files</b>       |
-| Persons                       | x    | x     | x      | x       |
-| Operators                     | x    | x     | x      | x       |
-| Operator groups               | x    |       |        |
-| Suppliers                     | x    |       |        |
-| Rooms                         | x    |       |        |
-| Login data                    |      | x     |        |
-| Supporting Files Settings     | x    | x     |        |         |
-| <b>Reporting API</b>          |
-| REST API                      | x    |       |        |
-| Use application passwords     |      | x     |        |
+| Permission                       | Read | Write | Create | Archive |
+| -------------------------------- | ---- | ----- | ------ | ------- |
+| <b>Call Management</b>           |
+| First line calls                 | x    | x     | x      |
+| Second line calls                | x    | x     | x      |
+| Escalate calls                   |      | x     |        |
+| Link object to call              |      | x     |        |
+| Link room to call                |      | x     |        |
+| <b>Change Management</b>         |
+| Requests for Simple Change       | x    | x     | x      |
+| Requests for Extensive Change    | x    | x     | x      |
+| Simple Changes                   | x    | x     |        |
+| Extensive Changes                | x    | x     |        |
+| <b>New Asset Management</b>      |
+| Templates                        | x    |       |        |
+| <b>Supporting Files</b>          |
+| Persons                          | x    | x     | x      | x       |
+| Operators                        | x    | x     | x      | x       |
+| Operator groups                  | x    |       |        |
+| Suppliers                        | x    |       |        |
+| Rooms                            | x    |       |        |
+| Login data                       |      | x     |        |
+| Supporting Files Settings        | x    | x     |        |         |
+| <b>Reporting API</b>             |
+| REST API                         | x    |       |        |
+| Use application passwords        |      | x     |        |
+| <b>Asset Management - Assets</b> |
+| Configuration                    | x    |       |        |         |
+| Firsttemplate                    | x    |       |        |         |
+| Hardware                         | x    |       |        |         |
+| Inventories                      | x    |       |        |         |
+| Licentie                         | x    |       |        |         |
+| Network component                | x    |       |        |         |
+| Software                         | x    |       |        |         |
+| Stock                            | x    |       |        |         |
+| Telephone systems                | x    |       |        |         |
 
 > [!NOTE]
 > It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk.
