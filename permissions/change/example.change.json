@@ -6,7 +6,7 @@
 		"DisplayName": "Aanvraag/Inname laptop",
 		"Grant": {
 			"Requester": "tester@test.com",
-			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nuserPrincipalName: $($account.userPrincipalName)\nsAMAccountName: $($account.sAMAccountName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)",
+			"Request": "Graag een laptop gereed maken voor onderstaande medewerker.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nuserPrincipalName: $($account.userPrincipalName)\nsAMAccountName: $($account.sAMAccountName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nAssets:\n$($account.TopdeskAssets)",
 			"Action": null,
 			"BriefDescription": "Aanvraag Laptop ($($p.displayName))",
 			"Template": "Ws 006",
@@ -15,11 +15,14 @@
 			"ChangeType": "Simple",
 			"Impact": "Persoon",
 			"Benefit": null,
-			"Priority": "P1"
+			"Priority": "P1",
+			"EnableGetAssets": true,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": "Hardware,Software"
 		},
 		"Revoke": {
 			"Requester": "Employee",
-			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)",
+			"Request": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.\n\nNaam: $($p.Name.NickName)\nAchternaam: $($p.Name.FamilyName)\nPersoneelsnummer: $($p.ExternalId)\n\nFunctie: $($p.PrimaryContract.Title.Name)\nAfdeling: $($p.PrimaryContract.Department.DisplayName)\n\nManager: $($p.PrimaryContract.Manager.DisplayName)\n\nAssets:\n$($account.TopdeskAssets)",
 			"Action": null,
 			"BriefDescription": "Inname Laptop ($($p.displayName))",
 			"Template": "Ws 015",
@@ -28,7 +31,10 @@
 			"ChangeType": "Simple",
 			"Impact": "Persoon",
 			"Benefit": null,
-			"Priority": "P1"
+			"Priority": "P1",
+			"EnableGetAssets": true,
+			"SkipNoAssetsFound": true,
+			"AssetsFilter": ""
 		}
 	},
 	{
@@ -47,7 +53,10 @@
 			"ChangeType": "Simple",
 			"Impact": "Persoon",
 			"Benefit": null,
-			"Priority": "P1"
+			"Priority": "P1",
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		},
 		"Revoke": {
 			"Requester": "Manager",
@@ -60,7 +69,10 @@
 			"ChangeType": "Simple",
 			"Impact": "Persoon",
 			"Benefit": null,
-			"Priority": "P1"
+			"Priority": "P1",
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		}
 	},
 	{
@@ -79,7 +91,10 @@
 			"ChangeType": "Extensive",
 			"Impact": "Persoon",
 			"Benefit": null,
-			"Priority": null
+			"Priority": null,
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		},
 		"Revoke": {}
 	},
@@ -100,7 +115,10 @@
 			"ChangeType": "Extensive",
 			"Impact": "Persoon",
 			"Benefit": null,
-			"Priority": null
+			"Priority": null,
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		}
 	}
 ]

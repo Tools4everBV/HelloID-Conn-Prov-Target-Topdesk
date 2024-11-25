@@ -7,7 +7,7 @@
 		"Grant": {
 			"Caller": "tester@test.com",
 			"RequestShort": "Aanvraag Laptop ($($p.displayName))",
-			"RequestDescription": "<b>Graag een laptop gereed maken voor onderstaande medewerker.</b><br><br><em>Naam: $($p.Name.NickName)</em><br><strong>Achternaam: $($p.Name.FamilyName)</strong><br>userPrincipalName: $($account.userPrincipalName)<br>sAMAccountName: $($account.sAMAccountName)<br><u>Personeelsnummer: $($p.ExternalId)</u><br><br>Functie: $($p.PrimaryContract.Title.Name)<br><i>Afdeling: $($p.PrimaryContract.Department.DisplayName)</i><br><br><a href='https://www.tools4ever.nl/'>Visit Tools4ever.nl!</a>",
+			"RequestDescription": "<b>Graag een laptop gereed maken voor onderstaande medewerker.</b><br><br><em>Naam: $($p.Name.NickName)</em><br><strong>Achternaam: $($p.Name.FamilyName)</strong><br>userPrincipalName: $($account.userPrincipalName)<br>sAMAccountName: $($account.sAMAccountName)<br><u>Personeelsnummer: $($p.ExternalId)</u><br><br>Functie: $($p.PrimaryContract.Title.Name)<br><i>Afdeling: $($p.PrimaryContract.Department.DisplayName)</i><br><br><a href='https://www.tools4ever.nl/'>Visit Tools4ever.nl!</a><br><br>Assets:<br>$($account.TopdeskAssets)",
 			"Action": "<b>Medewerker ($($p.displayName)) heeft een laptop nodig</b><br><br>Graag gereed maken voor $($p.PrimaryContract.StartDate).",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
@@ -20,12 +20,15 @@
 			"Duration": null,
 			"EntryType": null,
 			"Urgency": null,
-			"ProcessingStatus": null
+			"ProcessingStatus": null,
+			"EnableGetAssets": true,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": "Hardware,Software"
 		},
 		"Revoke": {
 			"Caller": "tester@test.com",
 			"RequestShort": "Inname Laptop ($($p.displayName))",
-			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)",
+			"RequestDescription": "Volgens onze informatie is onderstaande medewerker in het bezit van een laptop, deze dient op de laatste werkdag ingeleverd te worden bij zijn/haar direct leidinggevende.<br><br>Naam: $($p.Name.NickName)<br>Achternaam: $($p.Name.FamilyName)<br>Personeelsnummer: $($p.ExternalId)<br><br>Functie: $($p.PrimaryContract.Title.Name)<br>Afdeling: $($p.PrimaryContract.Department.DisplayName)<br><br>Manager: $($p.PrimaryContract.Manager.DisplayName)<br><br>Assets:<br>$($account.TopdeskAssets)",
 			"Action": "<b>Medewerker ($($p.displayName)) is in het bezit van een laptop</b>.",
 			"Branch": "Baarn",
 			"OperatorGroup": "Applicatiebeheerders",
@@ -38,7 +41,10 @@
 			"Duration": null,
 			"EntryType": null,
 			"Urgency": null,
-			"ProcessingStatus": null
+			"ProcessingStatus": null,
+			"EnableGetAssets": true,
+			"SkipNoAssetsFound": true,
+			"AssetsFilter": ""
 		}
 	},
 	{
@@ -62,7 +68,10 @@
 			"Duration": null,
 			"EntryType": null,
 			"Urgency": null,
-			"ProcessingStatus": null
+			"ProcessingStatus": null,
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		},
 		"Revoke": {
 			"Caller": "Manager",
@@ -80,7 +89,10 @@
 			"Duration": "1 dag",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"ProcessingStatus": "Geregistreerd"
+			"ProcessingStatus": "Geregistreerd",
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		}
 	},
 	{
@@ -104,7 +116,10 @@
 			"Duration": "1 dag",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"ProcessingStatus": "Geregistreerd"
+			"ProcessingStatus": "Geregistreerd",
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		},
 		"Revoke": {}
 	},
@@ -130,7 +145,10 @@
 			"Duration": "1 dag",
 			"EntryType": "Telefonisch",
 			"Urgency": "Kan niet werken",
-			"ProcessingStatus": "Geregistreerd"
+			"ProcessingStatus": "Geregistreerd",
+			"EnableGetAssets": false,
+			"SkipNoAssetsFound": false,
+			"AssetsFilter": ""
 		}
 	}
 ]

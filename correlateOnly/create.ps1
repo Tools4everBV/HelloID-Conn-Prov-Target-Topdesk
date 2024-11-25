@@ -70,7 +70,7 @@ function Invoke-TopdeskRestMethod {
             Invoke-RestMethod @splatParams -Verbose:$false
         }
         catch {
-            Throw $_
+            throw $_
         }
     }
 }
@@ -142,12 +142,12 @@ try {
 
         if ([string]::IsNullOrEmpty($correlationField)) {
             Write-Warning "Correlation is enabled but not configured correctly."
-            Throw "Correlation is enabled but not configured correctly."
+            throw "Correlation is enabled but not configured correctly."
         }
 
         if ([string]::IsNullOrEmpty($correlationValue)) {
             Write-Warning "The correlation value for [$correlationField] is empty. This is likely a scripting issue."
-            Throw "The correlation value for [$correlationField] is empty. This is likely a scripting issue."
+            throw "The correlation value for [$correlationField] is empty. This is likely a scripting issue."
         }
 
         # get person
@@ -161,7 +161,7 @@ try {
         $TopdeskPerson = Get-TopdeskPersonByCorrelationAttribute @splatParamsPerson
     }
     else {
-        Throw "Configuration of correlation is mandatory."
+        throw "Configuration of correlation is mandatory."
     }
     #endregion correlation
 

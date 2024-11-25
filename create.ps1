@@ -69,7 +69,7 @@ function Invoke-TopdeskRestMethod {
             Invoke-RestMethod @splatParams -Verbose:$false
         }
         catch {
-            Throw $_
+            throw $_
         }
     }
 }
@@ -447,7 +447,7 @@ function Set-TopdeskPersonArchiveStatus {
                     Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
-            Throw "Error(s) occured while looking up required values"
+            throw "Error(s) occured while looking up required values"
         }
 
         $splatParams = @{
@@ -465,7 +465,7 @@ function Set-TopdeskPersonArchiveStatus {
                     Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
-            Throw "Error(s) occured while looking up required values"
+            throw "Error(s) occured while looking up required values"
         }
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
@@ -581,12 +581,12 @@ try {
 
         if ([string]::IsNullOrEmpty($correlationField)) {
             Write-Warning "Correlation is enabled but not configured correctly."
-            Throw "Correlation is enabled but not configured correctly."
+            throw "Correlation is enabled but not configured correctly."
         }
 
         if ([string]::IsNullOrEmpty($correlationValue)) {
             Write-Warning "The correlation value for [$correlationField] is empty. This is likely a scripting issue."
-            Throw "The correlation value for [$correlationField] is empty. This is likely a scripting issue."
+            throw "The correlation value for [$correlationField] is empty. This is likely a scripting issue."
         }
 
         # get person
@@ -600,7 +600,7 @@ try {
         $TopdeskPerson = Get-TopdeskPersonByCorrelationAttribute @splatParamsPerson
     }
     else {
-        Throw "Configuration of correlation is mandatory."
+        throw "Configuration of correlation is mandatory."
     }
     #endregion correlation
 
@@ -692,7 +692,7 @@ try {
             }
 
             if ($outputContext.AuditLogs.isError -contains $true) {
-                Throw "Error(s) occured while looking up required values"
+                throw "Error(s) occured while looking up required values"
             }
             #endregion lookup
 

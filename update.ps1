@@ -97,7 +97,7 @@ function Invoke-TopdeskRestMethod {
             Invoke-RestMethod @splatParams -Verbose:$false
         }
         catch {
-            Throw $_
+            throw $_
         }
     }
 }
@@ -413,7 +413,7 @@ function Get-TopdeskPerson {
     # Check if the account reference is empty, if so, generate audit message
     if ([string]::IsNullOrEmpty($AccountReference)) {
 
-        # Throw an error when account reference is empty
+        # throw an error when account reference is empty
         Write-Warning "The account reference is empty. This is a scripting issue."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
                 Message = "The account reference is empty. This is a scripting issue."
@@ -510,7 +510,7 @@ function Set-TopdeskPersonArchiveStatus {
                     Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
-            Throw "Error(s) occured while looking up required values"
+            throw "Error(s) occured while looking up required values"
         }
 
         $splatParams = @{
@@ -528,7 +528,7 @@ function Set-TopdeskPersonArchiveStatus {
                     Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
-            Throw "Error(s) occured while looking up required values"
+            throw "Error(s) occured while looking up required values"
         }
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
@@ -712,7 +712,7 @@ try {
     }
 
     if ($outputContext.AuditLogs.isError -contains - $true) {
-        Throw "Error(s) occured while looking up required values"
+        throw "Error(s) occured while looking up required values"
     }
     #endregion lookup
     
