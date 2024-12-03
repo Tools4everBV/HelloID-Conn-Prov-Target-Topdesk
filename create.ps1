@@ -3,12 +3,6 @@
 # PowerShell V2
 #####################################################
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -168,7 +162,7 @@ function Get-TopdeskDepartment {
         }
         else {
             # False, no department in lookup value = clear value
-            Write-Verbose "Clearing department. (lookupErrorHrDepartment = False)"
+            Write-Information "Clearing department. (lookupErrorHrDepartment = False)"
             $Account.department.PSObject.Properties.Remove('name')
             $Account.department | Add-Member -NotePropertyName id -NotePropertyValue $null
         }
@@ -196,7 +190,7 @@ function Get-TopdeskDepartment {
                 # False, no department found = remove department field (leave empty on creation or keep current value on update)
                 $Account.department.PSObject.Properties.Remove('name')
                 $Account.PSObject.Properties.Remove('department')
-                Write-Verbose "Not overwriting or setting department as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
+                Write-Information "Not overwriting or setting department as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
             }
         }
         else {
@@ -248,7 +242,7 @@ function Get-TopdeskBudgetHolder {
         }
         else {
             # False, no budgetholder in lookup value = clear value
-            Write-Verbose "Clearing budgetholder. (lookupErrorHrBudgetHolder = False)"
+            Write-Information "Clearing budgetholder. (lookupErrorHrBudgetHolder = False)"
             $Account.budgetHolder.PSObject.Properties.Remove('name')
             $Account.budgetHolder | Add-Member -NotePropertyName id -NotePropertyValue $null
         }
@@ -277,7 +271,7 @@ function Get-TopdeskBudgetHolder {
                 # False, no budgetholder found = remove budgetholder field (leave empty on creation or keep current value on update)
                 $Account.budgetHolder.PSObject.Properties.Remove('name')
                 $Account.PSObject.Properties.Remove('budgetHolder')
-                Write-Verbose "Not overwriting or setting budgetholder as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
+                Write-Information "Not overwriting or setting budgetholder as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
             }
         }
         else {
@@ -395,7 +389,7 @@ function Get-TopdeskPersonManager {
     # Check if the manager reference is empty, if so, generate audit message or clear the manager attribute
     if ([string]::IsNullOrEmpty($Account.manager.id)) {
         #As manager.Id is empty, nothing needs to be done here
-        Write-Verbose "Manager Id is empty, clearing manager."
+        Write-Information "Manager Id is empty, clearing manager."
         return
     }
 
@@ -479,7 +473,7 @@ function Set-TopdeskPersonArchiveStatus {
     # Check the current status of the Person and compare it with the status in archiveStatus
     if ($archiveStatus -ne $TopdeskPerson.status) {
         # Archive / unarchive person
-        Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
             Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
@@ -516,7 +510,7 @@ function Set-TopdeskPersonIsManager {
         $body = [PSCustomObject]@{
             isManager = $isManager
         }
-        Write-Verbose "Setting flag isManager to [$isManager] to person with networkLoginName [$($TopdeskPerson.networkLoginName)] and id [$($TopdeskPerson.id)]"
+        Write-Information "Setting flag isManager to [$isManager] to person with networkLoginName [$($TopdeskPerson.networkLoginName)] and id [$($TopdeskPerson.id)]"
         $splatParams = @{
             Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
             Method  = 'PATCH'
@@ -541,7 +535,7 @@ function New-TopdeskPerson {
         $Account
     )
 
-    Write-Verbose "Creating person"
+    Write-Information "Creating person"
 
     # Clear manager attribute when id = null
 
@@ -612,7 +606,7 @@ try {
         $action = 'Create' 
     }
 
-    Write-Verbose "Check if current account can be found. Result: $action"
+    Write-Information "Check if current account can be found. Result: $action"
     #endregion Calulate action
 
     switch ($action) {
@@ -644,7 +638,7 @@ try {
                 Get-TopdeskDepartment @splatParamsDepartment  
             }
             else {
-                write-verbose "Mapping of [department.name] is missing to lookup the department in Topdesk. Action skipped"
+                Write-Information "Mapping of [department.name] is missing to lookup the department in Topdesk. Action skipped"
             }
 
             if ($Account.budgetHolder.PSObject.Properties.Name -Contains 'name') {
@@ -659,7 +653,7 @@ try {
                 Get-TopdeskBudgetholder @splatParamsBudgetHolder
             }
             else {
-                write-verbose "Mapping of [budgetHolder.name] is missing to lookup the budgetHolder in Topdesk. Action skipped"
+                Write-Information "Mapping of [budgetHolder.name] is missing to lookup the budgetHolder in Topdesk. Action skipped"
             }
 
             if ($account.manager.PSObject.Properties.Name -Contains 'id') {
@@ -688,7 +682,7 @@ try {
                 }
             }
             else {
-                write-verbose "Mapping of [manager.id] is missing to set the manager. Action skipped"
+                Write-Information "Mapping of [manager.id] is missing to set the manager. Action skipped"
             }
 
             if ($outputContext.AuditLogs.isError -contains $true) {
@@ -753,7 +747,7 @@ try {
                     }
                 }
             }
-            Write-Verbose "Creating Topdesk person for: [$($personContext.Person.DisplayName)]"
+            Write-Information "Creating Topdesk person for: [$($personContext.Person.DisplayName)]"
             $splatParamsPersonNew = @{
                 Account = $account
                 Headers = $authHeaders

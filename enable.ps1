@@ -3,12 +3,6 @@
 # PowerShell V2
 #####################################################
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -203,7 +197,7 @@ function Set-TopdeskPersonArchiveStatus {
     # Check the current status of the Person and compare it with the status in archiveStatus
     if ($archiveStatus -ne $TopdeskPerson.status) {
         # Archive / unarchive person
-        Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
             Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
@@ -253,13 +247,13 @@ try {
         $action = 'NotFound' 
     }        
 
-    Write-Verbose "Compared current account to mapped properties. Result: $action"
+    Write-Information "Compared current account to mapped properties. Result: $action"
     #endregion Calulate action
 
     # region write
     switch ($action) {
         'Enable' {
-            Write-Verbose "Activating Topdesk person for: [$($personContext.Person.DisplayName)]"
+            Write-Information "Activating Topdesk person for: [$($personContext.Person.DisplayName)]"
 
             # Unarchive person
             $splatParamsPersonUnarchive = @{

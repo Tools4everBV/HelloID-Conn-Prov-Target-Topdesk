@@ -9,12 +9,6 @@ $pRef = $actionContext.References.Permission
 # To resolve variables in the JSON (compatible with powershell v1 target)
 $p = $personContext.Person
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -225,7 +219,7 @@ function Resolve-Variables {
                 $String.Value = $String.Value.Replace($var, $curObject.$_)
             }
             else {
-                Write-Verbose  "Variable [$var] not found"
+                Write-Information  "Variable [$var] not found"
                 $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
             }
         }
@@ -317,11 +311,11 @@ function Get-TopdeskRequesterByType {
 
     # Validate employee entry
     if ($type -eq 'manager') {
-        write-verbose "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
+        Write-Information "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
         if ([string]::IsNullOrEmpty($managerAccountReference)) {
-            write-verbose "Type: Manager - managerAccountReference leeg"
+            Write-Information "Type: Manager - managerAccountReference empty"
             if ([string]::IsNullOrEmpty($managerFallback)) {
-                write-verbose "Type: Manager - managerAccountReference - leeg - fallback leeg"
+                Write-Information "Type: Manager - managerAccountReference - empty - fallback empty"
                 $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The manager account reference is empty and no fallback email is configured."
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
                         Message = $errorMessage
@@ -330,13 +324,13 @@ function Get-TopdeskRequesterByType {
                 return
             }
             else {
-                write-verbose "Type: Manager - managerAccountReference - leeg - fallback gevuld"
+                Write-Information "Type: Manager - managerAccountReference - empty - fallback filled"
                 # Set fallback adress and look it up below
                 $type = $managerFallback
             }
         }
         else {
-            write-verbose "Type: Manager - managerAccountReference - gevuld: [$managerAccountReference]"
+            Write-Information "Type: Manager - managerAccountReference - filled: [$managerAccountReference]"
             Write-Output $managerAccountReference
             return
         }
@@ -544,7 +538,7 @@ function Set-TopdeskPersonArchiveStatus {
     if ($archiveStatus -ne $TopdeskPerson.status) {
 
         # Archive / unarchive person
-        Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
             Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
@@ -576,10 +570,10 @@ function New-TopdeskChange {
         Headers = $Headers
         Body    = $TopdeskChange | ConvertTo-Json
     }
-    Write-Verbose ($TopdeskChange | ConvertTo-Json)
+    Write-Information ($TopdeskChange | ConvertTo-Json)
     $change = Invoke-TopdeskRestMethod @splatParams
 
-    Write-Verbose "Created change with number [$($change.number)]"
+    Write-Information "Created change with number [$($change.number)]"
 
     Write-Output $change
 }
@@ -652,7 +646,7 @@ function Get-TopdeskAssetsByPersonId {
 
     if ([string]::IsNullOrEmpty($assetList)) {
         if ($SkipNoAssets) {
-            Write-Verbose 'Action skipped because no assets are found and [SkipNoAssetsFound = true] is configured'
+            Write-Information 'Action skipped because no assets are found and [SkipNoAssetsFound = true] is configured'
             return
         }
         else {
@@ -851,14 +845,14 @@ try {
     # Add an auditMessage showing what will happen during enforcement
     if ($actionContext.DryRun -eq $true) {
         Write-Warning "Revoke Topdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)], will be executed during enforcement"
-        Write-Verbose ($requestObject | ConvertTo-Json)
+        Write-Information ($requestObject | ConvertTo-Json)
     }
 
     if (-Not($actionContext.DryRun -eq $true)) {
-        Write-Verbose "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
+        Write-Information "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
 
         if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
-            Write-Verbose "Check if manager is archived"
+            Write-Information "Check if manager is archived"
             # get person (manager)
             $splatParamsPerson = @{
                 AccountReference = $actionContext.References.ManagerAccount
@@ -868,7 +862,7 @@ try {
             $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
             if ($TopdeskPerson.status -eq 'personArchived') {
-                Write-Verbose "Manager $($TopdeskPerson.id) will be unarchived"
+                Write-Information "Manager $($TopdeskPerson.id) will be unarchived"
                 # Unarchive person (manager)
                 $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
@@ -883,7 +877,7 @@ try {
         }
         
         if ($template.Requester -eq 'employee') {
-            Write-Verbose "Check if employee is archived"
+            Write-Information "Check if employee is archived"
             # get person (employee)
             $splatParamsPerson = @{
                 AccountReference = $actionContext.References.Account 
@@ -893,7 +887,7 @@ try {
             $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
             
             if ($TopdeskPerson.status -eq 'personArchived') {
-                Write-Verbose "Employee $($TopdeskPerson.id) will be unarchived"
+                Write-Information "Employee $($TopdeskPerson.id) will be unarchived"
                 # Unarchive person (employee)
                 $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
@@ -917,7 +911,7 @@ try {
 
         if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
             if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
-                Write-Verbose "Manager $($TopdeskPerson.id) will be archived"
+                Write-Information "Manager $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
@@ -928,7 +922,7 @@ try {
                 Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
             if ($template.Requester -eq 'employee') {
-                Write-Verbose "Employee $($TopdeskPerson.id) will be archived"
+                Write-Information "Employee $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
                     TopdeskPerson   = [ref]$TopdeskPerson
                     Headers         = $authHeaders
@@ -975,7 +969,7 @@ catch {
                 })
 
         } default {
-            Write-Verbose ($ex | ConvertTo-Json) # Debug - Test
+            Write-Information ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
                 $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"

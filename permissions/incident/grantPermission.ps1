@@ -9,12 +9,6 @@ $pRef = $actionContext.References.Permission
 # To resolve variables in the JSON (compatible with powershell v1 target)
 $p = $personContext.Person
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -188,7 +182,7 @@ function Resolve-Variables {
                 $String.Value = $String.Value.Replace($var, $curObject.$_)
             }
             else {
-                Write-Verbose  "Variable [$var] not found"
+                Write-Information  "Variable [$var] not found"
                 $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
             }
         }
@@ -280,11 +274,11 @@ function Get-TopdeskRequesterByType {
 
     # Validate employee entry
     if ($type -eq 'manager') {
-        write-verbose "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
+        Write-Information "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
         if ([string]::IsNullOrEmpty($managerAccountReference)) {
-            write-verbose "Type: Manager - managerAccountReference leeg"
+            Write-Information "Type: Manager - managerAccountReference empty"
             if ([string]::IsNullOrEmpty($managerFallback)) {
-                write-verbose "Type: Manager - managerAccountReference - leeg - fallback leeg"
+                Write-Information "Type: Manager - managerAccountReference - empty - fallback empty"
                 $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The manager account reference is empty and no fallback email is configured."
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
                         Message = $errorMessage
@@ -293,13 +287,13 @@ function Get-TopdeskRequesterByType {
                 return
             }
             else {
-                write-verbose "Type: Manager - managerAccountReference - leeg - fallback gevuld"
+                Write-Information "Type: Manager - managerAccountReference - empty - fallback filled"
                 # Set fallback adress and look it up below
                 $type = $managerFallback
             }
         }
         else {
-            write-verbose "Type: Manager - managerAccountReference - gevuld: [$managerAccountReference]"
+            Write-Information "Type: Manager - managerAccountReference - filled: [$managerAccountReference]"
             Write-Output $managerAccountReference
             return
         }
@@ -478,7 +472,7 @@ function Set-TopdeskPersonArchiveStatus {
     if ($archiveStatus -ne $TopdeskPerson.status) {
 
         # Archive / unarchive person
-        Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
         $splatParams = @{
             Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
             Method  = 'PATCH'
@@ -525,7 +519,7 @@ function Get-TopdeskIdentifier {
         return
     }
     
-    Write-Verbose "Class [$class]: Variable [$`Value] has value [$($Value)] and endpoint [$($Endpoint)?query=$($SearchAttribute)==$($Value))]"
+    Write-Information "Class [$class]: Variable [$`Value] has value [$($Value)] and endpoint [$($Endpoint)?query=$($SearchAttribute)==$($Value))]"
 
     # Lookup Value is filled in, lookup value in Topdesk
     $splatParams = @{
@@ -570,11 +564,11 @@ function New-TopdeskIncident {
         Headers = $Headers
         Body    = $TopdeskIncident | ConvertTo-Json
     }
-    Write-Verbose ($TopdeskIncident | ConvertTo-Json)
+    Write-Information ($TopdeskIncident | ConvertTo-Json)
 
     $incident = Invoke-TopdeskRestMethod @splatParams
 
-    Write-Verbose "Created incident with number [$($incident.number)]"
+    Write-Information "Created incident with number [$($incident.number)]"
 
     Write-Output $incident
 }
@@ -656,7 +650,7 @@ function Get-TopdeskAssetsByPersonId {
     
     if ([string]::IsNullOrEmpty($assetList)) {
         if ($SkipNoAssets) {
-            Write-Verbose 'Action skipped because no assets are found and [SkipNoAssetsFound = true] is configured'
+            Write-Information 'Action skipped because no assets are found and [SkipNoAssetsFound = true] is configured'
             return
         }
         else {
@@ -1020,11 +1014,11 @@ try {
     if ($actionContext.DryRun -eq $true) {
         Write-Warning "Grant Topdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)], will be executed during enforcement"
           
-        Write-Verbose ($requestObject | ConvertTo-Json) 
+        Write-Information ($requestObject | ConvertTo-Json) 
     }
 
     if (-Not($actionContext.DryRun -eq $true)) {
-        Write-Verbose "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
+        Write-Information "Granting TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
 
         if (($template.caller -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
             # get person (manager)

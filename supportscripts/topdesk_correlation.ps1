@@ -19,7 +19,7 @@ $correlationField = 'employeeNumber'
 #correlation field source is by default ExternalId
 
 #Source Data
-Write-Verbose -Verbose "Retrieving Source data";
+Write-Information "Retrieving Source data";
  
 # need list of all persons for correlation
 $sourcePersons = [System.Collections.ArrayList]::new()
@@ -27,7 +27,7 @@ $sourcePersons = [System.Collections.ArrayList]::new()
 # [logic for retrieving persons]
 
 $persons = $sourcePersons
-Write-Verbose -Verbose "$($persons.count) source record(s)";
+Write-Information "$($persons.count) source record(s)";
 
 #Topdesk
 #Authorization
@@ -44,7 +44,7 @@ $results = @{
 
 $i = 1;
 foreach($person in $persons) {
-    Write-Verbose -Verbose "$($i):$($persons.count)";
+    Write-Information "$($i):$($persons.count)";
     $result = $null
 
     #Check if account exists (externalId), else create
@@ -69,9 +69,9 @@ $duplicatesbyId = ($results.match | Group-Object -Property Id) | Where-Object { 
 if($duplicatesbyId -is [System.Array]) { [void]$duplicates.AddRange($duplicatesbyId) } else { [void]$duplicates.Add($duplicatesbyId) };
 
 #Results
-Write-Verbose -Verbose "$($results.create.count) Create(s)"
-Write-Verbose -Verbose "$($results.match.count) Correlation(s)"
-Write-Verbose -Verbose "$($duplicates.count) Duplicate Correlation(s)"
+Write-Information "$($results.create.count) Create(s)"
+Write-Information "$($results.match.count) Correlation(s)"
+Write-Information "$($duplicates.count) Duplicate Correlation(s)"
 
 if($results.create.count -gt 0) { $results.create | Out-GridView }
 if($duplicates.count -gt 0) { $duplicates | Out-GridView }
