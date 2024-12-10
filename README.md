@@ -45,6 +45,7 @@ _HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a s
 | /tas/api/operatorgroups            | `GET` read operator groups used for incidents              |
 | /tas/api/operators                 | `GET` read operators used for incidents                    |
 | /tas/api/countries                 | `GET` read countries used for create branches              |
+| /tas/api/assetmgmt                 | `GET` read assets used for reading linked assets to person |
 
 The following lifecycle actions are available:
 
