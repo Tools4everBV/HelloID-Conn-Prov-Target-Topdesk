@@ -4,12 +4,6 @@
 # PowerShell V2
 #####################################################
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -173,7 +167,7 @@ try {
         $action = 'NotFound' 
     }
 
-    Write-Verbose "Check if current account can be found. Result: $action"
+    Write-Information "Check if current account can be found. Result: $action"
     #endregion Calulate action
 
     switch ($action) {       
