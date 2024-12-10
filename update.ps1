@@ -485,7 +485,7 @@ function Set-TopdeskPersonArchiveStatus {
 
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$TopdeskPerson,
+        $TopdeskPerson,
 
         [ValidateNotNullOrEmpty()]
         [Bool]
@@ -533,19 +533,17 @@ function Set-TopdeskPersonArchiveStatus {
         $archiveUri = 'unarchive'
         $body = $null
     }
-    # Check the current status of the Person and compare it with the status in archiveStatus
-    if ($archiveStatus -ne $TopdeskPerson.status) {
-        # Archive / unarchive person
-        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
-        $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
-            Method  = 'PATCH'
-            Headers = $Headers
-            Body    = $body | ConvertTo-Json
-        }
-        $null = Invoke-TopdeskRestMethod @splatParams
-        $TopdeskPerson.status = $archiveStatus
+
+    # Archive / unarchive person
+    Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+        Method  = 'PATCH'
+        Headers = $Headers
+        Body    = $body | ConvertTo-Json
     }
+    $null = Invoke-TopdeskRestMethod @splatParams
+    return $archiveStatus
 }
 
 function Set-TopdeskPersonIsManager {
@@ -761,7 +759,7 @@ try {
             # Unarchive manager
             $managerShouldArchive = $true
             $splatParamsManagerUnarchive = @{
-                TopdeskPerson   = [ref]$TopdeskManager
+                TopdeskPerson   = $TopdeskManager
                 Headers         = $authHeaders
                 BaseUrl         = $actionContext.Configuration.baseUrl
                 Archive         = $false
@@ -769,7 +767,7 @@ try {
             }
 
             if (-Not($actionContext.DryRun -eq $true)) {
-                Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
+                $TopdeskManager.status = Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
             }
             else {
                 Write-Warning "DryRun would unarchive manager for update"
@@ -796,7 +794,7 @@ try {
 
             # Archive manager
             $splatParamsManagerArchive = @{
-                TopdeskPerson   = [ref]$TopdeskManager
+                TopdeskPerson   = $TopdeskManager
                 Headers         = $authHeaders
                 BaseUrl         = $actionContext.Configuration.baseUrl
                 Archive         = $true
@@ -804,7 +802,7 @@ try {
             }
 
             if (-Not($actionContext.DryRun -eq $true)) {
-                Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
+                $TopdeskManager.status = Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
             }
             else {
                 Write-Warning "DryRun would re-archive manager"
@@ -814,8 +812,6 @@ try {
 
     switch ($action) {
         'Update' {
-            Write-Information "Updating Topdesk person for: [$($personContext.Person.DisplayName)]"
-
             $accountChangedPropertiesObject = [PSCustomObject]@{
                 OldValues = @{}
                 NewValues = @{}
@@ -835,16 +831,15 @@ try {
                 # Unarchive person
                 $personShouldArchive = $true
                 $splatParamsPersonUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
-        
                 }
 
                 if (-Not($actionContext.DryRun -eq $true)) {
-                    Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                    $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
                 }
                 else {
                     Write-Warning "DryRun would unarchive person for update"
@@ -852,6 +847,8 @@ try {
             }
         
             # Update TOPdesk person
+            Write-Information "Updating Topdesk person for: [$($personContext.Person.DisplayName)]"
+                        
             $splatParamsPersonUpdate = @{
                 TopdeskPerson = $TopdeskPerson
                 Account       = $account
@@ -871,14 +868,14 @@ try {
             
                 # Archive person
                 $splatParamsPersonArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $true
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
                 if (-Not($actionContext.DryRun -eq $true)) {
-                    Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+                    $TopdeskPersonUpdated.status = Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
                 }
                 else {
                     Write-Warning "DryRun would re-archive person after update"
@@ -890,10 +887,10 @@ try {
             $outputContext.PreviousData = $TopdeskPerson
 
             if (-Not($actionContext.DryRun -eq $true)) {
-                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPersonUpdated.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
 
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPersonUpdated.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
                         IsError = $false
                     })
             }

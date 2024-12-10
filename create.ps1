@@ -422,7 +422,7 @@ function Set-TopdeskPersonArchiveStatus {
 
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$TopdeskPerson,
+        $TopdeskPerson,
 
         [ValidateNotNullOrEmpty()]
         [Bool]
@@ -470,19 +470,17 @@ function Set-TopdeskPersonArchiveStatus {
         $archiveUri = 'unarchive'
         $body = $null
     }
-    # Check the current status of the Person and compare it with the status in archiveStatus
-    if ($archiveStatus -ne $TopdeskPerson.status) {
-        # Archive / unarchive person
-        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
-        $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
-            Method  = 'PATCH'
-            Headers = $Headers
-            Body    = $body | ConvertTo-Json
-        }
-        $null = Invoke-TopdeskRestMethod @splatParams
-        $TopdeskPerson.status = $archiveStatus
+
+    # Archive / unarchive person
+    Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+        Method  = 'PATCH'
+        Headers = $Headers
+        Body    = $body | ConvertTo-Json
     }
+    $null = Invoke-TopdeskRestMethod @splatParams
+    return $archiveStatus
 }
 
 function Set-TopdeskPersonIsManager {
@@ -698,14 +696,14 @@ try {
                     # Unarchive manager
                     $managerShouldArchive = $true
                     $splatParamsManagerUnarchive = @{
-                        TopdeskPerson   = [ref]$TopdeskManager
+                        TopdeskPerson   = $TopdeskManager
                         Headers         = $authHeaders
                         BaseUrl         = $actionContext.Configuration.baseUrl
                         Archive         = $false
                         ArchivingReason = $actionContext.Configuration.personArchivingReason
                     }
                     if (-Not($actionContext.DryRun -eq $true)) {
-                        Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
+                        $TopdeskManager.status = Set-TopdeskPersonArchiveStatus @splatParamsManagerUnarchive
                     }
                     else {
                         Write-Warning "DryRun would unarchive manager for update"
@@ -732,7 +730,7 @@ try {
 
                     # Archive manager
                     $splatParamsManagerArchive = @{
-                        TopdeskPerson   = [ref]$TopdeskManager
+                        TopdeskPerson   = $TopdeskManager
                         Headers         = $authHeaders
                         BaseUrl         = $actionContext.Configuration.baseUrl
                         Archive         = $true
@@ -740,7 +738,7 @@ try {
                     }
 
                     if (-Not($actionContext.DryRun -eq $true)) {
-                        Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
+                        $TopdeskManager.status = Set-TopdeskPersonArchiveStatus @splatParamsManagerArchive
                     }
                     else {
                         Write-Warning "DryRun would re-archive manager"

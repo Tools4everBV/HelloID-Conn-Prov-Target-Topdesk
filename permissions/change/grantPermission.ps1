@@ -482,7 +482,7 @@ function Set-TopdeskPersonArchiveStatus {
 
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$TopdeskPerson,
+        $TopdeskPerson,
 
         [ValidateNotNullOrEmpty()]
         [Bool]
@@ -497,9 +497,8 @@ function Set-TopdeskPersonArchiveStatus {
 
         #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
-            $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = $errorMessage
+                    Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
             throw "Error(s) occured while looking up required values"
@@ -516,14 +515,12 @@ function Set-TopdeskPersonArchiveStatus {
 
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
-            $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = $errorMessage
+                    Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
             throw "Error(s) occured while looking up required values"
         }
-
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
         $body = @{ id = $archivingReasonObject.id }
@@ -534,20 +531,16 @@ function Set-TopdeskPersonArchiveStatus {
         $body = $null
     }
 
-    # Check the current status of the Person and compare it with the status in archiveStatus
-    if ($archiveStatus -ne $TopdeskPerson.status) {
-
-        # Archive / unarchive person
-        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
-        $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
-            Method  = 'PATCH'
-            Headers = $Headers
-            Body    = $body | ConvertTo-Json
-        }
-        $null = Invoke-TopdeskRestMethod @splatParams
-        $TopdeskPerson.status = $archiveStatus
+    # Archive / unarchive person
+    Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+        Method  = 'PATCH'
+        Headers = $Headers
+        Body    = $body | ConvertTo-Json
     }
+    $null = Invoke-TopdeskRestMethod @splatParams
+    return $archiveStatus
 }
 
 function New-TopdeskChange {
@@ -866,13 +859,13 @@ try {
                 # Unarchive person (manager)
                 $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
             }
         }
         
@@ -891,13 +884,13 @@ try {
                 # Unarchive person (employee)
                 $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
             }
         }
 
@@ -909,28 +902,28 @@ try {
         }
         $TopdeskChange = New-TopdeskChange @splatParamsTopdeskChange
 
-        if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
+        if ($shouldArchive) {
             if (($template.Requester -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
                 Write-Information "Manager $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $true
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
             if ($template.Requester -eq 'employee') {
                 Write-Information "Employee $($TopdeskPerson.id) will be archived"
                 $splatParamsPersonArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $true
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
         }
 

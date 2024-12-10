@@ -146,7 +146,7 @@ function Set-TopdeskPersonArchiveStatus {
 
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$TopdeskPerson,
+        $TopdeskPerson,
 
         [ValidateNotNullOrEmpty()]
         [Bool]
@@ -194,19 +194,17 @@ function Set-TopdeskPersonArchiveStatus {
         $archiveUri = 'unarchive'
         $body = $null
     }
-    # Check the current status of the Person and compare it with the status in archiveStatus
-    if ($archiveStatus -ne $TopdeskPerson.status) {
-        # Archive / unarchive person
-        Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
-        $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
-            Method  = 'PATCH'
-            Headers = $Headers
-            Body    = $body | ConvertTo-Json
-        }
-        $null = Invoke-TopdeskRestMethod @splatParams
-        $TopdeskPerson.status = $archiveStatus
+
+    # Archive / unarchive person
+    Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+        Method  = 'PATCH'
+        Headers = $Headers
+        Body    = $body | ConvertTo-Json
     }
+    $null = Invoke-TopdeskRestMethod @splatParams
+    return $archiveStatus
 }
 #endregion functions
 
@@ -257,7 +255,7 @@ try {
 
             # Unarchive person
             $splatParamsPersonUnarchive = @{
-                TopdeskPerson   = [ref]$TopdeskPerson
+                TopdeskPerson   = $TopdeskPerson
                 Headers         = $authHeaders
                 BaseUrl         = $actionContext.Configuration.baseUrl
                 Archive         = $false
@@ -265,7 +263,7 @@ try {
 
             }
             if (-Not($actionContext.DryRun -eq $true)) {
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
 
                 Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully enabled"
 
