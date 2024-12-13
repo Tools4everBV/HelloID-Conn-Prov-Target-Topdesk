@@ -9,6 +9,13 @@
 > [!NOTE]
 > Only `create` and `update` account lifecycle actions are supported. If updating a value in the `delete` script is required, use the `update` operations within the `delete` script. Ensure that you modify scripts only where field mappings are defined. This add-on requires at least one valid field containing `contract.` in the field mapping for proper functionality.
 
+## Additional permissions
+
+| Permission              | Read | Write | Create | Archive |
+| ----------------------- | ---- | ----- | ------ | ------- |
+| <b>Supporting Files</b> |
+| Person contract tab     | x    | x     |        |         |
+
 ## fieldmapping
 Add all required fields in de fieldmapping with the prefix `contract.`, example:
 - contract.employmentTerminationDate
