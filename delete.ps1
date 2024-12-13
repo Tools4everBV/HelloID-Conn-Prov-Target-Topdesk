@@ -3,12 +3,6 @@
 # PowerShell V2
 #####################################################
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -181,7 +175,7 @@ function Set-TopdeskPersonArchiveStatus {
 
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$TopdeskPerson,
+        $TopdeskPerson,
 
         [ValidateNotNullOrEmpty()]
         [Bool]
@@ -197,7 +191,6 @@ function Set-TopdeskPersonArchiveStatus {
         #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DeleteAccount"
                     Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
@@ -216,7 +209,6 @@ function Set-TopdeskPersonArchiveStatus {
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Action  = "DeleteAccount"
                     Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
@@ -231,19 +223,17 @@ function Set-TopdeskPersonArchiveStatus {
         $archiveUri = 'unarchive'
         $body = $null
     }
-    # Check the current status of the Person and compare it with the status in archiveStatus
-    if ($archiveStatus -ne $TopdeskPerson.status) {
-        # Archive / unarchive person
-        Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
-        $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
-            Method  = 'PATCH'
-            Headers = $Headers
-            Body    = $body | ConvertTo-Json
-        }
-        $null = Invoke-TopdeskRestMethod @splatParams
-        $TopdeskPerson.status = $archiveStatus
+
+    # Archive / unarchive person
+    Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+        Method  = 'PATCH'
+        Headers = $Headers
+        Body    = $body | ConvertTo-Json
     }
+    $null = Invoke-TopdeskRestMethod @splatParams
+    return $archiveStatus
 }
 
 function Set-TopdeskPerson {
@@ -264,7 +254,7 @@ function Set-TopdeskPerson {
         $TopdeskPerson
     )
 
-    Write-Verbose "Updating person"
+    Write-Information "Updating person"
     $splatParams = @{
         Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)"
         Method  = 'PATCH'
@@ -337,13 +327,13 @@ try {
         $action = 'NotFound' 
     }        
 
-    Write-Verbose "Compared current account to mapped properties. Result: $action"
+    Write-Information "Compared current account to mapped properties. Result: $action"
     #endregion Calulate action
 
     #region write
     switch ($action) {
         'UpdateAndDisable' {
-            Write-Verbose "Archiving Topdesk person for: [$($personContext.Person.DisplayName)]"
+            Write-Information "Archiving Topdesk person for: [$($personContext.Person.DisplayName)]"
 
             $accountChangedPropertiesObject = [PSCustomObject]@{
                 OldValues = @{}
@@ -363,7 +353,7 @@ try {
         
                 # Unarchive person
                 $splatParamsPersonUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
@@ -371,7 +361,7 @@ try {
         
                 }
                 if (-Not($actionContext.DryRun -eq $true)) {
-                    Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                    $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
                 }
                 else {
                     Write-Warning "DryRun would unarchive person for update"
@@ -394,14 +384,14 @@ try {
            
             # Archive person
             $splatParamsPersonArchive = @{
-                TopdeskPerson   = [ref]$TopdeskPerson
+                TopdeskPerson   = $TopdeskPerson
                 Headers         = $authHeaders
                 BaseUrl         = $actionContext.Configuration.baseUrl
                 Archive         = $true
                 ArchivingReason = $actionContext.Configuration.personArchivingReason
             }
             if (-Not($actionContext.DryRun -eq $true)) {
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+                $TopdeskPersonUpdated.status = Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
             else {
                 Write-Warning "DryRun would archive person after update"
@@ -425,14 +415,14 @@ try {
 
         'Disable' {        
             $splatParamsPersonArchive = @{
-                TopdeskPerson   = [ref]$TopdeskPerson
+                TopdeskPerson   = $TopdeskPerson
                 Headers         = $authHeaders
                 BaseUrl         = $actionContext.Configuration.baseUrl
                 Archive         = $true
                 ArchivingReason = $actionContext.Configuration.personArchivingReason
             }
             if (-Not($actionContext.DryRun -eq $true)) {
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
 
                 Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPerson.dynamicName))] successfully archived"
 
