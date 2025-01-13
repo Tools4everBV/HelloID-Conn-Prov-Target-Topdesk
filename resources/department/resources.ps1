@@ -86,7 +86,7 @@ function Get-TopdeskDepartments {
         Headers = $Headers
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
-    Write-Information "Retrieved $($responseGet.count) department from Topdesk"
+    Write-Information "Retrieved $($responseGet.count) departments from Topdesk"
     Write-Output $responseGet
 }
 

@@ -311,7 +311,6 @@ function Get-TopdeskRequesterByType {
 
     # Validate employee entry
     if ($type -eq 'manager') {
-        Write-Information "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
         if ([string]::IsNullOrEmpty($managerAccountReference)) {
             Write-Information "Type: Manager - managerAccountReference empty"
             if ([string]::IsNullOrEmpty($managerFallback)) {
@@ -962,7 +961,6 @@ catch {
                 })
 
         } default {
-            Write-Information ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
                 $errorMessage = "Could not grant TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"

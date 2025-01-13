@@ -962,7 +962,6 @@ catch {
                 })
 
         } default {
-            Write-Information ($ex | ConvertTo-Json) # Debug - Test
             if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
                 $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
                 $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Error: $($ex.ErrorDetails.Message)"

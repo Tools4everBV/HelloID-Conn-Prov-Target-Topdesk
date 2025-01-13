@@ -97,7 +97,7 @@ function Get-TopdeskCountry {
 
     # When country is not found in Topdesk
     if ([string]::IsNullOrEmpty($country.id)) {
-        Write-Information "Aviable countries [$($responseGet | Convertto-json)]"
+        Write-Information "Available countries [$($responseGet | Convertto-json)]"
         $errorMessage = "Country [$CountryName)] not found in Topdesk. This is a mapping error."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
@@ -200,7 +200,7 @@ try {
         }
         if (-not($TopdeskBranches.name -eq $branch.name)) {
             if (-not ($actionContext.DryRun -eq $true)) {
-                Write-Information "Creating TOPdesk branch with the name [ $($branch.name) ] in TOPdesk..."
+                Write-Information "Creating TOPdesk branch with the name [$($branch.name)] in TOPdesk..."
                 # Create branch
                 $splatParamsCreateBranch = @{
                     Headers = $authHeaders
