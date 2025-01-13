@@ -9,12 +9,6 @@ $pRef = $actionContext.References.Permission
 # To resolve variables in the JSON (compatible with powershell v1 target)
 $p = $personContext.Person
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -188,7 +182,7 @@ function Resolve-Variables {
                 $String.Value = $String.Value.Replace($var, $curObject.$_)
             }
             else {
-                Write-Verbose  "Variable [$var] not found"
+                Write-Information  "Variable [$var] not found"
                 $String.Value = $String.Value.Replace($var, $curObject.$_) # Add to override unresolved variables with null
             }
         }
@@ -280,11 +274,11 @@ function Get-TopdeskRequesterByType {
 
     # Validate employee entry
     if ($type -eq 'manager') {
-        write-verbose "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
+        Write-Information "Type: Manager $([string]::IsNullOrEmpty($managerAccountReference))"
         if ([string]::IsNullOrEmpty($managerAccountReference)) {
-            write-verbose "Type: Manager - managerAccountReference leeg"
+            Write-Information "Type: Manager - managerAccountReference empty"
             if ([string]::IsNullOrEmpty($managerFallback)) {
-                write-verbose "Type: Manager - managerAccountReference - leeg - fallback leeg"
+                Write-Information "Type: Manager - managerAccountReference - empty - fallback empty"
                 $errorMessage = "Could not revoke TOPdesk entitlement: [$($pRef.id)]. Could not set requester: The manager account reference is empty and no fallback email is configured."
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
                         Message = $errorMessage
@@ -293,13 +287,13 @@ function Get-TopdeskRequesterByType {
                 return
             }
             else {
-                write-verbose "Type: Manager - managerAccountReference - leeg - fallback gevuld"
+                Write-Information "Type: Manager - managerAccountReference - empty - fallback filled"
                 # Set fallback adress and look it up below
                 $type = $managerFallback
             }
         }
         else {
-            write-verbose "Type: Manager - managerAccountReference - gevuld: [$managerAccountReference]"
+            Write-Information "Type: Manager - managerAccountReference - filled: [$managerAccountReference]"
             Write-Output $managerAccountReference
             return
         }
@@ -422,7 +416,7 @@ function Set-TopdeskPersonArchiveStatus {
 
         [ValidateNotNullOrEmpty()]
         [Object]
-        [Ref]$TopdeskPerson,
+        $TopdeskPerson,
 
         [ValidateNotNullOrEmpty()]
         [Bool]
@@ -437,9 +431,8 @@ function Set-TopdeskPersonArchiveStatus {
 
         #When the 'archiving reason' setting is not configured in the target connector configuration
         if ([string]::IsNullOrEmpty($ArchivingReason)) {
-            $errorMessage = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = $errorMessage
+                    Message = "Configuration setting 'Archiving Reason' is empty. This is a configuration error."
                     IsError = $true
                 })
             throw "Error(s) occured while looking up required values"
@@ -456,14 +449,12 @@ function Set-TopdeskPersonArchiveStatus {
 
         #When the configured archiving reason is not found in Topdesk
         if ([string]::IsNullOrEmpty($archivingReasonObject.id)) {
-            $errorMessage = "Archiving reason [$ArchivingReason] not found in Topdesk"
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = $errorMessage
+                    Message = "Archiving reason [$ArchivingReason] not found in Topdesk"
                     IsError = $true
                 })
             throw "Error(s) occured while looking up required values"
-        } # else
-
+        }
         $archiveStatus = 'personArchived'
         $archiveUri = 'archive'
         $body = @{ id = $archivingReasonObject.id }
@@ -474,20 +465,16 @@ function Set-TopdeskPersonArchiveStatus {
         $body = $null
     }
 
-    # Check the current status of the Person and compare it with the status in archiveStatus
-    if ($archiveStatus -ne $TopdeskPerson.status) {
-
-        # Archive / unarchive person
-        Write-Verbose "[$archiveUri] person with id [$($TopdeskPerson.id)]"
-        $splatParams = @{
-            Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
-            Method  = 'PATCH'
-            Headers = $Headers
-            Body    = $body | ConvertTo-Json
-        }
-        $null = Invoke-TopdeskRestMethod @splatParams
-        $TopdeskPerson.status = $archiveStatus
+    # Archive / unarchive person
+    Write-Information "[$archiveUri] person with id [$($TopdeskPerson.id)]"
+    $splatParams = @{
+        Uri     = "$BaseUrl/tas/api/persons/id/$($TopdeskPerson.id)/$archiveUri"
+        Method  = 'PATCH'
+        Headers = $Headers
+        Body    = $body | ConvertTo-Json
     }
+    $null = Invoke-TopdeskRestMethod @splatParams
+    return $archiveStatus
 }
 
 function Get-TopdeskIdentifier {
@@ -525,7 +512,7 @@ function Get-TopdeskIdentifier {
         return
     }
     
-    Write-Verbose "Class [$class]: Variable [$`Value] has value [$($Value)] and endpoint [$($Endpoint)?query=$($SearchAttribute)==$($Value))]"
+    Write-Information "Class [$class]: Variable [$`Value] has value [$($Value)] and endpoint [$($Endpoint)?query=$($SearchAttribute)==$($Value))]"
 
     # Lookup Value is filled in, lookup value in Topdesk
     $splatParams = @{
@@ -570,11 +557,11 @@ function New-TopdeskIncident {
         Headers = $Headers
         Body    = $TopdeskIncident | ConvertTo-Json
     }
-    Write-Verbose ($TopdeskIncident | ConvertTo-Json)
+    Write-Information ($TopdeskIncident | ConvertTo-Json)
 
     $incident = Invoke-TopdeskRestMethod @splatParams
 
-    Write-Verbose "Created incident with number [$($incident.number)]"
+    Write-Information "Created incident with number [$($incident.number)]"
 
     Write-Output $incident
 }
@@ -656,7 +643,7 @@ function Get-TopdeskAssetsByPersonId {
     
     if ([string]::IsNullOrEmpty($assetList)) {
         if ($SkipNoAssets) {
-            Write-Verbose 'Action skipped because no assets are found and [SkipNoAssetsFound = true] is configured'
+            Write-Information 'Action skipped because no assets are found and [SkipNoAssetsFound = true] is configured'
             return
         }
         else {
@@ -1020,11 +1007,11 @@ try {
     if ($actionContext.DryRun -eq $true) {
         Write-Warning "Revoke Topdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)], will be executed during enforcement"
           
-        Write-Verbose ($requestObject | ConvertTo-Json) 
+        Write-Information ($requestObject | ConvertTo-Json) 
     }
 
     if (-Not($actionContext.DryRun -eq $true)) {
-        Write-Verbose "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
+        Write-Information "Revoking TOPdesk entitlement: [$($pRef.id)] to: [$($personContext.Person.DisplayName)]"
 
         if (($template.caller -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
             # get person (manager)
@@ -1039,13 +1026,13 @@ try {
                 # Unarchive person (manager)
                 $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
             }
         }
         
@@ -1062,13 +1049,13 @@ try {
                 # Unarchive person (employee)
                 $shouldArchive = $true
                 $splatParamsPersonUnarchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $false
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonUnarchive
             }
         }
 
@@ -1080,26 +1067,26 @@ try {
         }
         $TopdeskIncident = New-TopdeskIncident @splatParamsTopdeskIncident
 
-        if ($shouldArchive -and $TopdeskPerson.status -ne 'personArchived') {
+        if ($shouldArchive) {
             if (($template.caller -eq 'manager') -and (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount)))) {
                 $splatParamsPersonArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $true
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
             if ($template.caller -eq 'employee') {
                 $splatParamsPersonArchive = @{
-                    TopdeskPerson   = [ref]$TopdeskPerson
+                    TopdeskPerson   = $TopdeskPerson
                     Headers         = $authHeaders
                     BaseUrl         = $actionContext.Configuration.baseUrl
                     Archive         = $true
                     ArchivingReason = $actionContext.Configuration.personArchivingReason
                 }
-                Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
+                $null = Set-TopdeskPersonArchiveStatus @splatParamsPersonArchive
             }
         }
 

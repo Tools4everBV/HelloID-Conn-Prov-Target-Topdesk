@@ -6,12 +6,6 @@
 # Set to true at start, because only when an error occurs it is set to false
 $outputContext.Success = $true
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -92,7 +86,7 @@ function Get-TopdeskDepartments {
         Headers = $Headers
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
-    Write-Verbose "Retrieved $($responseGet.count) department from Topdesk"
+    Write-Information "Retrieved $($responseGet.count) departments from Topdesk"
     Write-Output $responseGet
 }
 
@@ -117,7 +111,7 @@ function New-TopdeskDepartment {
         body    = @{name = $Name } | ConvertTo-Json
     }
     $responseCreate = Invoke-TopdeskRestMethod @splatParams
-    Write-Verbose "Created department with name [$($name)] and id [$($responseCreate.id)] in Topdesk"
+    Write-Information "Created department with name [$($name)] and id [$($responseCreate.id)] in Topdesk"
     Write-Output $responseCreate
 }
 #endregion functions
@@ -146,7 +140,7 @@ try {
     foreach ($HelloIdDepartment in $rRefSourceData) {
         if (-not($TopdeskDepartments.Name -eq $HelloIdDepartment.displayName)) {
             if (-not ($actionContext.DryRun -eq $true)) {
-                Write-Verbose "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
+                Write-Information "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
                 # Create department
                 $splatParamsCreateDepartment = @{
                     Headers = $authHeaders
@@ -166,7 +160,7 @@ try {
             }
         }
         else {
-            Write-Verbose "Not creating department [$($HelloIdDepartment.displayName)] as it already exists in Topdesk"
+            Write-Information "Not creating department [$($HelloIdDepartment.displayName)] as it already exists in Topdesk"
         }
     }
 }

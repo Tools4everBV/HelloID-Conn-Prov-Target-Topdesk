@@ -6,12 +6,6 @@
 # Set to true at start, because only when an error occurs it is set to false
 $outputContext.Success = $true
 
-# Set debug logging
-switch ($($actionContext.Configuration.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
-}
-
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
@@ -103,7 +97,7 @@ function Get-TopdeskCountry {
 
     # When country is not found in Topdesk
     if ([string]::IsNullOrEmpty($country.id)) {
-        write-verbose "Aviable countries [$($responseGet | Convertto-json)]"
+        Write-Information "Available countries [$($responseGet | Convertto-json)]"
         $errorMessage = "Country [$CountryName)] not found in Topdesk. This is a mapping error."
         $outputContext.AuditLogs.Add([PSCustomObject]@{
                 Message = $errorMessage
@@ -111,7 +105,7 @@ function Get-TopdeskCountry {
             })
     }
     else {
-        Write-Verbose "Retrieved country [$($country.name)] from TOPdesk [$($country.id)]"
+        Write-Information "Retrieved country [$($country.name)] from TOPdesk [$($country.id)]"
         Write-Output $country
     }
 }
@@ -131,7 +125,7 @@ function Get-TOPdeskBranches {
         Headers = $Headers
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
-    Write-Verbose "Retrieved $($responseGet.count) branches from Topdesk"
+    Write-Information "Retrieved $($responseGet.count) branches from Topdesk"
     Write-Output $responseGet
 }
 
@@ -156,7 +150,7 @@ function New-TOPdeskBranch {
         Body    = $Branch | ConvertTo-Json
     }
     $responseCreate = Invoke-TOPdeskRestMethod @splatParams
-    Write-Verbose "Created branch with name [$($Branch.name)] and id [$($responseCreate.id)] in TOPdesk"
+    Write-Information "Created branch with name [$($Branch.name)] and id [$($responseCreate.id)] in TOPdesk"
     Write-Output $responseCreate
 }
 #endregion functions
@@ -206,7 +200,7 @@ try {
         }
         if (-not($TopdeskBranches.name -eq $branch.name)) {
             if (-not ($actionContext.DryRun -eq $true)) {
-                Write-Verbose "Creating TOPdesk branch with the name [ $($branch.name) ] in TOPdesk..."
+                Write-Information "Creating TOPdesk branch with the name [$($branch.name)] in TOPdesk..."
                 # Create branch
                 $splatParamsCreateBranch = @{
                     Headers = $authHeaders
@@ -226,7 +220,7 @@ try {
             }
         }
         else {
-            Write-Verbose "Not creating branch [$($branch.name)] as it already exists in Topdesk"
+            Write-Information "Not creating branch [$($branch.name)] as it already exists in Topdesk"
         }
     }
 }
