@@ -19,21 +19,20 @@ function ConvertTo-TopDeskFlatObject {
     foreach ($property in $Object.PSObject.Properties) {
         $name = if ($Prefix) { "$Prefix`_$($property.Name)" } else { $property.Name }
  
-        if ($null -ne $property.Value) {
-            if ($property.Value -is [pscustomobject]) {
-                $flattenedSubObject = ConvertTo-TopDeskFlatObject -Object $property.Value -Prefix $name
-                foreach ($subProperty in $flattenedSubObject.PSObject.Properties) {
-                    $result[$subProperty.Name] = [string]$subProperty.Value
-                }
+        if ($property.Value -is [pscustomobject]) {
+            $flattenedSubObject = ConvertTo-TopDeskFlatObject -Object $property.Value -Prefix $name
+            foreach ($subProperty in $flattenedSubObject.PSObject.Properties) {
+                $result[$subProperty.Name] = [string]$subProperty.Value
             }
-            else {
-                $result[$name] = [string]$property.Value
-            }
+        }
+        else {
+            $result[$name] = [string]$property.Value
         }
     }
  
     [PSCustomObject]$result
 }
+
 function Set-AuthorizationHeaders {
     param (
         [ValidateNotNullOrEmpty()]
