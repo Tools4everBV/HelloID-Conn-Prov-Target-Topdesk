@@ -86,7 +86,7 @@ function Get-TopdeskBudgetHolders {
         Headers = $Headers
     }
     $responseGet = Invoke-TopdeskRestMethod @splatParams
-    Write-Information "Retrieved $($responseGet.count) budgetholders from Topdesk"
+    Write-Information "Retrieved $($responseGet.count) budget holders from Topdesk"
     Write-Output $responseGet
 }
 
@@ -111,7 +111,7 @@ function New-TopdeskBudgetHolder {
         body    = @{name = $Name } | ConvertTo-Json
     }
     $responseCreate = Invoke-TopdeskRestMethod @splatParams
-    Write-Information "Created budgetholder with name [$($name)] and id [$($responseCreate.id)] in Topdesk"
+    Write-Information "Created budget holder with name [$($name)] and id [$($responseCreate.id)] in Topdesk"
     Write-Output $responseCreate
 }
 #endregion functions
@@ -138,45 +138,79 @@ try {
 
     # Process
     foreach ($HelloIdBudgetHolder in $rRefSourceData) {
-        if (-not($TopdeskBudgetHolders.Name -eq $HelloIdBudgetHolder.name)) {
-            if (-not ($actionContext.DryRun -eq $true)) {
-                Write-Information "Creating Topdesk budgetholder with the name [$($HelloIdBudgetHolder.name)] in Topdesk."
-                # Create budget holder
-                $splatParamsCreateBudgetHolder = @{
-                    Headers = $authHeaders
-                    BaseUrl = $actionContext.Configuration.baseUrl
-                    Name    = $HelloIdBudgetHolder.name
-                }
-                $newBudgetHolder = New-TopdeskBudgetHolder @splatParamsCreateBudgetHolder
+        try {
+            if (-not($TopdeskBudgetHolders.Name -eq $HelloIdBudgetHolder.name)) {
+                if (-not ($actionContext.DryRun -eq $true)) {
+                    Write-Information "Creating Topdesk budget holder with the name [$($HelloIdBudgetHolder.name)] in Topdesk."
+                    # Create budget holder
+                    $splatParamsCreateBudgetHolder = @{
+                        Headers = $authHeaders
+                        BaseUrl = $actionContext.Configuration.baseUrl
+                        Name    = $HelloIdBudgetHolder.name
+                    }
+                    $newBudgetHolder = New-TopdeskBudgetHolder @splatParamsCreateBudgetHolder
 
-                $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Action  = "CreateResource"    
-                        Message = "Created Topdesk budgetholder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
-                        IsError = $false
-                    })
+                    $outputContext.AuditLogs.Add([PSCustomObject]@{
+                            Action  = "CreateResource"    
+                            Message = "Created Topdesk budget holder with the name [$($newBudgetHolder.name)] and ID [$($newBudgetHolder.id)]"
+                            IsError = $false
+                        })
+                }
+                else {
+                    Write-Warning "Preview: Would create Topdesk budget holder $($HelloIdBudgetHolder.name)"
+                }
             }
             else {
-                Write-Warning "Preview: Would create Topdesk budgetholder $($HelloIdBudgetHolder.name)"
+                Write-Information "Not creating budget holder [$($HelloIdBudgetHolder.name)] as it already exists in Topdesk"
             }
         }
-        else {
-            Write-Information "Not creating budgetholder [$($HelloIdBudgetHolder.name)] as it already exists in Topdesk"
+        catch {
+            $ex = $PSItem
+
+            if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
+                $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+                if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+                    $errorMessage = $($ex.ErrorDetails.Message)
+                }
+                else {
+                    $errorMessage = $($ex.Exception.Message)
+                }
+                $auditMessage = "Could not create budget holder [$($HelloIdBudgetHolder.name)]. Error: $($errorMessage)"
+                Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($errorMessage)"
+            }
+            else {
+                $auditMessage = "Could not create budget holder [$($HelloIdBudgetHolder.name)]. Error: $($ex.Exception.Message)"
+                Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
+            }
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateResource"    
+                    Message = $auditMessage
+                    IsError = $true
+                })
         }
     }
 }
 catch {
     $ex = $PSItem
-    
+
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+            $errorMessage = $($ex.ErrorDetails.Message)
+        }
+        else {
+            $errorMessage = $($ex.Exception.Message)
+        }
+        $auditMessage = "Could not create budget holders. Error: $($errorMessage)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($errorMessage)"
     }
     else {
-        $errorMessage = "Could not create budgetholder [$($HelloIdBudgetHolder.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $auditMessage = "Could not create budget holders. Error: $($ex.Exception.Message)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
             Action  = "CreateResource"    
-            Message = $errorMessage
+            Message = $auditMessage
             IsError = $true
         })
 }

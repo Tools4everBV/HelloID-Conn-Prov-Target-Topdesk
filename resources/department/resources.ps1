@@ -138,45 +138,79 @@ try {
 
     # Process
     foreach ($HelloIdDepartment in $rRefSourceData) {
-        if (-not($TopdeskDepartments.Name -eq $HelloIdDepartment.displayName)) {
-            if (-not ($actionContext.DryRun -eq $true)) {
-                Write-Information "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
-                # Create department
-                $splatParamsCreateDepartment = @{
-                    Headers = $authHeaders
-                    BaseUrl = $actionContext.Configuration.baseUrl
-                    Name    = $HelloIdDepartment.displayName
-                }
-                $newDepartment = New-TopdeskDepartment @splatParamsCreateDepartment
+        try {
+            if (-not($TopdeskDepartments.Name -eq $HelloIdDepartment.displayName)) {
+                if (-not ($actionContext.DryRun -eq $true)) {
+                    Write-Information "Creating Topdesk department with the name [$($HelloIdDepartment.displayName)] in Topdesk."
+                    # Create department
+                    $splatParamsCreateDepartment = @{
+                        Headers = $authHeaders
+                        BaseUrl = $actionContext.Configuration.baseUrl
+                        Name    = $HelloIdDepartment.displayName
+                    }
+                    $newDepartment = New-TopdeskDepartment @splatParamsCreateDepartment
                     
-                $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Action  = "CreateResource"    
-                        Message = "Created Topdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
-                        IsError = $false
-                    })
+                    $outputContext.AuditLogs.Add([PSCustomObject]@{
+                            Action  = "CreateResource"    
+                            Message = "Created Topdesk department with the name [$($newDepartment.name)] and ID [$($newDepartment.id)]"
+                            IsError = $false
+                        })
+                }
+                else {
+                    Write-Warning "Preview: Would create Topdesk department $($HelloIdDepartment.displayName)"
+                }
             }
             else {
-                Write-Warning "Preview: Would create Topdesk department $($HelloIdDepartment.displayName)"
+                Write-Information "Not creating department [$($HelloIdDepartment.displayName)] as it already exists in Topdesk"
             }
         }
-        else {
-            Write-Information "Not creating department [$($HelloIdDepartment.displayName)] as it already exists in Topdesk"
+        catch {
+            $ex = $PSItem
+        
+            if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
+                $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+                if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+                    $errorMessage = $($ex.ErrorDetails.Message)
+                }
+                else {
+                    $errorMessage = $($ex.Exception.Message)
+                }
+                $auditMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($errorMessage)"
+                Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($errorMessage)"
+            }
+            else {
+                $auditMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.Exception.Message)"
+                Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
+            }
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateResource"    
+                    Message = $auditMessage
+                    IsError = $true
+                })
         }
     }
 }
 catch {
     $ex = $PSItem
-    
+
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+            $errorMessage = $($ex.ErrorDetails.Message)
+        }
+        else {
+            $errorMessage = $($ex.Exception.Message)
+        }
+        $auditMessage = "Could not create departments. Error: $($errorMessage)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($errorMessage)"
     }
     else {
-        $errorMessage = "Could not create department [$($HelloIdDepartment.displayName)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $auditMessage = "Could not create departments. Error: $($ex.Exception.Message)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
             Action  = "CreateResource"    
-            Message = $errorMessage
+            Message = $auditMessage
             IsError = $true
         })
 }
