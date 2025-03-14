@@ -810,19 +810,6 @@ try {
 
     switch ($action) {
         'Update' {
-            $accountChangedPropertiesObject = [PSCustomObject]@{
-                OldValues = @{}
-                NewValues = @{}
-            }
-    
-            foreach ($accountOldProperty in ($accountOldProperties | Where-Object { $_.Name -in $accountNewProperties.Name })) {
-                $accountChangedPropertiesObject.OldValues.$($accountOldProperty.Name) = $accountOldProperty.Value
-            }
-    
-            foreach ($accountNewProperty in $accountNewProperties) {
-                $accountChangedPropertiesObject.NewValues.$($accountNewProperty.Name) = $accountNewProperty.Value
-            }
-
             # Unarchive person if required
             if ($TopdeskPerson.status -eq 'personArchived') {
         
@@ -858,7 +845,7 @@ try {
                 $TopdeskPersonUpdated = Set-TopdeskPerson @splatParamsPersonUpdate
             }
             else {
-                Write-Warning "DryRun would update Person. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                Write-Warning "DryRun would update Person."
             }
             
             # As the update process could be started for an inactive HelloID person, the user return should be archived state
@@ -885,10 +872,10 @@ try {
             $outputContext.PreviousData = $TopdeskPerson
 
             if (-Not($actionContext.DryRun -eq $true)) {
-                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPersonUpdated.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                Write-Information "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPersonUpdated.dynamicName))] successfully updated."
 
                 $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPersonUpdated.dynamicName))] successfully updated. Old values: $($accountChangedPropertiesObject.oldValues | ConvertTo-Json). New values: $($accountChangedPropertiesObject.newValues | ConvertTo-Json)"
+                        Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [($($TopdeskPersonUpdated.dynamicName))] successfully updated."
                         IsError = $false
                     })
             }
