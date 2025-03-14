@@ -69,6 +69,11 @@ try {
             $enabled = $false
         }
 
+        # Make sure the DisplayName has a value
+        if ([string]::IsNullOrEmpty($account.dynamicName)) {
+            $account.dynamicName = $account.id
+        }
+
         # Make sure the Username has a value
         if ([string]::IsNullOrEmpty($account.tasLoginName)) {
             $account.tasLoginName = $account.id
