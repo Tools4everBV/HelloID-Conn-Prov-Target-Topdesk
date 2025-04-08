@@ -189,60 +189,89 @@ try {
 
     # Process
     foreach ($HelloIdBranch in $rRefSourceData) {
-        
-        # Mapping how to create a branch. https://developers.topdesk.com/explorer/?page=supporting-files#/Branches/createBranch
-        $branch = [PSCustomObject]@{
-            name          = $HelloIdBranch.name
-            postalAddress = @{
-                country = @{id = $country.id }
-            }
-            branchType    = 'independentBranch' # valid values: 'independentBranch' 'headBranch' 'hasAHeadBranch'.
-        }
-        if (-not($TopdeskBranches.name -eq $branch.name)) {
-            if (-not ($actionContext.DryRun -eq $true)) {
-                Write-Information "Creating TOPdesk branch with the name [$($branch.name)] in TOPdesk..."
-                # Create branch
-                $splatParamsCreateBranch = @{
-                    Headers = $authHeaders
-                    BaseUrl = $actionContext.Configuration.baseUrl
-                    Branch  = $branch
+        try {
+            # Mapping how to create a branch. https://developers.topdesk.com/explorer/?page=supporting-files#/Branches/createBranch
+            $branch = [PSCustomObject]@{
+                name          = $HelloIdBranch.name
+                postalAddress = @{
+                    country = @{id = $country.id }
                 }
-                $newBranch = New-TOPdeskBranch @splatParamsCreateBranch
+                branchType    = 'independentBranch' # valid values: 'independentBranch' 'headBranch' 'hasAHeadBranch'.
+            }
+            if (-not($TopdeskBranches.name -eq $branch.name)) {
+                if (-not ($actionContext.DryRun -eq $true)) {
+                    Write-Information "Creating TOPdesk branch with the name [$($branch.name)] in TOPdesk..."
+                    # Create branch
+                    $splatParamsCreateBranch = @{
+                        Headers = $authHeaders
+                        BaseUrl = $actionContext.Configuration.baseUrl
+                        Branch  = $branch
+                    }
+                    $newBranch = New-TOPdeskBranch @splatParamsCreateBranch
 
-                $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Action  = "CreateResource"    
-                        Message = "Created Topdesk branch with the name [$($newBranch.name)] and ID [$($newBranch.id)]"
-                        IsError = $false
-                    })
+                    $outputContext.AuditLogs.Add([PSCustomObject]@{
+                            Action  = "CreateResource"    
+                            Message = "Created Topdesk branch with the name [$($newBranch.name)] and ID [$($newBranch.id)]"
+                            IsError = $false
+                        })
+                }
+                else {
+                    Write-Warning "Preview: Would create Topdesk branch $($branch.name)"
+                }
             }
             else {
-                Write-Warning "Preview: Would create Topdesk branch $($branch.name)"
+                Write-Information "Not creating branch [$($branch.name)] as it already exists in Topdesk"
             }
         }
-        else {
-            Write-Information "Not creating branch [$($branch.name)] as it already exists in Topdesk"
+        catch {
+            $ex = $PSItem
+
+            if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
+                $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+                if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+                    $errorMessage = $($ex.ErrorDetails.Message)
+                }
+                else {
+                    $errorMessage = $($ex.Exception.Message)
+                }
+                $auditMessage = "Could not create branch [$($branch.name)]. Error: $($errorMessage)"
+                Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($errorMessage)"
+            }
+            else {
+                $auditMessage = "Could not create branch [$($branch.name)]. Error: $($ex.Exception.Message)"
+                Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
+            }
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Action  = "CreateResource"    
+                    Message = $auditMessage
+                    IsError = $true
+                })
         }
     }
 }
 catch {
     $ex = $PSItem
-    
+
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorMessage = "Could not create branch [$($branch.name)]. Error:  $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        if (-Not [string]::IsNullOrEmpty($ex.ErrorDetails.Message)) {
+            $errorMessage = $($ex.ErrorDetails.Message)
+        }
+        else {
+            $errorMessage = $($ex.Exception.Message)
+        }
+        $auditMessage = "Could not create branches. Error: $($errorMessage)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($errorMessage)"
     }
     else {
-        $errorMessage = "Could not create branch [$($branch.name)]. Error: $($ex.Exception.Message) $($ex.ScriptStackTrace)"
+        $auditMessage = "Could not create branches. Error: $($ex.Exception.Message)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
     }
-
-    # Only log when there are no lookup values, as these generate their own audit message
-    if (-Not($ex.Exception.Message -eq 'Error(s) occured while looking up required values')) {
-        $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "CreateResource"    
-                Message = $errorMessage
-                IsError = $true
-            })
-    }
+    $outputContext.AuditLogs.Add([PSCustomObject]@{
+            Action  = "CreateResource"    
+            Message = $auditMessage
+            IsError = $true
+        })
 }
 finally {
     # Check if auditLogs contains errors, if errors are found, set success to false

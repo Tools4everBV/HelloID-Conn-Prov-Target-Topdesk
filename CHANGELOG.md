@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com), and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [3.4.0] - 14-03-2025
+
+List of changes:
+- Added account import script
+- Enhanced error handling resource scripts ([#32](https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/issues/32))
+- Optimized audit logging
+
 ## [3.3.0] - 10-12-2024
 
 Added examples for adding additional endpoints and removed debug toggle
