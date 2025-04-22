@@ -654,9 +654,9 @@ try {
                 Write-Information "Mapping of [budgetHolder.name] is missing to lookup the budgetHolder in Topdesk. Action skipped"
             }
 
-            if ($account.manager.PSObject.Properties.Name -Contains 'id') {
+            if ($outputContext.data.manager.PSObject.Properties.Name -Contains 'id') {
                 if (-not ([string]::IsNullOrEmpty($actionContext.References.ManagerAccount))) {
-                    $account.manager.id = $actionContext.References.ManagerAccount
+                    $account | Add-Member @{ manager = [PSCustomObject]@{ id = $actionContext.References.ManagerAccount } } -Force
                     # get manager
                     $splatParamsManager = @{
                         Account = [ref]$account
@@ -676,7 +676,7 @@ try {
                     }
                     $TopdeskManager = Get-TopdeskPersonByCorrelationAttribute @splatParamsManager
                     # add mref id to manager
-                    $account.manager.id = $TopdeskManager.id
+                    $account | Add-Member @{ manager = [PSCustomObject]@{ id = $TopdeskManager.id } } -Force
                 }
             }
             else {
