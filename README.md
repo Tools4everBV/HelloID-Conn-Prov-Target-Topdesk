@@ -350,6 +350,7 @@ The incident JSON file has the following structure:
 		"Category": "Middelen",
 		"SubCategory": "Inventaris & apparatuur",
 		"CallType": "Aanvraag",
+		"Status": "firstLine",
 		"Impact": null,
 		"Priority": null,
 		"Duration": null,
@@ -371,6 +372,7 @@ The incident JSON file has the following structure:
 		"Category": "Middelen",
 		"SubCategory": "Inventaris & apparatuur",
 		"CallType": "Aanvraag",
+		"Status": "secondLine",
 		"Impact": null,
 		"Priority": null,
 		"Duration": null,
@@ -398,6 +400,7 @@ The incident JSON file has the following structure:
 | Category:           | Fill in the category name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                    |
 | SubCategory:        | Fill in the subcategory name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                 |
 | CallType:           | Fill in the branch call type that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                 |
+| Status:             | Fill in the status of the ticket. Possible values are firstLine or secondLine. This field is case-sensitive.                                                                                                                                                                                                                                                            |
 | Impact:             | Fill in the impact name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                      |
 | Priority:           | Fill in the priority name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                    |
 | Duration:           | Fill in the duration name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident.                                                                                                                                                                    |
