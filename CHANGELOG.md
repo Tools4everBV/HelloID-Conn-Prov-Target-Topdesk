@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com), and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [3.4.0] - 27-05-2025
+
+Added support for specifying the status field (firstLine or secondLine) on incidents
+
 ## [3.4.0] - 14-03-2025
 
 List of changes:

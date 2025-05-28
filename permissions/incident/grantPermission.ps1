@@ -999,6 +999,13 @@ try {
         }
     }
 
+    # Add status to request object
+    if (-not [string]::IsNullOrEmpty($template.Status)) {
+        $requestObject += @{
+            status = $template.Status
+        }
+    }
+
     if ($outputContext.AuditLogs.IsError -contains $true) {
         throw "Error(s) occured while looking up required values"
     }
