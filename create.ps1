@@ -609,7 +609,10 @@ try {
 
     switch ($action) {
         'Create' {   
-            #region lookup  
+            #region lookup
+            
+            # Additional endpoint contract (1): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#splitting-account-and-accountcontract-create--update
+            # Additional endpoint privateDetails (1): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#splitting-account-and-accountprivatedetails-create--update
             $account = $actionContext.Data
             # Remove ID field because only used for export data
             if ($account.PSObject.Properties.Name -Contains 'id') {
@@ -766,10 +769,11 @@ try {
                 Write-Warning "DryRun would create topdesk person. Account: $($account | Convertto-json)"
             }
 
+            # Additional endpoint contract (4): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#patch-contract-data-create
+            # Additional endpoint privateDetails (4): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#patch-privatedetails-data-create
+
             $outputContext.AccountReference = $TopdeskPerson.id
             $outputContext.Data = $TopdeskPerson
-
-
             break
             #endregion Write
         }
