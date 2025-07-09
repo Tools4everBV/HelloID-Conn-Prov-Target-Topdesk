@@ -269,6 +269,18 @@ function Set-TopdeskPerson {
 try {
     $action = 'Process'
 
+    if ($actionContext.Origin -eq 'reconciliation') {
+        $data = [pscustomobject]@{ 
+            email            = ''
+            networkLoginName = ''
+            tasLoginName     = ''
+            # mainframeLoginName = 'Deleted by HelloID'
+        }
+        $actionContext | Add-Member -MemberType NoteProperty -Name 'data' -Value $data -Force
+
+        # Additional endpoint Reconciliation
+    }
+
     # Additional endpoint contract (1): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#splitting-account-and-accountcontract-create--update
     # Additional endpoint privateDetails (1): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#splitting-account-and-accountprivatedetails-create--update
     $account = $actionContext.Data

@@ -44,6 +44,17 @@ $accountContract = [PSCustomObject]$actionContext.Data.contract.PsObject.Copy()
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
+> [!WARNING]
+> When updating the `delete` script, make sure that reconciliation continues to work. For example:
+> ```powershell
+> #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
+> $dataContract = [PSCustomObject]@{
+> 	hireDate = $null
+> }
+> $actionContext.Data | Add-Member -MemberType NoteProperty -Name 'contract' -Value $dataContract -Force
+> #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
+> ```
+
 ## GET current contract data [Update / Delete]
 We need to check if the current contract data on the Topdesk person needs to be updated. For this reason we first need to `GET` this data. Add this in the `#region lookup`
 

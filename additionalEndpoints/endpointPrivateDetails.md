@@ -43,6 +43,17 @@ $accountPrivateDetails = [PSCustomObject]$actionContext.Data.privateDetails.PsOb
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
+> [!WARNING]
+> When updating the `delete` script, make sure that reconciliation continues to work. For example:
+> ```powershell
+> #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
+> $dataPrivateDetails = [PSCustomObject]@{
+> 	privateEmail = $null
+> }
+> $actionContext.Data | Add-Member -MemberType NoteProperty -Name 'privateDetails' -Value $dataPrivateDetails -Force
+> #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
+> ```
+
 ## GET current privateDetails data [Update / Delete]
 We need to check if the current privateDetails data on the Topdesk person needs to be updated. For this reason we first need to `GET` this data. Add this in the `#region lookup`
 
