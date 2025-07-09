@@ -470,10 +470,10 @@ try {
             $outputContext.Data = $account
             $outputContext.PreviousData = $account
 
-            Write-Information "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
+            Write-Information "Account with id [$($actionContext.References.Account)] successfully archived (skipped not found)"
                 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
+                    Message = "Account with id [$($actionContext.References.Account)] successfully archived (skipped not found)"
                     IsError = $false
                 })
 
