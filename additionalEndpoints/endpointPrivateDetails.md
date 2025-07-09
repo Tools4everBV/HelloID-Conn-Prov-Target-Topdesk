@@ -7,7 +7,7 @@
 > [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
 
 > [!NOTE]
-> Only `create` and `update` account lifecycle actions are supported. If updating a value in the `delete` script is required, use the `update` operations within the `delete` script. Ensure that you modify scripts only where field mappings are defined. This add-on requires at least one valid field containing `privateDetails.` in the field mapping for proper functionality.
+> > Only `create`, `update` and `delete` account lifecycle actions are supported. Ensure that you modify scripts only where field mappings are defined. This add-on requires at least one valid field containing `privateDetails.` in the field mapping for proper functionality.
 
 ## Additional permissions
 
@@ -22,7 +22,7 @@ Add all required fields in de fieldmapping with the prefix `privateDetails.`, ex
 
 For more options please look at [Topdesk API documentation /privateDetails](https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/getPersonPrivateDetailsByPersonId)
 
-## splitting account and accountPrivateDetails [Create / Update]
+## splitting account and accountPrivateDetails [Create / Update / Delete]
 Because `/privateDetails` is a different endpoint we need to split the fieldmapping data. Replace the `$account = $actionContext.Data` and `remove 'id'` part.
 
 ```powershell
@@ -43,7 +43,7 @@ $accountPrivateDetails = [PSCustomObject]$actionContext.Data.privateDetails.PsOb
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-## GET current privateDetails data [Update]
+## GET current privateDetails data [Update / Delete]
 We need to check if the current privateDetails data on the Topdesk person needs to be updated. For this reason we first need to `GET` this data. Add this in the `#region lookup`
 
 ```powershell
@@ -63,7 +63,7 @@ $TopdeskPersonPrivateDetails | Get-Member -MemberType Properties | ForEach-Objec
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-## Enrich compare [Update]
+## Enrich compare [Update / Delete]
 Add all properties from privateDetails `$accountPrivateDetails` and `$TopdeskPersonPrivateDetails` to `$accountDifferenceObject` and `$accountReferenceObject` to get a complete compare.
 This must be added after `$accountDifferenceObject` and `$accountReferenceObject` are filled by `$account` and `$TopdeskPerson`.
 
@@ -104,7 +104,7 @@ else {
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-## PATCH privateDetails data [Update]
+## PATCH privateDetails data [Update / Delete]
 `PATCH` the privateDetails data of the Topdesk person. Add this part after updating the Topdesk Person, before re-archiving in the update script. Also `$outputContext.Data` and need to be filled correctly so custom events and audit logging will work correctly.
 
 ```powershell

@@ -7,7 +7,7 @@
 > [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
 
 > [!NOTE]
-> Only `create` and `update` account lifecycle actions are supported. If updating a value in the `delete` script is required, use the `update` operations within the `delete` script. Ensure that you modify scripts only where field mappings are defined. This add-on requires at least one valid field containing `contract.` in the field mapping for proper functionality.
+> Only `create`, `update` and `delete` account lifecycle actions are supported. Ensure that you modify scripts only where field mappings are defined. This add-on requires at least one valid field containing `contract.` in the field mapping for proper functionality.
 
 ## Additional permissions
 
@@ -23,7 +23,7 @@ Add all required fields in de fieldmapping with the prefix `contract.`, example:
 
 For more options please look at [Topdesk API documentation /contract](https://developers.topdesk.com/explorer/?page=supporting-files#/Persons/getPersonContractByPersonId)
 
-## splitting account and accountContract [Create / Update]
+## splitting account and accountContract [Create / Update / Delete]
 Because `/contract` is a different endpoint we need to split the fieldmapping data. Replace the `$account = $actionContext.Data` and `remove 'id'` part.
 
 ```powershell
@@ -44,7 +44,7 @@ $accountContract = [PSCustomObject]$actionContext.Data.contract.PsObject.Copy()
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-## GET current contract data [Update]
+## GET current contract data [Update / Delete]
 We need to check if the current contract data on the Topdesk person needs to be updated. For this reason we first need to `GET` this data. Add this in the `#region lookup`
 
 > [!TIP]
@@ -79,7 +79,7 @@ if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.employmentTerminationDat
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-## Enrich compare [Update]
+## Enrich compare [Update / Delete]
 Add all properties from contract `$accountContract` and `$TopdeskPersonContract` to `$accountDifferenceObject` and `$accountReferenceObject` to get a complete compare.
 This must be added after `$accountDifferenceObject` and `$accountReferenceObject` are filled by `$account` and `$TopdeskPerson`.
 
@@ -120,7 +120,7 @@ else {
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-## PATCH contract data [Update]
+## PATCH contract data [Update / Delete]
 `PATCH` the contract data of the Topdesk person. Add this part after updating the Topdesk Person, before re-archiving in the update script. Also `$outputContext.Data` and `$outputContext.PreviousData` need to be filled correctly so custom events and audit logging will work correctly.
 
 ```powershell
