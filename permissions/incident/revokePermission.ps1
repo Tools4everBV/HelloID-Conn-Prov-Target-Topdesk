@@ -722,7 +722,7 @@ try {
         # Use $($account.TopdeskAssets) in your notification configuration to resolve the queried assets
         $account.TopdeskAssets = Get-TopdeskAssetsByPersonId @splatParamsTopdeskAssets
         
-        # TopdeskAssets can only be empty if the action needs to be skiped [SkipNoAssetsFound = true]
+        # TopdeskAssets can only be empty if the action needs to be skipped [SkipNoAssetsFound = true]
         if ([string]::IsNullOrEmpty($account.TopdeskAssets)) {
             throw 'Action skip'
         }

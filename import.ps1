@@ -23,6 +23,9 @@ try {
     if ('dynamicName' -notin $importFields) { $importFields += 'dynamicName' }
     if ('tasLoginName' -notin $importFields) { $importFields += 'tasLoginName' }
 
+    # Example how to filter out users that are deleted by HelloID (Reconciliation)
+    # if ('mainframeLoginName' -notin $importFields) { $importFields += 'mainframeLoginName' }
+    
     # Remove fields from other endpoints
     if ('privateDetails' -in $importFields) { $importFields = $importFields | Where-Object { $_ -ne 'privateDetails' } }
     if ('contract' -in $importFields) { $importFields = $importFields | Where-Object { $_ -ne 'contract' } }
@@ -60,6 +63,9 @@ try {
 
         Write-Information "Successfully queried [$($existingAccounts.count)] existing accounts"
     } while ($uri)
+
+    # Example how to filter out users that are deleted by HelloID (Reconciliation)
+    # $existingAccounts = $existingAccounts | Where-Object {$_.mainframeLoginName -ne 'Deleted by HelloID'}
 
     # Map the imported data to the account field mappings
     foreach ($account in $existingAccounts) {

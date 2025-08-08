@@ -269,6 +269,20 @@ function Set-TopdeskPerson {
 try {
     $action = 'Process'
 
+    if ($actionContext.Origin -eq 'reconciliation') {
+        $data = [pscustomobject]@{ 
+            email            = ''
+            networkLoginName = ''
+            tasLoginName     = ''
+            # mainframeLoginName = 'Deleted by HelloID'
+        }
+        $actionContext | Add-Member -MemberType NoteProperty -Name 'data' -Value $data -Force
+
+        # Additional endpoint Reconciliation
+    }
+
+    # Additional endpoint contract (1): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#splitting-account-and-accountcontract-create--update
+    # Additional endpoint privateDetails (1): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#splitting-account-and-accountprivatedetails-create--update
     $account = $actionContext.Data
 
     # Setup authentication headers
@@ -286,6 +300,9 @@ try {
     }
     $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
+    # Additional endpoint contract (2): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#get-current-contract-data-update
+    # Additional endpoint privateDetails (2): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#get-current-privatedetails-data-update
+
     if ($outputContext.AuditLogs.isError -contains - $true) {
         throw "Error(s) occured while looking up required values"
     }
@@ -298,6 +315,10 @@ try {
             # Flatten the JSON object
             $accountDifferenceObject = ConvertTo-TopDeskFlatObject -Object $account
             $accountReferenceObject = ConvertTo-TopDeskFlatObject -Object $TopdeskPerson
+
+            # Additional endpoint contract (3): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#enrich-compare-update
+            # Additional endpoint privateDetails (3): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#enrich-compare-update
+
             # Define properties to compare for update
             $accountPropertiesToCompare = $accountDifferenceObject.PsObject.Properties.Name
 
@@ -367,6 +388,9 @@ try {
             else {
                 Write-Warning "DryRun would update Person."
             }
+
+            # Additional endpoint contract (5): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#patch-contract-data-update
+            # Additional endpoint privateDetails (5): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#patch-privatedetails-data-update
            
             # Archive person
             $splatParamsPersonArchive = @{
@@ -446,10 +470,10 @@ try {
             $outputContext.Data = $account
             $outputContext.PreviousData = $account
 
-            Write-Information "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
+            Write-Information "Account with id [$($actionContext.References.Account)] successfully archived (skipped not found)"
                 
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Account with id [$($actionContext.References.Account)] successfully archived (skiped not found)"
+                    Message = "Account with id [$($actionContext.References.Account)] successfully archived (skipped not found)"
                     IsError = $false
                 })
 
