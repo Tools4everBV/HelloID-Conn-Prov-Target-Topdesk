@@ -47,7 +47,7 @@ try {
 
     $existingAccounts = @()
     $pageSize = 5000
-    $uri = "$($actionContext.Configuration.baseUrl)/tas/api/persons?pageStart=0&pageSize=$pageSize&fields=$fields"
+    $uri = "$($actionContext.Configuration.baseUrl)/tas/api/persons?pageStart=0&pageSize=$pageSize&fields=$fields&query=employeeNumber != '*****'"
     
     do {
         $splatParams = @{
