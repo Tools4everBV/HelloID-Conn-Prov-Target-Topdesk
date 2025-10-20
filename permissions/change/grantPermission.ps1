@@ -39,6 +39,7 @@ function Set-AuthorizationHeaders {
     $authHeaders = [System.Collections.Generic.Dictionary[string, string]]::new()
     $authHeaders.Add("Authorization", "BASIC $base64")
     $authHeaders.Add('Accept', 'application/json; charset=utf-8')
+    $authHeaders.Add('Partner-Solution-Id', 'TOOL001') # Fixed value - Tools4ever Partner Solution ID
 
     Write-Output $authHeaders
 }
