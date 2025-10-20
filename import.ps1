@@ -44,6 +44,7 @@ try {
     $headers = [System.Collections.Generic.Dictionary[string, string]]::new()
     $headers.Add("Authorization", "BASIC $base64")
     $headers.Add('Accept', 'application/x.topdesk-collection-person-v2+json')
+    $headers.Add('Partner-Solution-Id', 'TOOL001') # Fixed value - Tools4ever Partner Solution ID
 
     $existingAccounts = @()
     $pageSize = 5000
