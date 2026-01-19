@@ -303,7 +303,7 @@
             "Disable"
           ],
           "MappingMode": "Fixed",
-          "Value": "\"Managed by HelloI\"",
+          "Value": "\"Managed by HelloID\"",
           "UsedInNotifications": false,
           "StoreInAccountData": false
         },
