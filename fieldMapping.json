@@ -291,7 +291,7 @@
       ]
     },
     {
-      "Name": "MainframeLoginName",
+      "Name": "mainframeLoginName",
       "Description": "",
       "Type": "Text",
       "MappingActions": [
