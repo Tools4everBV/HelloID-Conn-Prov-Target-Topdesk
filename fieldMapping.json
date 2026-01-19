@@ -289,6 +289,34 @@
           "StoreInAccountData": false
         }
       ]
+    },
+    {
+      "Name": "MainframeLoginName",
+      "Description": "",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Update",
+            "Enable",
+            "Disable"
+          ],
+          "MappingMode": "Fixed",
+          "Value": "\"Managed by HelloI\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        },
+        {
+          "MapForActions": [
+            "Delete"
+          ],
+          "MappingMode": "Fixed",
+          "Value": "\"Deleted by HelloID\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
     }
   ],
   "UniqueFieldNames": []
