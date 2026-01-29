@@ -578,6 +578,11 @@ function Set-TopdeskPersonIsManager {
             Body    = $body | ConvertTo-Json
         }
         $null = Invoke-TopdeskRestMethod @splatParams
+
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Message = "Account with id [$($TopdeskPerson.id)] and dynamicName [$($TopdeskPerson.dynamicName)]: flag isManager successfully set to [$isManager]."
+                IsError = $false
+            })
     }
 }
 
@@ -793,7 +798,7 @@ try {
             Set-TopdeskPersonIsManager @splatParamsManagerIsManager
         }
         else {
-            Write-Warning "DryRun would set isManager to [$($splatParamsManagerIsManager.IsManager)]"
+            Write-Warning "DryRun would set isManager to [$($splatParamsManagerIsManager.IsManager)] for [$($TopdeskManager.dynamicName)]"
         }
 
         # Archive manager if required
