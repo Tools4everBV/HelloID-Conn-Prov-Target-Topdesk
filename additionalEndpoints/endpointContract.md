@@ -76,16 +76,17 @@ $TopdeskPersonContract | Get-Member -MemberType Properties | ForEach-Object {
 	$oldAccountContract | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonContract.$($_.Name)
 }
 
-# Response is yyyy-MM-ddT00:00:00.000+0000 and must be date only for the compare
 if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.hireDate))) {
-	# Extract the date part before 'T'
-	$hireDate = $TopdeskPersonContract.hireDate -split 'T'
-	$TopdeskPersonContract.hireDate = $hireDate[0]
+	$TopdeskPersonContract.hireDate = ([datetime]::Parse($TopdeskPersonContract.hireDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
 }
 if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.employmentTerminationDate))) {
-	# Extract the date part before 'T'
-	$terminationDate = $TopdeskPersonContract.employmentTerminationDate -split 'T'
-	$TopdeskPersonContract.employmentTerminationDate = $terminationDate[0]
+	$TopdeskPersonContract.employmentTerminationDate = ([datetime]::Parse($TopdeskPersonContract.employmentTerminationDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
+}
+if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.contractStartDate))) {
+	$TopdeskPersonContract.contractStartDate = ([datetime]::Parse($TopdeskPersonContract.contractStartDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
+}
+if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.contractExpiryDate))) {
+	$TopdeskPersonContract.contractExpiryDate = ([datetime]::Parse($TopdeskPersonContract.contractExpiryDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```

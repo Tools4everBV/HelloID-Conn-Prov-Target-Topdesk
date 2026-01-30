@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com), and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [3.4.2] - 19-01-2026
+
+Updated contract endpoint datetime conversion for better timezone support.
+Added better logging when isManager flag is changed.
+
 ## [3.4.1] - 19-01-2026
 
 Added MainframeLoginName field mapping with fixed values for managed/deleted states
