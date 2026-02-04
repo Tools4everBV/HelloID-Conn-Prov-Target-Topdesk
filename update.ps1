@@ -634,13 +634,18 @@ try {
     }
     $authHeaders = Set-AuthorizationHeaders @splatParamsAuthorizationHeaders
     
-    # Resolve branch id
-    $splatParamsBranch = @{
-        Account = [ref]$account
-        Headers = $authHeaders
-        BaseUrl = $actionContext.Configuration.baseUrl
+    if ($Account.branch.PSObject.Properties.Name -Contains 'name') {
+        # Resolve branch id
+        $splatParamsBranch = @{
+            Account = [ref]$account
+            Headers = $authHeaders
+            BaseUrl = $actionContext.Configuration.baseUrl
+        }
+        Get-TopdeskBranch @splatParamsBranch
     }
-    Get-TopdeskBranch @splatParamsBranch
+    else {
+        Write-Information "Mapping of [branch.name] is missing to lookup the branch in Topdesk. Action skipped"
+    }
 
     if ($Account.department.PSObject.Properties.Name -Contains 'name') {
         # Resolve department id
