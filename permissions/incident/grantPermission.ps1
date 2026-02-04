@@ -226,12 +226,12 @@ function Confirm-Description {
         $AllowedLength
     )
     if ($Description.Length -gt $AllowedLength) {
-        $errorMessage = "Could not grant TOPdesk entitlement [$id]: The attribute [$AttributeName] exceeds the max amount of [$AllowedLength] characters. Please shorten the value for this attribute in the JSON file. Value: [$Description]"
-        
-        $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Message = $errorMessage
-                IsError = $true
-            })
+        Write-Information "Attribute [$AttributeName] exceeds [$AllowedLength] characters [$Description] and will be shortened."
+        $descriptionShortened = $Description.substring(0, [System.Math]::Min($AllowedLength, $Description.Length))
+        return $descriptionShortened
+    }
+    else {
+        return $Description
     }
 }
 
@@ -740,14 +740,12 @@ try {
         Description   = $requestShort
         AllowedLength = 80
         AttributeName = 'requestShort'
-        id            = $pref.id
+        id            = $pRef.id
     }
-
-    Confirm-Description @splatParamsValidateRequestShort
     
     # Add value to request object
     $requestObject += @{
-        briefDescription = $requestShort
+        briefDescription = Confirm-Description @splatParamsValidateRequestShort
     }
 
     # Resolve variables in the RequestDescription field
