@@ -525,6 +525,11 @@ function Get-TopdeskIdentifier {
 
     $result = $responseGet | Where-object $SearchAttribute -eq $Value
 
+    if ($class -eq 'SubCategory' -and ($result | Measure-Object).Count -gt 1) {
+        # Ensure category ID is available or adjust order of operations to guarantee its presence
+        $result = $result | Where-Object { $_.Category.Id -eq $RequestObject.category.id }
+    }
+
     # When attribute $Class with $Value is not found in Topdesk
     if ([string]::IsNullOrEmpty($result.id)) {
         $errorMessage = "Class [$Class] with SearchAttribute [$SearchAttribute] with value [$Value] isn't found in Topdesk"
