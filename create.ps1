@@ -137,9 +137,6 @@ function Get-TopdeskDepartment {
         $LookupErrorHrDepartment,
 
         [ValidateNotNullOrEmpty()]
-        $LookupErrorTopdesk,
-
-        [ValidateNotNullOrEmpty()]
         [Object]
         [ref]$Account
     )
@@ -180,19 +177,10 @@ function Get-TopdeskDepartment {
 
         # When department is not found in Topdesk
         if ([string]::IsNullOrEmpty($department.id)) {
-            if ([System.Convert]::ToBoolean($LookupErrorTopdesk)) {
-                # True, no department found = throw error
-                $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Department [$($Account.department.name)] not found in Topdesk and the connector is configured to stop when this happens."
-                        IsError = $true
-                    })
-            }
-            else {
-                # False, no department found = remove department field (leave empty on creation or keep current value on update)
-                $Account.department.PSObject.Properties.Remove('name')
-                $Account.PSObject.Properties.Remove('department')
-                Write-Information "Not overwriting or setting department as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
-            }
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = "Department [$($Account.department.name)] not found in Topdesk and the connector is configured to stop when this happens."
+                    IsError = $true
+                })
         }
         else {
             # Department is found in Topdesk, set in Topdesk
@@ -214,9 +202,6 @@ function Get-TopdeskBudgetHolder {
 
         [ValidateNotNullOrEmpty()]
         $LookupErrorHrBudgetHolder,
-
-        [ValidateNotNullOrEmpty()]
-        $LookupErrorTopdesk,
 
         [ValidateNotNullOrEmpty()]
         [Object]
@@ -261,19 +246,10 @@ function Get-TopdeskBudgetHolder {
 
         # When budgetholder is not found in Topdesk
         if ([string]::IsNullOrEmpty($budgetHolder.id)) {
-            if ([System.Convert]::ToBoolean($lookupErrorTopdesk)) {
-                # True, no budgetholder found = throw error
-                $outputContext.AuditLogs.Add([PSCustomObject]@{
-                        Message = "Budgetholder [$($Account.budgetHolder.name)] not found in Topdesk and the connector is configured to stop when this happens."
-                        IsError = $true
-                    })
-            }
-            else {
-                # False, no budgetholder found = remove budgetholder field (leave empty on creation or keep current value on update)
-                $Account.budgetHolder.PSObject.Properties.Remove('name')
-                $Account.PSObject.Properties.Remove('budgetHolder')
-                Write-Information "Not overwriting or setting budgetholder as it can't be found in Topdesk. (lookupErrorTopdesk = False)"
-            }
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = "Budgetholder [$($Account.budgetHolder.name)] not found in Topdesk and the connector is configured to stop when this happens."
+                    IsError = $true
+                })
         }
         else {
             # Budgetholder is found in Topdesk, set in Topdesk
@@ -640,7 +616,6 @@ try {
                     Headers                 = $authHeaders
                     BaseUrl                 = $actionContext.Configuration.baseUrl
                     LookupErrorHrDepartment = $actionContext.Configuration.lookupErrorHrDepartment
-                    LookupErrorTopdesk      = $actionContext.Configuration.lookupErrorTopdesk
                 }
                 Get-TopdeskDepartment @splatParamsDepartment  
             }
@@ -655,7 +630,6 @@ try {
                     Headers                   = $authHeaders
                     BaseUrl                   = $actionContext.Configuration.baseUrl
                     lookupErrorHrBudgetHolder = $actionContext.Configuration.lookupErrorHrBudgetHolder
-                    lookupErrorTopdesk        = $actionContext.Configuration.lookupErrorTopdesk
                 }
                 Get-TopdeskBudgetholder @splatParamsBudgetHolder
             }

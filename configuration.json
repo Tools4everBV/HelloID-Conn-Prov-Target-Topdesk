@@ -80,24 +80,6 @@
     }
   },
   {
-    "key": "lookupErrorTopdesk",
-    "type": "radio",
-    "defaultValue": "true",
-    "templateOptions": {
-      "label": "When an item can't be found in Topdesk",
-      "options": [
-        {
-          "value": "true",
-          "label": "Stop processing and generate an error"
-        },
-        {
-          "value": "false",
-          "label": "Keep the current value and continue"
-        }
-      ]
-    }
-  },
-  {
     "key": "lookupErrorHrDepartment",
     "type": "radio",
     "defaultValue": "true",

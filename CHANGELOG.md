@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com), and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [3.4.3] - 06-02-2026
+
+List of changes:
+- Removed `lookupErrorTopdesk` [#44](https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/issues/44)
+- `Confirm-Description` now shorten the `BriefDescription` and `requestShort`
+- Added support to not update branch in update script (when not update is not selected on `branch.name`)
+- Fixed [#37](https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/issues/37)
+
 ## [3.4.2] - 19-01-2026
 
 Updated contract endpoint datetime conversion for better timezone support.
