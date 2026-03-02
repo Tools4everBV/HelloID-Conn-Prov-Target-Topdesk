@@ -15,69 +15,34 @@
 	- [Introduction](#introduction)
 	- [Getting started](#getting-started)
 		- [HelloID Icon URL](#helloid-icon-url)
-		- [Provisioning PowerShell V2 connector](#provisioning-powershell-v2-connector)
+		- [Requirements](#requirements)
+		- [Connection settings](#connection-settings)
 			- [Correlation configuration](#correlation-configuration)
 			- [Field mapping](#field-mapping)
-		- [Connection settings](#connection-settings)
-		- [Prerequisites](#prerequisites)
-		- [Remarks](#remarks)
+		- [Account Reference](#account-reference)
+	- [Remarks](#remarks)
 	- [Setup the connector](#setup-the-connector)
 		- [Remove attributes when updating a Topdesk person instead of correlating](#remove-attributes-when-updating-a-topdesk-person-instead-of-correlating)
 		- [Disable department, budgetholder or manager](#disable-department-budgetholder-or-manager)
 		- [Changes](#changes)
 		- [Incidents](#incidents)
+	- [Development resources](#development-resources)
+		- [API endpoints](#api-endpoints)
+		- [API documentation](#api-documentation)
 	- [Getting help](#getting-help)
 	- [HelloID docs](#helloid-docs)
 
 ## Introduction
 
 Supported features:
-| Feature                                   | Supported | Actions                                 | Remarks                                                                                                                                  |
-| ----------------------------------------- | --------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Account Lifecycle**                     | ✅         | Create, Update, Enable, Disable, Delete |                                                                                                                                          |
-| **Permissions**                           | ✅         | Retrieve, Grant, Revoke                 | Creating changes and incidents                                                                                                           |
-| **Resources**                             | ✅         | -                                       |                                                                                                                                          |
-| **Entitlement Import: Accounts**          | ✅         | -                                       |                                                                                                                                          |
-| **Entitlement Import: Permissions**       | ❌         | -                                       |                                                                                                                                          |
-| **Governance Reconciliation Resolutions** | ✅         | Disable, Delete                         | Delete is treated as a disable action with the option to update values. Please adjust the configuration accordingly in the delete script |
-
-_HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a set of REST APIs that allow you to programmatically interact with its data. The [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commands that are used.
-
-| Endpoint                           | Description                                                |
-| ---------------------------------- | ---------------------------------------------------------- |
-| /tas/api/persons                   | `GET / POST / PATCH` actions to read and write the persons |
-| /tas/api/branches                  | `GET / POST` read and create branches                      |
-| /tas/api/departments               | `GET / POST` read and create departments                   |
-| /tas/api/budgetholders             | `GET / POST` read and create budgetholders                 |
-| /tas/api/archiving-reasons         | `GET` archiving-reasons to archive persons                 |
-| /tas/api/applicableChangeTemplates | `GET` read change template from Topdesk                    |
-| /tas/api/operatorChanges           | `POST` create changes in Topdesk                           |
-| /tas/api/incidents                 | `GET / POST` read and create incidents                     |
-| /tas/api/operatorgroups            | `GET` read operator groups used for incidents              |
-| /tas/api/operators                 | `GET` read operators used for incidents                    |
-| /tas/api/countries                 | `GET` read countries used for create branches              |
-| /tas/api/assetmgmt                 | `GET` read assets used for reading linked assets to person |
-
-The following lifecycle actions are available:
-
-| Action                     | Description                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------- |
-| create.ps1                 | PowerShell _create_ or _correlate_ lifecycle action                          |
-| delete.ps1                 | PowerShell _delete_ lifecycle action (empty configured values and archive)   |
-| disable.ps1                | PowerShell _disable_ lifecycle action                                        |
-| enable.ps1                 | PowerShell _enable_ lifecycle action                                         |
-| update.ps1                 | PowerShell _update_ lifecycle action                                         |
-| grant.change.ps1           | PowerShell _grant_  lifecycle action (create change on entitlement grant)    |
-| revoke.change.ps1          | PowerShell _revoke_ lifecycle action (create change on entitlement revoke)   |
-| permissions.change.ps1     | PowerShell _permissions_ lifecycle action (read configured change.json)      |
-| grant.incident.ps1         | PowerShell _grant_ lifecycle action (create incident on entitlement grant)   |
-| revoke.incident.ps1        | PowerShell _revoke_ lifecycle action (create incident on entitlement revoke) |
-| permissions.incident.ps1   | PowerShell _permissions_ lifecycle action (read configured incident.json)    |
-| resources.branch.ps1       | PowerShell _resources_ lifecycle action (create braches)                     |
-| resources.department.ps1   | PowerShell _resources_ lifecycle action (create departments)                 |
-| resources.budgetholder.ps1 | PowerShell _resources_ lifecycle action (create budgetholders)               |
-| configuration.json         | Default _configuration.json_                                                 |
-| fieldMapping.json          | Default _fieldMapping.json_                                                  |
+| Feature                                   | Supported | Actions                                 | Remarks                                                                                                                                                                                                |
+| ----------------------------------------- | --------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Account Lifecycle**                     | ✅         | Create, Update, Enable, Disable, Delete |                                                                                                                                                                                                        |
+| **Permissions**                           | ✅         | Retrieve, Grant, Revoke                 | Creating changes and incidents                                                                                                                                                                         |
+| **Resources**                             | ✅         | -                                       |                                                                                                                                                                                                        |
+| **Entitlement Import: Accounts**          | ✅         | -                                       |                                                                                                                                                                                                        |
+| **Entitlement Import: Permissions**       | ❌         |                                         |                                                                                                                                                                                                        |
+| **Governance Reconciliation Resolutions** | ✅         | Disable, Delete, Revoke                 | Delete is treated as a disable action with the option to update values. Please adjust the configuration accordingly in the delete script. Revoke only avalible for the software assignments permission |
 
 ## Getting started
 
@@ -88,7 +53,68 @@ URL of the icon used for the HelloID Provisioning target system.
 https://raw.githubusercontent.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/refs/heads/main/Icon.png
 ```
 
-### Provisioning PowerShell V2 connector
+### Requirements
+> [!IMPORTANT]
+> <b> When changes or incidents are in scope, a helloID agent on-premise is required. For cloud only changes or incidents use the [HelloID Topdesk notification system](https://github.com/Tools4everBV/HelloID-Conn-Prov-Notification-Topdesk) </b> 
+
+an archiving reason that is configured in Topdesk.
+Credentials with the rights listed below. 
+
+| Permission                       | Read | Write | Create | Archive |
+| -------------------------------- | ---- | ----- | ------ | ------- |
+| <b>Call Management</b>           |      |       |        |         |
+| First line calls                 | x    | x     | x      |         |
+| Second line calls                | x    | x     | x      |         |
+| Escalate calls                   |      | x     |        |         |
+| Link object to call              |      | x     |        |         |
+| Link room to call                |      | x     |        |         |
+| <b>Change Management</b>         |      |       |        |         |
+| Requests for Simple Change       | x    | x     | x      |         |
+| Requests for Extensive Change    | x    | x     | x      |         |
+| Simple Changes                   | x    | x     |        |         |
+| Extensive Changes                | x    | x     |        |         |
+| <b>New Asset Management</b>      |      |       |        |         |
+| Templates                        | x    |       |        |         |
+| <b>Supporting Files</b>          |      |       |        |         |
+| Persons                          | x    | x     | x      | x       |
+| Operators                        | x    | x     | x      | x       |
+| Operator groups                  | x    |       |        |         |
+| Suppliers                        | x    |       |        |         |
+| Rooms                            | x    |       |        |         |
+| Login data                       |      | x     |        |         |
+| Supporting Files Settings        | x    | x     |        |         |
+| <b>Reporting API</b>             |      |       |        |         |
+| REST API                         | x    |       |        |         |
+| Use application passwords        |      | x     |        |         |
+| <b>Asset Management - Assets</b> |      |       |        |         |
+| Configuration                    | x    |       |        |         |
+| Firsttemplate                    | x    |       |        |         |
+| Hardware                         | x    |       |        |         |
+| Inventories                      | x    |       |        |         |
+| Licentie                         | x    |       |        |         |
+| Network component                | x    |       |        |         |
+| Software                         | x    |       |        |         |
+| Stock                            | x    |       |        |         |
+| Telephone systems                | x    |       |        |         |
+
+> [!NOTE]
+> It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk.
+
+### Connection settings
+
+The following settings are required to connect to the API.
+
+| Setting                             | Description                                                                                          | Mandatory |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- | --------- |
+| BaseUrl                             | The URL to the API                                                                                   | Yes       |
+| UserName                            | The UserName to connect to the API                                                                   | Yes       |
+| Password                            | The Password to connect to the API                                                                   | Yes       |
+| Notification file path              | Location of the JSON file needed for changes or incidents                                            |           |
+| Archiving reason                    | Fill in an archiving reason that is configured in Topdesk                                            | Yes       |
+| Fallback email                      | When a manager is set as the requester (in the JSON file) but the manager account reference is empty |           |
+| Do not create changes or incidents  | If enabled no changes or incidents will be created in Topdesk                                        |           |
+| When no department in source data   | Stop processing and generate an error or clear the department field in Topdesk                       | Yes       |
+| When no budgetholder in source data | Stop processing and generate an error or clear the budgetholder field in Topdesk                     | Yes       |
 
 #### Correlation configuration
 
@@ -119,73 +145,11 @@ The field mapping can be imported by using the [_fieldMapping.json_](./fieldMapp
 > [!TIP]
 > You can add extra fields to the account mapping. For example `mobileNumber` or a boolean field `showAllBranches`. For all possible options please check the [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
 
-### Connection settings
+### Account Reference
 
-The following settings are required to connect to the API.
+The account reference is populated with the property `id` property from _HelloID-Conn-Prov-Target-Topdesk_
 
-| Setting                             | Description                                                                                                             | Mandatory |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------- |
-| BaseUrl                             | The URL to the API                                                                                                      | Yes       |
-| UserName                            | The UserName to connect to the API                                                                                      | Yes       |
-| Password                            | The Password to connect to the API                                                                                      | Yes       |
-| Notification file path              | Location of the JSON file needed for changes or incidents                                                               |           |
-| Archiving reason                    | Fill in an archiving reason that is configured in Topdesk                                                               | Yes       |
-| Fallback email                      | When a manager is set as the requester (in the JSON file) but the manager account reference is empty                    |           |
-| Do not create changes or incidents  | If enabled no changes or incidents will be created in Topdesk                                                           |           |
-| When no item is found in Topdesk    | Stop processing and generate an error or keep the current value and continue if budgetHolder or Department is not found | Yes       |
-| When no department in source data   | Stop processing and generate an error or clear the department field in Topdesk                                          | Yes       |
-| When no budgetholder in source data | Stop processing and generate an error or clear the budgetholder field in Topdesk                                        | Yes       |
-| Toggle debug logging                | Creates extra logging for debug purposes                                                                                |
-
-### Prerequisites
-> [!IMPORTANT]
-> <b> When changes or incidents are in scope, a helloID agent on-premise is required. For cloud only changes or incidents use the [HelloID Topdesk notification system](https://github.com/Tools4everBV/HelloID-Conn-Prov-Notification-Topdesk) </b> 
-
-an archiving reason that is configured in Topdesk.
-Credentials with the rights listed below. 
-
-| Permission                       | Read | Write | Create | Archive |
-| -------------------------------- | ---- | ----- | ------ | ------- |
-| <b>Call Management</b>           |
-| First line calls                 | x    | x     | x      |
-| Second line calls                | x    | x     | x      |
-| Escalate calls                   |      | x     |        |
-| Link object to call              |      | x     |        |
-| Link room to call                |      | x     |        |
-| <b>Change Management</b>         |
-| Requests for Simple Change       | x    | x     | x      |
-| Requests for Extensive Change    | x    | x     | x      |
-| Simple Changes                   | x    | x     |        |
-| Extensive Changes                | x    | x     |        |
-| <b>New Asset Management</b>      |
-| Templates                        | x    |       |        |
-| <b>Supporting Files</b>          |
-| Persons                          | x    | x     | x      | x       |
-| Operators                        | x    | x     | x      | x       |
-| Operator groups                  | x    |       |        |
-| Suppliers                        | x    |       |        |
-| Rooms                            | x    |       |        |
-| Login data                       |      | x     |        |
-| Supporting Files Settings        | x    | x     |        |         |
-| <b>Reporting API</b>             |
-| REST API                         | x    |       |        |
-| Use application passwords        |      | x     |        |
-| <b>Asset Management - Assets</b> |
-| Configuration                    | x    |       |        |         |
-| Firsttemplate                    | x    |       |        |         |
-| Hardware                         | x    |       |        |         |
-| Inventories                      | x    |       |        |         |
-| Licentie                         | x    |       |        |         |
-| Network component                | x    |       |        |         |
-| Software                         | x    |       |        |         |
-| Stock                            | x    |       |        |         |
-| Telephone systems                | x    |       |        |         |
-
-> [!NOTE]
-> It is possible to set filters in Topdesk. If you don't get a result from Topdesk when expecting one it is probably because filters are used. For example, searching for a branch that can't be found by the API user but is visible in Topdesk.
-
-
-### Remarks
+## Remarks
 
 ## Setup the connector
 
@@ -256,8 +220,9 @@ The change JSON file has the following structure:
 		"Impact": "Persoon",
 		"Benefit": null,
 		"Priority": "P1",
-		"EnableGetAssets": false,
+		"EnableGetAssets": true,
 		"SkipNoAssetsFound": false,
+		"SkipAssetsFound": true,
 		"AssetsFilter": ""
 	},
 	"Revoke": {
@@ -274,6 +239,7 @@ The change JSON file has the following structure:
 		"Priority": "P1",
 		"EnableGetAssets": true,
 		"SkipNoAssetsFound": true,
+		"SkipAssetsFound": false,
 		"AssetsFilter": "Hardware,Software"
 	}
 }
@@ -297,6 +263,7 @@ The change JSON file has the following structure:
 | Priority:          | Commonly filled in the Topdesk change template. If so use null.                                                                                                                                                                                                                                                                                                            |
 | EnableGetAssets:   | Set this value `true` for querying the assets that are linked to the person.                                                                                                                                                                                                                                                                                               |
 | SkipNoAssetsFound: | Set this value `true` if no change must be created when no asset is found.                                                                                                                                                                                                                                                                                                 |
+| SkipAssetsFound:   | Set this value `true` if no change must be created when one or multiple asset(s) are found.                                                                                                                                                                                                                                                                                |
 | AssetsFilter:      | For the type of assets that need to be queried. Use `,` between the types when querying more than one. Beware that the values are case-sensitive. Leave empty to query all assets.                                                                                                                                                                                         |
 
 ### Incidents
@@ -366,8 +333,9 @@ The incident JSON file has the following structure:
 		"EntryType": null,
 		"Urgency": null,
 		"ProcessingStatus": null,
-		"EnableGetAssets": false,
+		"EnableGetAssets": true,
 		"SkipNoAssetsFound": false,
+		"SkipAssetsFound": true,
 		"AssetsFilter": ""
 	},
 	"Revoke": {
@@ -390,6 +358,7 @@ The incident JSON file has the following structure:
 		"ProcessingStatus": null,
 		"EnableGetAssets": true,
 		"SkipNoAssetsFound": true,
+		"SkipAssetsFound": false,
 		"AssetsFilter": "Hardware,Software"
 	}
 }
@@ -418,15 +387,38 @@ The incident JSON file has the following structure:
 | ProcessingStatus:   | Fill in the processing status name that is used in Topdesk. It is possible to disable this lookup field by using the value null. If marked mandatory in Topdesk this will be shown when opening the incident. With the correct processing status, it is possible to create a closed incident.                                                                           |
 | EnableGetAssets:    | Set this value `true` for querying the assets that are linked to the person.                                                                                                                                                                                                                                                                                            |
 | SkipNoAssetsFound:  | Set this value `true` if no incident must be created when no asset is found.                                                                                                                                                                                                                                                                                            |
+| SkipAssetsFound:    | Set this value `true` if no incident must be created when one or multiple asset(s) are found.                                                                                                                                                                                                                                                                           |
 | AssetsFilter:       | For the type of assets that need to be queried. Use `,` between the types when querying more than one. Beware that the values are case-sensitive. Leave empty to query all assets.                                                                                                                                                                                      |
+
+## Development resources
+
+### API endpoints
+
+The following endpoints are used by the connector
+
+| Endpoint                           | Description                                                |
+| ---------------------------------- | ---------------------------------------------------------- |
+| /tas/api/persons                   | `GET / POST / PATCH` actions to read and write the persons |
+| /tas/api/branches                  | `GET / POST` read and create branches                      |
+| /tas/api/departments               | `GET / POST` read and create departments                   |
+| /tas/api/budgetholders             | `GET / POST` read and create budgetholders                 |
+| /tas/api/archiving-reasons         | `GET` archiving-reasons to archive persons                 |
+| /tas/api/applicableChangeTemplates | `GET` read change template from Topdesk                    |
+| /tas/api/operatorChanges           | `POST` create changes in Topdesk                           |
+| /tas/api/incidents                 | `GET / POST` read and create incidents                     |
+| /tas/api/operatorgroups            | `GET` read operator groups used for incidents              |
+| /tas/api/operators                 | `GET` read operators used for incidents                    |
+| /tas/api/countries                 | `GET` read countries used for create branches              |
+| /tas/api/assetmgmt                 | `GET` for reading linked assets*                           |
+
+### API documentation
+
+_HelloID-Conn-Prov-Target-Topdesk_ is a _target_ connector. Topdesk provides a set of REST APIs that allow you to programmatically interact with its data. The [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/) provides details of API commands that are used.
 
 ## Getting help
 
 > [!TIP]
 > _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
-
-> [!TIP]
->  _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1266-helloid-conn-prov-target-topdesk)._
 
 ## HelloID docs
 

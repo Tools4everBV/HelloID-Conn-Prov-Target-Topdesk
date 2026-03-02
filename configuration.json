@@ -90,7 +90,7 @@
           "value": "true",
           "label": "Stop processing and generate an error"
         },
-        {
+        { 
           "value": "false",
           "label": "Clear the department field in Topdesk"
         }

@@ -18,6 +18,7 @@
 			"Priority": "P1",
 			"EnableGetAssets": true,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": true,
 			"AssetsFilter": "Hardware,Software"
 		},
 		"Revoke": {
@@ -34,6 +35,7 @@
 			"Priority": "P1",
 			"EnableGetAssets": true,
 			"SkipNoAssetsFound": true,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		}
 	},
@@ -56,6 +58,7 @@
 			"Priority": "P1",
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		},
 		"Revoke": {
@@ -72,6 +75,7 @@
 			"Priority": "P1",
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		}
 	},
@@ -94,6 +98,7 @@
 			"Priority": null,
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		},
 		"Revoke": {}
@@ -118,6 +123,7 @@
 			"Priority": null,
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		}
 	}
