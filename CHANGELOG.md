@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [3.5.0] - 02-03-2026
 
 List of changes:
-- Added `SkipAssetsFound` option for change and incident notifications to skip creating a Topdesk change/incident when one or multiple assets are found
+- Added `SkipAssetsFound` option for change and incident notifications to skip creating a TOPdesk change/incident when one or multiple assets are found
 - Updated change and incident grant/revoke scripts to support the new skip flow and improved action-skip audit logging
 - Updated example permission JSON files for change and incident with `SkipAssetsFound` configuration
 - Updated documentation (`README.md`) with the new asset-skip behavior and refreshed connector setup/reference sections
