@@ -594,7 +594,11 @@ function Get-TopdeskAssetsByPersonId {
         
         [Parameter()]
         [Boolean]
-        $SkipNoAssets
+        $SkipNoAssets,
+
+        [Parameter()]
+        [Boolean]
+        $SkipAssetsFound
     )
 
     if ($AssetFilter) {
@@ -640,13 +644,17 @@ function Get-TopdeskAssetsByPersonId {
     if ([string]::IsNullOrEmpty($assetList)) {
         if ($SkipNoAssets) {
             Write-Information 'Action skipped because no assets are found and [SkipNoAssetsFound = true] is configured'
-            return
+            throw 'Action skip [SkipNoAssetsFound]'
         }
         else {
             # no results found
             $defaultMessage = $actionContext.Configuration.messageNoAssetsFound
             $assetList = "- $defaultMessage`n"
         }
+    }
+    elseif ($SkipAssetsFound) {
+        Write-Information "Action skipped because assets are found and [SkipAssetsFound = true] is configured [$($assetList)]"
+        throw 'Action skip [SkipAssetsFound]'
     }
     write-output $assetList
 }
@@ -705,20 +713,16 @@ try {
         
         # get assets of employee
         $splatParamsTopdeskAssets = @{
-            PersonId     = $actionContext.References.Account 
-            Headers      = $authHeaders
-            BaseUrl      = $actionContext.Configuration.baseUrl
-            AssetFilter  = $templateFilters
-            SkipNoAssets = [boolean]$template.SkipNoAssetsFound
+            PersonId        = $actionContext.References.Account 
+            Headers         = $authHeaders
+            BaseUrl         = $actionContext.Configuration.baseUrl
+            AssetFilter     = $templateFilters
+            SkipNoAssets    = [boolean]$template.SkipNoAssetsFound
+            SkipAssetsFound = [boolean]$template.SkipAssetsFound
         }
 
         # Use $($account.TopdeskAssets) in your notification configuration to resolve the queried assets
         $account.TopdeskAssets = Get-TopdeskAssetsByPersonId @splatParamsTopdeskAssets
-
-        # TopdeskAssets can only be empty if the action needs to be skipped [SkipNoAssetsFound = true]
-        if ([string]::IsNullOrEmpty($account.TopdeskAssets)) {
-            throw 'Action skip'
-        }
     }
  
     # Resolve variables in the BriefDescription field
@@ -945,10 +949,18 @@ catch {
             # Only log when there are no lookup values, as these generate their own audit message
         }
 
-        'Action skip' {
+        'Action skip [SkipNoAssetsFound]' {
             # If empty and [SkipNoAssetsFound = true] in the JSON, nothing should be done. Mark them as a success
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Message = 'Not creating Topdesk change, because no assets are found and [SkipNoAssetsFound = true] is configured'
+                    IsError = $false
+                })
+        }
+
+        'Action skip [SkipAssetsFound]' {
+            # If not empty and [SkipAssetsFound = true] in the JSON, nothing should be done. Mark them as a success
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = 'Not creating Topdesk change, because assets are found and [SkipAssetsFound = true] is configured'
                     IsError = $false
                 })
         }

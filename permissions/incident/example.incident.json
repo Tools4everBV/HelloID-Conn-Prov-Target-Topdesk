@@ -24,6 +24,7 @@
 			"ProcessingStatus": null,
 			"EnableGetAssets": true,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": true,
 			"AssetsFilter": "Hardware,Software"
 		},
 		"Revoke": {
@@ -46,6 +47,7 @@
 			"ProcessingStatus": null,
 			"EnableGetAssets": true,
 			"SkipNoAssetsFound": true,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		}
 	},
@@ -74,6 +76,7 @@
 			"ProcessingStatus": null,
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		},
 		"Revoke": {
@@ -96,6 +99,7 @@
 			"ProcessingStatus": "Geregistreerd",
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		}
 	},
@@ -124,6 +128,7 @@
 			"ProcessingStatus": "Geregistreerd",
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		},
 		"Revoke": {}
@@ -154,6 +159,7 @@
 			"ProcessingStatus": "Geregistreerd",
 			"EnableGetAssets": false,
 			"SkipNoAssetsFound": false,
+			"SkipAssetsFound": false,
 			"AssetsFilter": ""
 		}
 	}
