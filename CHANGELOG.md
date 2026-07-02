@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com), and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [3.5.0] - 02-03-2026
+## [3.5.3] - 02-03-2026
 
 List of changes:
 - Added `SkipAssetsFound` option for change and incident notifications to skip creating a TOPdesk change/incident when one or multiple assets are found
