@@ -35,14 +35,14 @@
 ## Introduction
 
 Supported features:
-| Feature                                   | Supported | Actions                                 | Remarks                                                                                                                                                                                                |
-| ----------------------------------------- | --------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Account Lifecycle**                     | ✅         | Create, Update, Enable, Disable, Delete |                                                                                                                                                                                                        |
-| **Permissions**                           | ✅         | Retrieve, Grant, Revoke                 | Creating changes and incidents                                                                                                                                                                         |
-| **Resources**                             | ✅         | -                                       |                                                                                                                                                                                                        |
-| **Entitlement Import: Accounts**          | ✅         | -                                       |                                                                                                                                                                                                        |
-| **Entitlement Import: Permissions**       | ❌         |                                         |                                                                                                                                                                                                        |
-| **Governance Reconciliation Resolutions** | ✅         | Disable, Delete, Revoke                 | Delete is treated as a disable action with the option to update values. Please adjust the configuration accordingly in the delete script. Revoke only avalible for the software assignments permission |
+| Feature                                   | Supported | Actions                                 | Remarks                                                                                                                                   |
+| ----------------------------------------- | --------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Account Lifecycle**                     | ✅         | Create, Update, Enable, Disable, Delete |                                                                                                                                           |
+| **Permissions**                           | ✅         | Retrieve, Grant, Revoke                 | Creating changes and incidents                                                                                                            |
+| **Resources**                             | ✅         | -                                       |                                                                                                                                           |
+| **Entitlement Import: Accounts**          | ✅         | -                                       |                                                                                                                                           |
+| **Entitlement Import: Permissions**       | ❌         |                                         |                                                                                                                                           |
+| **Governance Reconciliation Resolutions** | ✅         | Disable, Delete                         | Delete is treated as a disable action with the option to update values. Please adjust the configuration accordingly in the delete script. |
 
 ## Getting started
 
@@ -56,6 +56,9 @@ https://raw.githubusercontent.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/
 ### Requirements
 > [!IMPORTANT]
 > <b> When changes or incidents are in scope, a helloID agent on-premise is required. For cloud only changes or incidents use the [HelloID Topdesk notification system](https://github.com/Tools4everBV/HelloID-Conn-Prov-Notification-Topdesk) </b> 
+
+> [!NOTE]
+> For archiving a person with a linked operator the rights `Operator` `Read` and `Archive` are required.
 
 an archiving reason that is configured in Topdesk.
 Credentials with the rights listed below. 
