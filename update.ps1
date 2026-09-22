@@ -106,7 +106,11 @@ function Get-TopdeskBranch {
 
         [ValidateNotNullOrEmpty()]
         [Object]
-        [ref]$Account
+        [ref]$Account,
+
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $LookupField
     )
 
     # Check if branch.name property exists in the account object set in the mapping
@@ -117,7 +121,7 @@ function Get-TopdeskBranch {
             })
         return
     }
-        
+
     if ([string]::IsNullOrEmpty($Account.branch.name)) {
         # As branch is always a required field,  no branch in lookup value = error
         $outputContext.AuditLogs.Add([PSCustomObject]@{
@@ -128,27 +132,36 @@ function Get-TopdeskBranch {
     else {
         # Lookup Value is filled in, lookup value in Topdesk
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/branches"
+            Uri     = "$baseUrl/tas/api/branches?query=$LookupField==$($Account.branch.name)"
             Method  = 'GET'
             Headers = $Headers
         }
+
         $responseGet = Invoke-TopdeskRestMethod @splatParams
-        $branch = $responseGet | Where-object name -eq $Account.branch.name
         # When branch is not found in Topdesk
-        if ([string]::IsNullOrEmpty($branch.id)) {
+        if ([string]::IsNullOrEmpty($responseGet.id)) {
             # As branch is a required field, if no branch is found, an error is logged
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Branch with name [$($Account.branch.name)] isn't found in Topdesk but it's a required field."
+                    Message = "Branch with $LookupField [$($Account.branch.name)] isn't found in Topdesk but it's a required field."
+                    IsError = $true
+                })
+
+        }
+        elseif ($responseGet.Count -eq 1) {
+            # Branch is found in Topdesk, set in Topdesk
+            $Account.branch.PSObject.Properties.Remove('name')
+            $Account.branch | Add-Member -MemberType NoteProperty -Name 'id' -Value $responseGet.id
+        }
+        else {
+            # Multiple records found, correlation
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = "Multiple [$($responseGet.Count)] branchess found with [$lookupField] [$($Account.branch.name)]. Branch names: [$($responseGet.name -join ', ')]"
                     IsError = $true
                 })
         }
-        else {
-            # Branch is found in Topdesk, set in Topdesk
-            $Account.branch.PSObject.Properties.Remove('name')
-            $Account.branch | Add-Member -MemberType NoteProperty -Name 'id' -Value $branch.id
-        }
     }
 }
+
 function Get-TopdeskDepartment {
     param (
         [ValidateNotNullOrEmpty()]
@@ -611,13 +624,14 @@ try {
     $authHeaders = Set-AuthorizationHeaders @splatParamsAuthorizationHeaders
     
     if ($Account.branch.PSObject.Properties.Name -Contains 'name') {
-        # Resolve branch id
-        $splatParamsBranch = @{
-            Account = [ref]$account
-            Headers = $authHeaders
-            BaseUrl = $actionContext.Configuration.baseUrl
-        }
-        Get-TopdeskBranch @splatParamsBranch
+            # Resolve branch id
+            $splatParamsBranch = @{
+                Account = [ref]$account
+                Headers = $authHeaders
+                BaseUrl = $actionContext.Configuration.baseUrl
+                LookupField = 'name'
+            }
+            Get-TopdeskBranch @splatParamsBranch
     }
     else {
         Write-Information "Mapping of [branch.name] is missing to lookup the branch in Topdesk. Action skipped"
