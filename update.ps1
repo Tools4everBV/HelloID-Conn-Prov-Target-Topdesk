@@ -155,7 +155,7 @@ function Get-TopdeskBranch {
         else {
             # Multiple records found, correlation
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Multiple [$($responseGet.Count)] branchess found with [$lookupField] [$($Account.branch.name)]. Branch names: [$($responseGet.name -join ', ')]"
+                    Message = "Multiple [$($responseGet.Count)] branches found with [$lookupField] [$($Account.branch.name)]. Branch names: [$($responseGet.name -join ', ')]"
                     IsError = $true
                 })
         }
