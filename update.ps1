@@ -131,8 +131,10 @@ function Get-TopdeskBranch {
     }
     else {
         # Lookup Value is filled in, lookup value in Topdesk
+        $branchQuery = "$LookupField=='$($Account.branch.name)'"
+        $encodedBranchQuery = [uri]::EscapeDataString($branchQuery)
         $splatParams = @{
-            Uri     = "$baseUrl/tas/api/branches?query=$LookupField==$($Account.branch.name)"
+            Uri     = "$baseUrl/tas/api/branches?query=$encodedBranchQuery"
             Method  = 'GET'
             Headers = $Headers
         }
