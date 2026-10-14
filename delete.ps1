@@ -304,7 +304,7 @@ try {
     # Additional endpoint contract (2): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointContract.md#get-current-contract-data-update
     # Additional endpoint privateDetails (2): https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-Topdesk/blob/main/additionalEndpoints/endpointPrivateDetails.md#get-current-privatedetails-data-update
 
-    if ($outputContext.AuditLogs.isError -contains - $true) {
+    if ($outputContext.AuditLogs.isError -contains $true) {
         throw "Error(s) occured while looking up required values"
     }
     #endregion lookup
