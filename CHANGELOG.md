@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Fixed
 - Updated the AdditionalEndPoints READMEs to clarify that mapping a required field is no longer mandatory, making implementation easier.
+- Fix redundant `-` in error checking condition in `enable.ps1`, `update.ps1`, `disable.ps1` and `delete.ps1`.
 
 ## [3.5.4] - 22-09-2026
 
