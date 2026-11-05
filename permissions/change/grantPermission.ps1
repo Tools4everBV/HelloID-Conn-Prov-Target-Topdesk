@@ -605,7 +605,7 @@ function Get-TopdeskAssetsByPersonId {
         foreach ($item in $AssetFilter) {
             # Lookup value is filled in, lookup value in Topdesk
             $splatParams = @{
-                Uri     = "$baseUrl/tas/api/assetmgmt/assets?archived='false'&templateName=$item&linkedTo=person/$PersonId"
+                Uri     = "$baseUrl/tas/api/assetmgmt/assets?archived='false'&templateName=$([uri]::EscapeDataString($item))&linkedTo=person/$PersonId"
                 Method  = 'GET'
                 Headers = $Headers
             }

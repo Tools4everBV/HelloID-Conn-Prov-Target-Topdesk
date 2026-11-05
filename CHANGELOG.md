@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com), and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [3.5.5] - 05-11-2026
+
+List of changes:
+- `Get-TopdeskIdentifier` in the incident `grantPermission.ps1` and `revokePermission.ps1` now URL-encodes the query value. Values containing a single quote are wrapped in double quotes
+- The `templateName` asset filter in the incident and change `grantPermission.ps1` and `revokePermission.ps1` is now URL-encoded
+
 ## [3.5.4] - 22-09-2026
 
 List of changes:
