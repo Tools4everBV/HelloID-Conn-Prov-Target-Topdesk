@@ -7,7 +7,7 @@
 > [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
 
 > [!NOTE]
-> > Only `create`, `update` and `delete` account lifecycle actions are supported. Ensure that you modify scripts only where field mappings are defined. This add-on requires at least one valid field containing `privateDetails.` in the field mapping for proper functionality.
+> > Only `create`, `update` and `delete` account lifecycle actions are supported.
 
 ## Additional permissions
 
@@ -37,14 +37,13 @@ if ($account.PSObject.Properties.Name -Contains 'id') {
 # Remove properties privateDetails.<x> because this is send to a different endpoint
 if ($account.PSObject.Properties.Name -Contains 'privateDetails') {
 	$account.PSObject.Properties.Remove('privateDetails')
+	$accountPrivateDetails = [PSCustomObject]$actionContext.Data.privateDetails.PsObject.Copy()
 }
-
-$accountPrivateDetails = [PSCustomObject]$actionContext.Data.privateDetails.PsObject.Copy()
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-> [!WARNING]
-> When updating the `delete` script, make sure that reconciliation continues to work. For example:
+> [!NOTE]
+> When updating the `delete` script, don't forget the reconciliation action. For example:
 > ```powershell
 > #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 > $dataPrivateDetails = [PSCustomObject]@{
@@ -59,17 +58,19 @@ We need to check if the current privateDetails data on the Topdesk person needs 
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-$getPrivateDetailsSplatParams = @{
-	Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($actionContext.References.Account)/privateDetails"
-	Method  = 'GET'
-	Headers = $authHeaders
-}
-$TopdeskPersonPrivateDetails = Invoke-TopdeskRestMethod @getPrivateDetailsSplatParams
+if (-not [string]::IsNullOrWhiteSpace($accountPrivateDetails)) {
+	$getPrivateDetailsSplatParams = @{
+		Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($actionContext.References.Account)/privateDetails"
+		Method  = 'GET'
+		Headers = $authHeaders
+	}
+	$TopdeskPersonPrivateDetails = Invoke-TopdeskRestMethod @getPrivateDetailsSplatParams
 
-# to return values to HelloID
-$oldAccountPrivateDetails = [PSCustomObject]@{}
-$TopdeskPersonPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
-	$oldAccountPrivateDetails | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonPrivateDetails.$($_.Name)
+	# to return values to HelloID
+	$oldAccountPrivateDetails = [PSCustomObject]@{}
+	$TopdeskPersonPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
+		$oldAccountPrivateDetails | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonPrivateDetails.$($_.Name)
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
@@ -80,11 +81,13 @@ This must be added after `$accountDifferenceObject` and `$accountReferenceObject
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-$accountPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
-	$accountDifferenceObject | Add-Member -MemberType NoteProperty -Name "privateDetails_$($_.Name)" -Value $accountPrivateDetails.$($_.Name)
-}
-$TopdeskPersonPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
-	$accountReferenceObject | Add-Member -MemberType NoteProperty -Name "privateDetails_$($_.Name)" -Value $TopdeskPersonPrivateDetails.$($_.Name)
+if (-not [string]::IsNullOrWhiteSpace($accountPrivateDetails)) {
+	$accountPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
+		$accountDifferenceObject | Add-Member -MemberType NoteProperty -Name "privateDetails_$($_.Name)" -Value $accountPrivateDetails.$($_.Name)
+	}
+	$TopdeskPersonPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
+		$accountReferenceObject | Add-Member -MemberType NoteProperty -Name "privateDetails_$($_.Name)" -Value $TopdeskPersonPrivateDetails.$($_.Name)
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
@@ -94,23 +97,25 @@ $TopdeskPersonPrivateDetails | Get-Member -MemberType Properties | ForEach-Objec
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-if (-Not($actionContext.DryRun -eq $true)) {
-	$setPrivateDetailsSplatParams = @{
-		Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/privateDetails"
-		Method  = 'PATCH'
-		Headers = $authHeaders
-		Body    = $accountPrivateDetails | ConvertTo-Json
-	}
-	$TopdeskPersonUpdatedPrivateDetails = Invoke-TopdeskRestMethod @setPrivateDetailsSplatParams
+if (-not [string]::IsNullOrWhiteSpace($accountPrivateDetails)) {
+	if (-Not($actionContext.DryRun -eq $true)) {
+		$setPrivateDetailsSplatParams = @{
+			Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/privateDetails"
+			Method  = 'PATCH'
+			Headers = $authHeaders
+			Body    = $accountPrivateDetails | ConvertTo-Json
+		}
+		$TopdeskPersonUpdatedPrivateDetails = Invoke-TopdeskRestMethod @setPrivateDetailsSplatParams
 
-	$newAccountPrivateDetails = [PSCustomObject]@{}
-	$TopdeskPersonUpdatedPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
-		$newAccountPrivateDetails | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedPrivateDetails.$($_.Name)
+		$newAccountPrivateDetails = [PSCustomObject]@{}
+		$TopdeskPersonUpdatedPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
+			$newAccountPrivateDetails | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedPrivateDetails.$($_.Name)
+		}
+		$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'privateDetails' -Value $newAccountPrivateDetails
 	}
-	$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'privateDetails' -Value $newAccountPrivateDetails
-}
-else {
-	Write-Warning "DryRun would update Topdesk person privateDetails [$($TopdeskPerson.id)]."
+	else {
+		Write-Warning "DryRun would update Topdesk person privateDetails [$($TopdeskPerson.id)]."
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
@@ -120,24 +125,26 @@ else {
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-if (-Not($actionContext.DryRun -eq $true)) {
-	$setPrivateDetailsSplatParams = @{
-		Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/privateDetails"
-		Method  = 'PATCH'
-		Headers = $authHeaders
-		Body    = $accountPrivateDetails | ConvertTo-Json
-	}
-	$TopdeskPersonUpdatedPrivateDetails = Invoke-TopdeskRestMethod @setPrivateDetailsSplatParams
+if (-not [string]::IsNullOrWhiteSpace($accountPrivateDetails)) {
+	if (-Not($actionContext.DryRun -eq $true)) {
+		$setPrivateDetailsSplatParams = @{
+			Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/privateDetails"
+			Method  = 'PATCH'
+			Headers = $authHeaders
+			Body    = $accountPrivateDetails | ConvertTo-Json
+		}
+		$TopdeskPersonUpdatedPrivateDetails = Invoke-TopdeskRestMethod @setPrivateDetailsSplatParams
 
-	$newAccountPrivateDetails = [PSCustomObject]@{}
-	$TopdeskPersonUpdatedPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
-		$newAccountPrivateDetails | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedPrivateDetails.$($_.Name)
+		$newAccountPrivateDetails = [PSCustomObject]@{}
+		$TopdeskPersonUpdatedPrivateDetails | Get-Member -MemberType Properties | ForEach-Object {
+			$newAccountPrivateDetails | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedPrivateDetails.$($_.Name)
+		}
+		$TopdeskPersonUpdated | Add-Member -MemberType NoteProperty -Name 'privateDetails' -Value $newAccountPrivateDetails
+		$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'privateDetails' -Value $oldAccountPrivateDetails
 	}
-	$TopdeskPersonUpdated | Add-Member -MemberType NoteProperty -Name 'privateDetails' -Value $newAccountPrivateDetails
-	$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'privateDetails' -Value $oldAccountPrivateDetails
-}
-else {
-	Write-Warning "DryRun would update Topdesk person privateDetails [$($TopdeskPerson.id)]."
+	else {
+		Write-Warning "DryRun would update Topdesk person privateDetails [$($TopdeskPerson.id)]."
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```

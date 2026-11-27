@@ -228,7 +228,7 @@ try {
     }
     $TopdeskPerson = Get-TopdeskPerson  @splatParamsPerson
 
-    if ($outputContext.AuditLogs.isError -contains - $true) {
+    if ($outputContext.AuditLogs.isError -contains $true) {
         throw "Error(s) occured while looking up required values"
     }
     #endregion lookup

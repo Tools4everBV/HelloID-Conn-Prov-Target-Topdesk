@@ -7,7 +7,7 @@
 > [Topdesk API documentation](https://developers.topdesk.com/explorer/?page=supporting-files#/)
 
 > [!NOTE]
-> Only `create`, `update` and `delete` account lifecycle actions are supported. Ensure that you modify scripts only where field mappings are defined. This add-on requires at least one valid field containing `contract.` in the field mapping for proper functionality.
+> Only `create`, `update` and `delete` account lifecycle actions are supported.
 
 ## Additional permissions
 
@@ -38,14 +38,13 @@ if ($account.PSObject.Properties.Name -Contains 'id') {
 # Remove properties contract.<x> because this is send to a different endpoint
 if ($account.PSObject.Properties.Name -Contains 'contract') {
 	$account.PSObject.Properties.Remove('contract')
+	$accountContract = [PSCustomObject]$actionContext.Data.contract.PsObject.Copy()
 }
-
-$accountContract = [PSCustomObject]$actionContext.Data.contract.PsObject.Copy()
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
 
-> [!WARNING]
-> When updating the `delete` script, make sure that reconciliation continues to work. For example:
+> [!NOTE]
+> When updating the `delete` script, don't forget the reconciliation action. For example:
 > ```powershell
 > #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 > $dataContract = [PSCustomObject]@{
@@ -63,30 +62,32 @@ We need to check if the current contract data on the Topdesk person needs to be 
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-$getContractSplatParams = @{
-	Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($actionContext.References.Account)/contract"
-	Method  = 'GET'
-	Headers = $authHeaders
-}
-$TopdeskPersonContract = Invoke-TopdeskRestMethod @getContractSplatParams
+if (-not [string]::IsNullOrWhiteSpace($accountContract)) {
+	$getContractSplatParams = @{
+		Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($actionContext.References.Account)/contract"
+		Method  = 'GET'
+		Headers = $authHeaders
+	}
+	$TopdeskPersonContract = Invoke-TopdeskRestMethod @getContractSplatParams
 
-# to return values to HelloID
-$oldAccountContract = [PSCustomObject]@{}
-$TopdeskPersonContract | Get-Member -MemberType Properties | ForEach-Object {
-	$oldAccountContract | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonContract.$($_.Name)
-}
+	# to return values to HelloID
+	$oldAccountContract = [PSCustomObject]@{}
+	$TopdeskPersonContract | Get-Member -MemberType Properties | ForEach-Object {
+		$oldAccountContract | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonContract.$($_.Name)
+	}
 
-if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.hireDate))) {
-	$TopdeskPersonContract.hireDate = ([datetime]::Parse($TopdeskPersonContract.hireDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
-}
-if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.employmentTerminationDate))) {
-	$TopdeskPersonContract.employmentTerminationDate = ([datetime]::Parse($TopdeskPersonContract.employmentTerminationDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
-}
-if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.contractStartDate))) {
-	$TopdeskPersonContract.contractStartDate = ([datetime]::Parse($TopdeskPersonContract.contractStartDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
-}
-if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.contractExpiryDate))) {
-	$TopdeskPersonContract.contractExpiryDate = ([datetime]::Parse($TopdeskPersonContract.contractExpiryDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
+	if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.hireDate))) {
+		$TopdeskPersonContract.hireDate = ([datetime]::Parse($TopdeskPersonContract.hireDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
+	}
+	if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.employmentTerminationDate))) {
+		$TopdeskPersonContract.employmentTerminationDate = ([datetime]::Parse($TopdeskPersonContract.employmentTerminationDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
+	}
+	if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.contractStartDate))) {
+		$TopdeskPersonContract.contractStartDate = ([datetime]::Parse($TopdeskPersonContract.contractStartDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
+	}
+	if (-Not([string]::IsNullOrEmpty($TopdeskPersonContract.contractExpiryDate))) {
+		$TopdeskPersonContract.contractExpiryDate = ([datetime]::Parse($TopdeskPersonContract.contractExpiryDate, [System.Globalization.CultureInfo]::GetCultureInfo("en-US"))).ToString("yyyy-MM-dd")
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
@@ -97,11 +98,13 @@ This must be added after `$accountDifferenceObject` and `$accountReferenceObject
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-$accountContract | Get-Member -MemberType Properties | ForEach-Object {
-	$accountDifferenceObject | Add-Member -MemberType NoteProperty -Name "contract_$($_.Name)" -Value $accountContract.$($_.Name)
-}
-$TopdeskPersonContract | Get-Member -MemberType Properties | ForEach-Object {
-	$accountReferenceObject | Add-Member -MemberType NoteProperty -Name "contract_$($_.Name)" -Value $TopdeskPersonContract.$($_.Name)
+if (-not [string]::IsNullOrWhiteSpace($accountContract)) {
+	$accountContract | Get-Member -MemberType Properties | ForEach-Object {
+		$accountDifferenceObject | Add-Member -MemberType NoteProperty -Name "contract_$($_.Name)" -Value $accountContract.$($_.Name)
+	}
+	$TopdeskPersonContract | Get-Member -MemberType Properties | ForEach-Object {
+		$accountReferenceObject | Add-Member -MemberType NoteProperty -Name "contract_$($_.Name)" -Value $TopdeskPersonContract.$($_.Name)
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
@@ -111,23 +114,25 @@ $TopdeskPersonContract | Get-Member -MemberType Properties | ForEach-Object {
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-if (-Not($actionContext.DryRun -eq $true)) {
-	$setContractSplatParams = @{
-		Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/contract"
-		Method  = 'PATCH'
-		Headers = $authHeaders
-		Body    = $AccountContract | ConvertTo-Json
-	}
-	$TopdeskPersonUpdatedContract = Invoke-TopdeskRestMethod @setContractSplatParams
+if (-not [string]::IsNullOrWhiteSpace($accountContract)) {
+	if (-Not($actionContext.DryRun -eq $true)) {
+		$setContractSplatParams = @{
+			Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/contract"
+			Method  = 'PATCH'
+			Headers = $authHeaders
+			Body    = $AccountContract | ConvertTo-Json
+		}
+		$TopdeskPersonUpdatedContract = Invoke-TopdeskRestMethod @setContractSplatParams
 
-	$newAccountContract = [PSCustomObject]@{}
-	$TopdeskPersonUpdatedContract | Get-Member -MemberType Properties | ForEach-Object {
-		$newAccountContract | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedContract.$($_.Name)
+		$newAccountContract = [PSCustomObject]@{}
+		$TopdeskPersonUpdatedContract | Get-Member -MemberType Properties | ForEach-Object {
+			$newAccountContract | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedContract.$($_.Name)
+		}
+		$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'contract' -Value $newAccountContract
 	}
-	$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'contract' -Value $newAccountContract
-}
-else {
-	Write-Warning "DryRun would update Topdesk person contract [$($TopdeskPerson.id)]."
+	else {
+		Write-Warning "DryRun would update Topdesk person contract [$($TopdeskPerson.id)]."
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
@@ -137,24 +142,26 @@ else {
 
 ```powershell
 #region Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
-if (-Not($actionContext.DryRun -eq $true)) {
-	$setContractSplatParams = @{
-		Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/contract"
-		Method  = 'PATCH'
-		Headers = $authHeaders
-		Body    = $AccountContract | ConvertTo-Json
-	}
-	$TopdeskPersonUpdatedContract = Invoke-TopdeskRestMethod @setContractSplatParams
+if (-not [string]::IsNullOrWhiteSpace($accountContract)) {
+	if (-Not($actionContext.DryRun -eq $true)) {
+		$setContractSplatParams = @{
+			Uri     = "$($actionContext.Configuration.baseUrl)/tas/api/persons/id/$($TopdeskPerson.id)/contract"
+			Method  = 'PATCH'
+			Headers = $authHeaders
+			Body    = $AccountContract | ConvertTo-Json
+		}
+		$TopdeskPersonUpdatedContract = Invoke-TopdeskRestMethod @setContractSplatParams
 
-	$newAccountContract = [PSCustomObject]@{}
-	$TopdeskPersonUpdatedContract | Get-Member -MemberType Properties | ForEach-Object {
-		$newAccountContract | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedContract.$($_.Name)
+		$newAccountContract = [PSCustomObject]@{}
+		$TopdeskPersonUpdatedContract | Get-Member -MemberType Properties | ForEach-Object {
+			$newAccountContract | Add-Member -MemberType NoteProperty -Name $_.Name -Value $TopdeskPersonUpdatedContract.$($_.Name)
+		}
+		$TopdeskPersonUpdated | Add-Member -MemberType NoteProperty -Name 'contract' -Value $newAccountContract
+		$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'contract' -Value $oldAccountContract
 	}
-	$TopdeskPersonUpdated | Add-Member -MemberType NoteProperty -Name 'contract' -Value $newAccountContract
-	$TopdeskPerson | Add-Member -MemberType NoteProperty -Name 'contract' -Value $oldAccountContract
-}
-else {
-	Write-Warning "DryRun would update Topdesk person contract [$($TopdeskPerson.id)]."
+	else {
+		Write-Warning "DryRun would update Topdesk person contract [$($TopdeskPerson.id)]."
+	}
 }
 #endregion Custom - <yyyy-MM-dd> - <initials> - <ticket number> - <what has changed>
 ```
